@@ -84,12 +84,12 @@ const StudentRegisterPage = () => {
         .eq("user_id", authorizedEmail.parent_id)
         .single();
 
-      // Create student record with gender
+      // Create student record with gender and school year from authorized email
       await supabase.from("students").insert({
         user_id: data.user.id,
         parent_id: authorizedEmail.parent_id,
         display_name: formData.name,
-        school_year: "1" as any,
+        school_year: formData.schoolYear as any,
         district: parentProfile?.district as any,
         gender: formData.gender,
       });
