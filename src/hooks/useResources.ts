@@ -154,5 +154,27 @@ export function useResources(studentId: string | undefined) {
     return type in TERRAIN_TO_RESOURCE;
   }, []);
 
-  return { resources, loading, gather, isOnCooldown, isGatherable };
+  // Spend resources (for building construction)
+  const spendResources = useCallback(async (costs: { resource: NaturalResource; amount: number }[]): Promise<boolean> => {
+    if (!studentId) return false;
+    // Check all costs
+    for (const cost of costs) {
+      if (resources[cost.resource] < cost.amount) return false;
+    }
+    // Deduct all
+    const newResources = { ...resources };
+    for (const cost of costs) {
+      newResources[cost.resource] -= cost.amount;
+      await (supabase
+        .from('player_resources' as any)
+        .upsert(
+          { student_id: studentId, resource_type: cost.resource, amount: newResources[cost.resource], updated_at: new Date().toISOString() },
+          { onConflict: 'student_id,resource_type' }
+        ) as any);
+    }
+    setResources(newResources);
+    return true;
+  }, [studentId, resources]);
+
+  return { resources, loading, gather, isOnCooldown, isGatherable, spendResources };
 }

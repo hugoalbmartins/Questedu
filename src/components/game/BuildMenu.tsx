@@ -1,9 +1,14 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { BUILDING_DEFS, BUILDING_CATEGORIES, BuildingDef } from '@/lib/gameTypes';
+import { BUILDING_DEFS, BUILDING_CATEGORIES, BuildingDef, NaturalResourceType } from '@/lib/gameTypes';
+import { RESOURCE_INFO } from '@/hooks/useResources';
 import { SFX } from '@/lib/sounds';
 import { Coins, Diamond, Lock, Crown } from 'lucide-react';
+
+interface ResourceAmounts {
+  wood: number; stone: number; iron: number; coal: number; food: number; leather: number; fish: number;
+}
 
 interface BuildMenuProps {
   selectedBuilding: string | null;
@@ -13,21 +18,23 @@ interface BuildMenuProps {
   villageLevel: number;
   isPremium: boolean;
   district?: string | null;
+  resources: ResourceAmounts;
 }
 
 export const BuildMenu = ({
-  selectedBuilding, onSelect, coins, diamonds, villageLevel, isPremium, district,
+  selectedBuilding, onSelect, coins, diamonds, villageLevel, isPremium, district, resources,
 }: BuildMenuProps) => {
   const [activeCategory, setActiveCategory] = useState<string>('infrastructure');
 
   const filteredBuildings = Object.values(BUILDING_DEFS).filter(def => {
     if (def.category !== activeCategory) return false;
-    // Hide district monuments not matching player district
     if (def.districtExclusive && def.districtExclusive !== district) return false;
     return true;
   });
 
-  const canAfford = (def: BuildingDef) => coins >= def.costCoins && diamonds >= def.costDiamonds;
+  const canAffordCurrency = (def: BuildingDef) => coins >= def.costCoins && diamonds >= def.costDiamonds;
+  const canAffordResources = (def: BuildingDef) => def.resourceCosts.every(rc => resources[rc.resource] >= rc.amount);
+  const canAfford = (def: BuildingDef) => canAffordCurrency(def) && canAffordResources(def);
   const meetsLevel = (def: BuildingDef) => villageLevel >= def.minVillageLevel;
   const meetsAccess = (def: BuildingDef) => !def.premiumOnly || isPremium;
 
@@ -52,7 +59,7 @@ export const BuildMenu = ({
       </div>
 
       {/* Buildings list */}
-      <ScrollArea className="max-h-32">
+      <ScrollArea className="max-h-40">
         <div className="flex gap-2 px-2 py-2 overflow-x-auto">
           {filteredBuildings.map(def => {
             const affordable = canAfford(def);
@@ -70,25 +77,40 @@ export const BuildMenu = ({
                     SFX.click();
                   }
                 }}
-                className={`flex-shrink-0 w-20 p-2 rounded-lg border-2 text-center transition-all
+                className={`flex-shrink-0 w-24 p-2 rounded-lg border-2 text-center transition-all
                   ${isSelected ? 'border-primary bg-primary/10 scale-105' : 'border-border bg-card'}
                   ${!available ? 'opacity-50 cursor-not-allowed' : 'hover:border-primary/50 cursor-pointer'}
                 `}
               >
                 <div className="text-2xl mb-0.5">{def.emoji}</div>
                 <div className="text-[10px] font-body font-bold leading-tight truncate">{def.name}</div>
-                <div className="flex items-center justify-center gap-1 mt-0.5">
+                {/* Currency costs */}
+                <div className="flex items-center justify-center gap-1 mt-0.5 flex-wrap">
                   {def.costCoins > 0 && (
-                    <span className="flex items-center gap-0.5 text-[9px]">
+                    <span className={`flex items-center gap-0.5 text-[9px] ${coins < def.costCoins ? 'text-destructive' : ''}`}>
                       <Coins className="w-2.5 h-2.5 text-gold" />{def.costCoins}
                     </span>
                   )}
                   {def.costDiamonds > 0 && (
-                    <span className="flex items-center gap-0.5 text-[9px]">
+                    <span className={`flex items-center gap-0.5 text-[9px] ${diamonds < def.costDiamonds ? 'text-destructive' : ''}`}>
                       <Diamond className="w-2.5 h-2.5 text-diamond" />{def.costDiamonds}
                     </span>
                   )}
                 </div>
+                {/* Resource costs */}
+                {def.resourceCosts.length > 0 && (
+                  <div className="flex items-center justify-center gap-1 mt-0.5 flex-wrap">
+                    {def.resourceCosts.map(rc => {
+                      const info = RESOURCE_INFO[rc.resource];
+                      const hasEnough = resources[rc.resource] >= rc.amount;
+                      return (
+                        <span key={rc.resource} className={`flex items-center gap-0.5 text-[8px] ${!hasEnough ? 'text-destructive font-bold' : 'text-muted-foreground'}`}>
+                          {info.emoji}{rc.amount}
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
                 {!accessOk && <Crown className="w-3 h-3 mx-auto mt-0.5 text-gold" />}
                 {!levelOk && accessOk && <Lock className="w-3 h-3 mx-auto mt-0.5 text-muted-foreground" />}
               </button>
