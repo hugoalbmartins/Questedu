@@ -81,6 +81,54 @@ export const VillageView = ({ student, onQuiz, onRefresh }: VillageViewProps) =>
   useEffect(() => { loadBuildings(); }, [student.id]);
   useEffect(() => { return () => { AmbientMusic.stop(); }; }, []);
 
+  // === REALTIME TRADE NOTIFICATIONS ===
+  useEffect(() => {
+    const channel = supabase
+      .channel('trade-notifications')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'trade_offers',
+          filter: `receiver_id=eq.${student.id}`,
+        },
+        (payload) => {
+          const trade = payload.new as any;
+          toast.info(`📦 Nova proposta de troca! ${trade.offer_coins > 0 ? `🪙${trade.offer_coins}` : ''} ${trade.offer_food > 0 ? `🍖${trade.offer_food}` : ''}`, {
+            duration: 6000,
+            action: {
+              label: 'Ver',
+              onClick: () => setShowTrade(true),
+            },
+          });
+          SFX.coins();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'trade_offers',
+          filter: `sender_id=eq.${student.id}`,
+        },
+        (payload) => {
+          const trade = payload.new as any;
+          if (trade.status === 'accepted') {
+            toast.success('🤝 A tua proposta de troca foi aceite!', { duration: 5000 });
+            SFX.coins();
+            onRefresh();
+          } else if (trade.status === 'rejected') {
+            toast.info('❌ A tua proposta de troca foi rejeitada.', { duration: 4000 });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [student.id]);
+
   // Passive production timer
   useEffect(() => {
     if (buildings.length === 0) return;
