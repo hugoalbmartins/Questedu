@@ -46,6 +46,13 @@ export const IsometricCanvas = ({
 
   const fullGrid = useMemo(() => applyBuildingsToGrid(grid, buildings), [grid, buildings]);
 
+  // Generate terrain elements (deterministic based on student id)
+  const terrainElements = useMemo(() => {
+    const seed = studentId ? studentIdToSeed(studentId) : 12345;
+    return generateTerrain({ district, gridSize, seed });
+  }, [studentId, district, gridSize]);
+
+  const wildernessBorder = getWildernessBorder();
   const originX = (gridSize * TILE_W) / 2;
   const originY = 50;
 
