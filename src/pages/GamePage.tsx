@@ -161,10 +161,10 @@ const GamePage = () => {
               <Button 
                 variant="outline" 
                 className="flex flex-col gap-2 h-auto py-4"
-                onClick={() => setView("map")}
+                onClick={() => setShowPremium(true)}
               >
-                <Trophy className="w-6 h-6 text-gold" />
-                <span className="text-xs">Rankings</span>
+                <Crown className="w-6 h-6 text-gold" />
+                <span className="text-xs">Premium</span>
               </Button>
             </div>
 
