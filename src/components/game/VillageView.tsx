@@ -4,6 +4,7 @@ import { IsometricCanvas } from './IsometricCanvas';
 import { BuildMenu } from './BuildMenu';
 import { BuildingInfoModal } from './BuildingInfoModal';
 import { ExpansionPanel } from './ExpansionPanel';
+import { ResourceBar } from './ResourceBar';
 import { MIN_GRID_SIZE, BUILDING_DEFS, EXPANSION_LEVELS, PlacedBuilding } from '@/lib/gameTypes';
 import { createEmptyGrid, applyBuildingsToGrid, canPlace, hasRoadAccess, getUpgradeCost, getTotalStats } from '@/lib/gridLogic';
 import { SFX } from '@/lib/sounds';
@@ -14,8 +15,10 @@ import { TILE_W, TILE_H } from '@/lib/gameTypes';
 import { calculateSimState, SimState, AnimatedCitizen, createAnimatedCitizen, updateCitizen, SIM_TICK_MS, SIM_RATES, Complaint, getCurrentSeason, SEASON_CONFIG } from '@/lib/simulation';
 import { TradePanel } from './TradePanel';
 import { TutorialOverlay } from './TutorialOverlay';
+import { useResources } from '@/hooks/useResources';
+import { TerrainElement } from '@/lib/terrainGeneration';
 import { toast } from 'sonner';
-import { BookOpen, Shield, Users, Sparkles, Music, Volume2, Maximize, Crown, Lock, Heart, Apple, Droplets, GraduationCap, ArrowLeftRight } from 'lucide-react';
+import { BookOpen, Shield, Users, Sparkles, Music, Volume2, Maximize, Crown, Lock, Heart, Apple, Droplets, GraduationCap, ArrowLeftRight, Pickaxe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface VillageViewProps {
@@ -64,6 +67,14 @@ export const VillageView = ({ student, onQuiz, onRefresh, onPremium }: VillageVi
   const [simState, setSimState] = useState<SimState | null>(null);
   const [animatedCitizens, setAnimatedCitizens] = useState<AnimatedCitizen[]>([]);
   const citizenAnimRef = useRef<number>(0);
+
+  // Natural resources
+  const { resources, gather, isOnCooldown, isGatherable } = useResources(student.id);
+
+  const handleTerrainClick = useCallback(async (element: TerrainElement) => {
+    if (!isGatherable(element.type)) return;
+    await gather(element);
+  }, [gather, isGatherable]);
 
   const baseGrid = createEmptyGrid(gridSize);
   const fullGrid = applyBuildingsToGrid(baseGrid, buildings);
@@ -473,6 +484,11 @@ export const VillageView = ({ student, onQuiz, onRefresh, onPremium }: VillageVi
         )}
       </div>
 
+      {/* Resource bar */}
+      <div className="absolute top-12 left-2 z-20">
+        <ResourceBar resources={resources} />
+      </div>
+
       {xpLimited && (
         <div className="absolute top-12 left-2 right-16 z-20 bg-destructive/90 text-destructive-foreground text-xs font-body px-3 py-1.5 rounded-lg backdrop-blur-sm animate-pulse">
           <Crown className="w-3 h-3 inline mr-1" />
@@ -523,6 +539,7 @@ export const VillageView = ({ student, onQuiz, onRefresh, onPremium }: VillageVi
         studentId={student.id}
         district={student.district}
         onTileClick={handleTileClick} onTileHover={handleTileHover} onBuildingClick={handleBuildingClick}
+        onTerrainClick={handleTerrainClick}
       />
 
       {/* Tutorial */}
