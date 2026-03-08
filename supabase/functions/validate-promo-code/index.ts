@@ -43,21 +43,18 @@ serve(async (req) => {
       });
     }
 
-    // Check expiry
     if (promo.expires_at && new Date(promo.expires_at) < new Date()) {
       return new Response(JSON.stringify({ valid: false, error: "Código expirado" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Check usage limit
     if (promo.current_uses >= promo.max_uses) {
       return new Response(JSON.stringify({ valid: false, error: "Código esgotado" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Check target user
     if (promo.target_user_id && promo.target_user_id !== user.id) {
       return new Response(JSON.stringify({ valid: false, error: "Código não disponível para este utilizador" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -72,8 +69,11 @@ serve(async (req) => {
 
     return new Response(JSON.stringify({
       valid: true,
+      promo_type: promo.promo_type || "discount",
       discount_percent: promo.discount_percent,
       discount_amount: promo.discount_amount,
+      free_months: promo.free_months,
+      discount_duration_months: promo.discount_duration_months,
       code_id: promo.id,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
