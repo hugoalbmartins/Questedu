@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { BUILDING_DEFS, PlacedBuilding } from '@/lib/gameTypes';
+import { RESOURCE_INFO } from '@/hooks/useResources';
 import { getUpgradeCost } from '@/lib/gridLogic';
 import { Coins, Diamond, ArrowUp, Trash2, BookOpen } from 'lucide-react';
 import { MonumentInfoModal } from './MonumentInfoModal';
@@ -49,6 +50,21 @@ export const BuildingInfoModal = ({
           </DialogHeader>
 
           <p className="text-sm font-body text-muted-foreground">{def.description}</p>
+
+          {/* Resource costs display */}
+          {def.resourceCosts.length > 0 && (
+            <div className="flex items-center gap-2 flex-wrap text-xs text-muted-foreground">
+              <span className="font-semibold">Custo materiais:</span>
+              {def.resourceCosts.map(rc => {
+                const info = RESOURCE_INFO[rc.resource];
+                return (
+                  <span key={rc.resource} className="flex items-center gap-0.5">
+                    {info.emoji} {rc.amount} {info.label}
+                  </span>
+                );
+              })}
+            </div>
+          )}
 
           {/* Monument educational info button */}
           {isMonument && (

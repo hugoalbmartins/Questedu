@@ -25,6 +25,13 @@ export interface GridTile {
   buildingId?: string;
 }
 
+export type NaturalResourceType = 'wood' | 'stone' | 'iron' | 'coal' | 'food' | 'leather' | 'fish';
+
+export interface ResourceCost {
+  resource: NaturalResourceType;
+  amount: number;
+}
+
 export interface BuildingDef {
   id: string;
   name: string;
@@ -34,6 +41,7 @@ export interface BuildingDef {
   height: number;
   costCoins: number;
   costDiamonds: number;
+  resourceCosts: ResourceCost[];
   maxLevel: number;
   citizenBonus: number;
   defenseBonus: number;
@@ -62,7 +70,7 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
   road: {
     id: 'road', name: 'Estrada', emoji: '🛤️',
     category: 'infrastructure', width: 1, height: 1,
-    costCoins: 5, costDiamonds: 0, maxLevel: 3,
+    costCoins: 5, costDiamonds: 0, resourceCosts: [{ resource: 'stone', amount: 2 }], maxLevel: 3,
     citizenBonus: 0, defenseBonus: 0, xpBonus: 2,
     requiresRoad: false, premiumOnly: false, minVillageLevel: 1,
     description: 'Liga edifícios e permite acesso.',
@@ -72,7 +80,7 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
   house: {
     id: 'house', name: 'Casa', emoji: '🏠',
     category: 'residential', width: 1, height: 1,
-    costCoins: 50, costDiamonds: 0, maxLevel: 5,
+    costCoins: 50, costDiamonds: 0, resourceCosts: [{ resource: 'wood', amount: 5 }, { resource: 'stone', amount: 3 }], maxLevel: 5,
     citizenBonus: 5, defenseBonus: 0, xpBonus: 10,
     requiresRoad: true, premiumOnly: false, minVillageLevel: 1,
     description: 'Abrigo para cidadãos. Precisa de estrada.',
@@ -81,7 +89,7 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
   mansion: {
     id: 'mansion', name: 'Mansão', emoji: '🏰',
     category: 'residential', width: 2, height: 2,
-    costCoins: 200, costDiamonds: 5, maxLevel: 5,
+    costCoins: 200, costDiamonds: 5, resourceCosts: [{ resource: 'wood', amount: 15 }, { resource: 'stone', amount: 10 }, { resource: 'iron', amount: 3 }], maxLevel: 5,
     citizenBonus: 20, defenseBonus: 2, xpBonus: 30,
     requiresRoad: true, premiumOnly: false, minVillageLevel: 3,
     description: 'Grande residência. +20 cidadãos.',
@@ -91,7 +99,7 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
   workshop: {
     id: 'workshop', name: 'Oficina', emoji: '🔨',
     category: 'production', width: 1, height: 1,
-    costCoins: 75, costDiamonds: 0, maxLevel: 5,
+    costCoins: 75, costDiamonds: 0, resourceCosts: [{ resource: 'wood', amount: 8 }, { resource: 'iron', amount: 2 }], maxLevel: 5,
     citizenBonus: 2, defenseBonus: 0, xpBonus: 15,
     requiresRoad: true, premiumOnly: false, minVillageLevel: 1,
     description: 'Produz recursos extras.',
@@ -100,7 +108,7 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
   market: {
     id: 'market', name: 'Mercado', emoji: '🏪',
     category: 'production', width: 2, height: 1,
-    costCoins: 120, costDiamonds: 2, maxLevel: 5,
+    costCoins: 120, costDiamonds: 2, resourceCosts: [{ resource: 'wood', amount: 10 }, { resource: 'stone', amount: 5 }], maxLevel: 5,
     citizenBonus: 3, defenseBonus: 0, xpBonus: 20,
     requiresRoad: true, premiumOnly: false, minVillageLevel: 2,
     description: 'Gera moedas extra por hora.',
@@ -110,7 +118,7 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
   wall: {
     id: 'wall', name: 'Muralha', emoji: '🧱',
     category: 'military', width: 1, height: 1,
-    costCoins: 30, costDiamonds: 0, maxLevel: 5,
+    costCoins: 30, costDiamonds: 0, resourceCosts: [{ resource: 'stone', amount: 5 }], maxLevel: 5,
     citizenBonus: 0, defenseBonus: 5, xpBonus: 5,
     requiresRoad: false, premiumOnly: false, minVillageLevel: 1,
     description: 'Protege contra invasores.',
@@ -119,7 +127,7 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
   tower: {
     id: 'tower', name: 'Torre de Defesa', emoji: '🗼',
     category: 'military', width: 1, height: 1,
-    costCoins: 150, costDiamonds: 3, maxLevel: 5,
+    costCoins: 150, costDiamonds: 3, resourceCosts: [{ resource: 'stone', amount: 10 }, { resource: 'iron', amount: 5 }], maxLevel: 5,
     citizenBonus: 0, defenseBonus: 15, xpBonus: 20,
     requiresRoad: true, premiumOnly: false, minVillageLevel: 2,
     description: 'Ataca invasores à distância.',
@@ -128,7 +136,7 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
   barracks: {
     id: 'barracks', name: 'Quartel', emoji: '⚔️',
     category: 'military', width: 2, height: 2,
-    costCoins: 250, costDiamonds: 5, maxLevel: 5,
+    costCoins: 250, costDiamonds: 5, resourceCosts: [{ resource: 'wood', amount: 12 }, { resource: 'stone', amount: 15 }, { resource: 'iron', amount: 8 }], maxLevel: 5,
     citizenBonus: 0, defenseBonus: 25, xpBonus: 40,
     requiresRoad: true, premiumOnly: false, minVillageLevel: 3,
     description: 'Treina soldados para defesa.',
@@ -138,7 +146,7 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
   farm: {
     id: 'farm', name: 'Horta', emoji: '🌾',
     category: 'production', width: 2, height: 2,
-    costCoins: 80, costDiamonds: 0, maxLevel: 5,
+    costCoins: 80, costDiamonds: 0, resourceCosts: [{ resource: 'wood', amount: 6 }], maxLevel: 5,
     citizenBonus: 0, defenseBonus: 0, xpBonus: 15,
     requiresRoad: true, premiumOnly: false, minVillageLevel: 1,
     description: 'Produz alimentos para a população.',
@@ -147,7 +155,7 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
   windmill: {
     id: 'windmill', name: 'Moinho', emoji: '🏭',
     category: 'production', width: 2, height: 2,
-    costCoins: 200, costDiamonds: 3, maxLevel: 5,
+    costCoins: 200, costDiamonds: 3, resourceCosts: [{ resource: 'wood', amount: 12 }, { resource: 'stone', amount: 8 }, { resource: 'iron', amount: 3 }], maxLevel: 5,
     citizenBonus: 2, defenseBonus: 0, xpBonus: 25,
     requiresRoad: true, premiumOnly: false, minVillageLevel: 2,
     description: 'Processa cereais em farinha. +Alimentação.',
@@ -157,7 +165,7 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
   hospital: {
     id: 'hospital', name: 'Hospital', emoji: '🏥',
     category: 'infrastructure', width: 2, height: 2,
-    costCoins: 300, costDiamonds: 5, maxLevel: 5,
+    costCoins: 300, costDiamonds: 5, resourceCosts: [{ resource: 'wood', amount: 15 }, { resource: 'stone', amount: 12 }, { resource: 'iron', amount: 5 }], maxLevel: 5,
     citizenBonus: 5, defenseBonus: 0, xpBonus: 35,
     requiresRoad: true, premiumOnly: false, minVillageLevel: 2,
     description: 'Cura doenças e previne epidemias.',
@@ -166,7 +174,7 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
   school_building: {
     id: 'school_building', name: 'Escola', emoji: '🏫',
     category: 'infrastructure', width: 2, height: 2,
-    costCoins: 250, costDiamonds: 3, maxLevel: 5,
+    costCoins: 250, costDiamonds: 3, resourceCosts: [{ resource: 'wood', amount: 12 }, { resource: 'stone', amount: 10 }], maxLevel: 5,
     citizenBonus: 8, defenseBonus: 0, xpBonus: 40,
     requiresRoad: true, premiumOnly: false, minVillageLevel: 2,
     description: 'Educa a população. +Cidadãos felizes.',
@@ -175,7 +183,7 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
   church: {
     id: 'church', name: 'Igreja', emoji: '⛪',
     category: 'infrastructure', width: 2, height: 2,
-    costCoins: 200, costDiamonds: 5, maxLevel: 5,
+    costCoins: 200, costDiamonds: 5, resourceCosts: [{ resource: 'stone', amount: 15 }, { resource: 'wood', amount: 8 }], maxLevel: 5,
     citizenBonus: 5, defenseBonus: 0, xpBonus: 30,
     requiresRoad: true, premiumOnly: false, minVillageLevel: 3,
     description: 'Lugar de culto. Aumenta felicidade.',
@@ -184,7 +192,7 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
   well: {
     id: 'well', name: 'Poço', emoji: '🪣',
     category: 'infrastructure', width: 1, height: 1,
-    costCoins: 60, costDiamonds: 0, maxLevel: 3,
+    costCoins: 60, costDiamonds: 0, resourceCosts: [{ resource: 'stone', amount: 4 }], maxLevel: 3,
     citizenBonus: 2, defenseBonus: 0, xpBonus: 10,
     requiresRoad: false, premiumOnly: false, minVillageLevel: 1,
     description: 'Fornece água à população.',
@@ -194,7 +202,7 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
   fountain: {
     id: 'fountain', name: 'Fonte', emoji: '⛲',
     category: 'decoration', width: 1, height: 1,
-    costCoins: 40, costDiamonds: 1, maxLevel: 3,
+    costCoins: 40, costDiamonds: 1, resourceCosts: [{ resource: 'stone', amount: 3 }], maxLevel: 3,
     citizenBonus: 2, defenseBonus: 0, xpBonus: 8,
     requiresRoad: false, premiumOnly: false, minVillageLevel: 1,
     description: 'Embeleza a aldeia.',
@@ -203,7 +211,7 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
   garden: {
     id: 'garden', name: 'Jardim', emoji: '🌳',
     category: 'decoration', width: 1, height: 1,
-    costCoins: 25, costDiamonds: 0, maxLevel: 3,
+    costCoins: 25, costDiamonds: 0, resourceCosts: [{ resource: 'wood', amount: 2 }], maxLevel: 3,
     citizenBonus: 1, defenseBonus: 0, xpBonus: 5,
     requiresRoad: false, premiumOnly: false, minVillageLevel: 1,
     description: 'Área verde para cidadãos.',
@@ -212,7 +220,7 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
   statue: {
     id: 'statue', name: 'Estátua', emoji: '🗽',
     category: 'decoration', width: 1, height: 1,
-    costCoins: 100, costDiamonds: 5, maxLevel: 3,
+    costCoins: 100, costDiamonds: 5, resourceCosts: [{ resource: 'stone', amount: 8 }, { resource: 'iron', amount: 3 }], maxLevel: 3,
     citizenBonus: 5, defenseBonus: 0, xpBonus: 25,
     requiresRoad: false, premiumOnly: true, minVillageLevel: 2,
     description: 'Premium: Estátua decorativa.',
@@ -222,7 +230,7 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
   torre_belem: {
     id: 'torre_belem', name: 'Torre de Belém', emoji: '🏛️',
     category: 'monument', width: 2, height: 2,
-    costCoins: 0, costDiamonds: 0, maxLevel: 1,
+    costCoins: 0, costDiamonds: 0, resourceCosts: [], maxLevel: 1,
     citizenBonus: 30, defenseBonus: 20, xpBonus: 100,
     requiresRoad: true, premiumOnly: true, minVillageLevel: 1,
     description: 'Monumento de Lisboa. Prémio de teste mensal.',
@@ -231,7 +239,7 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
   ponte_dom_luis: {
     id: 'ponte_dom_luis', name: 'Ponte D. Luís', emoji: '🌉',
     category: 'monument', width: 3, height: 1,
-    costCoins: 0, costDiamonds: 0, maxLevel: 1,
+    costCoins: 0, costDiamonds: 0, resourceCosts: [], maxLevel: 1,
     citizenBonus: 25, defenseBonus: 10, xpBonus: 100,
     requiresRoad: true, premiumOnly: true, minVillageLevel: 1,
     description: 'Monumento do Porto. Prémio de teste mensal.',
@@ -240,7 +248,7 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
   universidade_coimbra: {
     id: 'universidade_coimbra', name: 'Universidade', emoji: '🎓',
     category: 'monument', width: 2, height: 2,
-    costCoins: 0, costDiamonds: 0, maxLevel: 1,
+    costCoins: 0, costDiamonds: 0, resourceCosts: [], maxLevel: 1,
     citizenBonus: 35, defenseBonus: 5, xpBonus: 120,
     requiresRoad: true, premiumOnly: true, minVillageLevel: 1,
     description: 'Monumento de Coimbra. Prémio de teste mensal.',
@@ -249,167 +257,151 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
   castelo_guimaraes: {
     id: 'castelo_guimaraes', name: 'Castelo Guimarães', emoji: '🏰',
     category: 'monument', width: 2, height: 2,
-    costCoins: 0, costDiamonds: 0, maxLevel: 1,
+    costCoins: 0, costDiamonds: 0, resourceCosts: [], maxLevel: 1,
     citizenBonus: 20, defenseBonus: 30, xpBonus: 100,
     requiresRoad: true, premiumOnly: true, minVillageLevel: 1,
     description: 'Monumento de Braga. Prémio de teste mensal.',
     upgradeCostMultiplier: 1, districtExclusive: 'braga',
   },
-  // Faro
   fortaleza_sagres: {
     id: 'fortaleza_sagres', name: 'Fortaleza de Sagres', emoji: '🏰',
     category: 'monument', width: 2, height: 2,
-    costCoins: 0, costDiamonds: 0, maxLevel: 1,
+    costCoins: 0, costDiamonds: 0, resourceCosts: [], maxLevel: 1,
     citizenBonus: 15, defenseBonus: 35, xpBonus: 100,
     requiresRoad: true, premiumOnly: true, minVillageLevel: 1,
     description: 'Monumento de Faro. Prémio de teste mensal.',
     upgradeCostMultiplier: 1, districtExclusive: 'faro',
   },
-  // Évora
   templo_romano: {
     id: 'templo_romano', name: 'Templo Romano', emoji: '🏛️',
     category: 'monument', width: 2, height: 2,
-    costCoins: 0, costDiamonds: 0, maxLevel: 1,
+    costCoins: 0, costDiamonds: 0, resourceCosts: [], maxLevel: 1,
     citizenBonus: 30, defenseBonus: 10, xpBonus: 110,
     requiresRoad: true, premiumOnly: true, minVillageLevel: 1,
     description: 'Monumento de Évora. Prémio de teste mensal.',
     upgradeCostMultiplier: 1, districtExclusive: 'evora',
   },
-  // Bragança
   castelo_braganca: {
     id: 'castelo_braganca', name: 'Castelo de Bragança', emoji: '🏯',
     category: 'monument', width: 2, height: 2,
-    costCoins: 0, costDiamonds: 0, maxLevel: 1,
+    costCoins: 0, costDiamonds: 0, resourceCosts: [], maxLevel: 1,
     citizenBonus: 20, defenseBonus: 35, xpBonus: 100,
     requiresRoad: true, premiumOnly: true, minVillageLevel: 1,
     description: 'Monumento de Bragança. Prémio de teste mensal.',
     upgradeCostMultiplier: 1, districtExclusive: 'braganca',
   },
-  // Aveiro
   moliceiro_aveiro: {
     id: 'moliceiro_aveiro', name: 'Canal dos Moliceiros', emoji: '🚣',
     category: 'monument', width: 3, height: 1,
-    costCoins: 0, costDiamonds: 0, maxLevel: 1,
+    costCoins: 0, costDiamonds: 0, resourceCosts: [], maxLevel: 1,
     citizenBonus: 25, defenseBonus: 5, xpBonus: 100,
     requiresRoad: true, premiumOnly: true, minVillageLevel: 1,
     description: 'Monumento de Aveiro. Prémio de teste mensal.',
     upgradeCostMultiplier: 1, districtExclusive: 'aveiro',
   },
-  // Beja
   castelo_beja: {
     id: 'castelo_beja', name: 'Castelo de Beja', emoji: '🏰',
     category: 'monument', width: 2, height: 2,
-    costCoins: 0, costDiamonds: 0, maxLevel: 1,
+    costCoins: 0, costDiamonds: 0, resourceCosts: [], maxLevel: 1,
     citizenBonus: 20, defenseBonus: 30, xpBonus: 100,
     requiresRoad: true, premiumOnly: true, minVillageLevel: 1,
     description: 'Monumento de Beja. Prémio de teste mensal.',
     upgradeCostMultiplier: 1, districtExclusive: 'beja',
   },
-  // Castelo Branco
   jardim_episcopal: {
     id: 'jardim_episcopal', name: 'Jardim Episcopal', emoji: '🌺',
     category: 'monument', width: 2, height: 2,
-    costCoins: 0, costDiamonds: 0, maxLevel: 1,
+    costCoins: 0, costDiamonds: 0, resourceCosts: [], maxLevel: 1,
     citizenBonus: 30, defenseBonus: 5, xpBonus: 110,
     requiresRoad: true, premiumOnly: true, minVillageLevel: 1,
     description: 'Monumento de C. Branco. Prémio de teste mensal.',
     upgradeCostMultiplier: 1, districtExclusive: 'castelo_branco',
   },
-  // Guarda
   se_guarda: {
     id: 'se_guarda', name: 'Sé da Guarda', emoji: '⛪',
     category: 'monument', width: 2, height: 2,
-    costCoins: 0, costDiamonds: 0, maxLevel: 1,
+    costCoins: 0, costDiamonds: 0, resourceCosts: [], maxLevel: 1,
     citizenBonus: 25, defenseBonus: 15, xpBonus: 100,
     requiresRoad: true, premiumOnly: true, minVillageLevel: 1,
     description: 'Monumento da Guarda. Prémio de teste mensal.',
     upgradeCostMultiplier: 1, districtExclusive: 'guarda',
   },
-  // Leiria
   castelo_leiria: {
     id: 'castelo_leiria', name: 'Castelo de Leiria', emoji: '🏰',
     category: 'monument', width: 2, height: 2,
-    costCoins: 0, costDiamonds: 0, maxLevel: 1,
+    costCoins: 0, costDiamonds: 0, resourceCosts: [], maxLevel: 1,
     citizenBonus: 20, defenseBonus: 30, xpBonus: 100,
     requiresRoad: true, premiumOnly: true, minVillageLevel: 1,
     description: 'Monumento de Leiria. Prémio de teste mensal.',
     upgradeCostMultiplier: 1, districtExclusive: 'leiria',
   },
-  // Portalegre
   castelo_marvao: {
     id: 'castelo_marvao', name: 'Castelo de Marvão', emoji: '🏔️',
     category: 'monument', width: 2, height: 2,
-    costCoins: 0, costDiamonds: 0, maxLevel: 1,
+    costCoins: 0, costDiamonds: 0, resourceCosts: [], maxLevel: 1,
     citizenBonus: 15, defenseBonus: 35, xpBonus: 100,
     requiresRoad: true, premiumOnly: true, minVillageLevel: 1,
     description: 'Monumento de Portalegre. Prémio de teste mensal.',
     upgradeCostMultiplier: 1, districtExclusive: 'portalegre',
   },
-  // Santarém
   castelo_almourol: {
     id: 'castelo_almourol', name: 'Castelo de Almourol', emoji: '🏰',
     category: 'monument', width: 2, height: 2,
-    costCoins: 0, costDiamonds: 0, maxLevel: 1,
+    costCoins: 0, costDiamonds: 0, resourceCosts: [], maxLevel: 1,
     citizenBonus: 20, defenseBonus: 30, xpBonus: 110,
     requiresRoad: true, premiumOnly: true, minVillageLevel: 1,
     description: 'Monumento de Santarém. Prémio de teste mensal.',
     upgradeCostMultiplier: 1, districtExclusive: 'santarem',
   },
-  // Setúbal
   castelo_palmela: {
     id: 'castelo_palmela', name: 'Castelo de Palmela', emoji: '🏰',
     category: 'monument', width: 2, height: 2,
-    costCoins: 0, costDiamonds: 0, maxLevel: 1,
+    costCoins: 0, costDiamonds: 0, resourceCosts: [], maxLevel: 1,
     citizenBonus: 20, defenseBonus: 25, xpBonus: 100,
     requiresRoad: true, premiumOnly: true, minVillageLevel: 1,
     description: 'Monumento de Setúbal. Prémio de teste mensal.',
     upgradeCostMultiplier: 1, districtExclusive: 'setubal',
   },
-  // Viana do Castelo
   santuario_luzia: {
     id: 'santuario_luzia', name: 'Santa Luzia', emoji: '⛪',
     category: 'monument', width: 2, height: 2,
-    costCoins: 0, costDiamonds: 0, maxLevel: 1,
+    costCoins: 0, costDiamonds: 0, resourceCosts: [], maxLevel: 1,
     citizenBonus: 30, defenseBonus: 10, xpBonus: 110,
     requiresRoad: true, premiumOnly: true, minVillageLevel: 1,
     description: 'Monumento de Viana do Castelo. Prémio de teste mensal.',
     upgradeCostMultiplier: 1, districtExclusive: 'viana_castelo',
   },
-  // Vila Real
   solar_mateus: {
     id: 'solar_mateus', name: 'Solar de Mateus', emoji: '🏡',
     category: 'monument', width: 2, height: 2,
-    costCoins: 0, costDiamonds: 0, maxLevel: 1,
+    costCoins: 0, costDiamonds: 0, resourceCosts: [], maxLevel: 1,
     citizenBonus: 30, defenseBonus: 5, xpBonus: 100,
     requiresRoad: true, premiumOnly: true, minVillageLevel: 1,
     description: 'Monumento de Vila Real. Prémio de teste mensal.',
     upgradeCostMultiplier: 1, districtExclusive: 'vila_real',
   },
-  // Viseu
   se_viseu: {
     id: 'se_viseu', name: 'Sé de Viseu', emoji: '⛪',
     category: 'monument', width: 2, height: 2,
-    costCoins: 0, costDiamonds: 0, maxLevel: 1,
+    costCoins: 0, costDiamonds: 0, resourceCosts: [], maxLevel: 1,
     citizenBonus: 25, defenseBonus: 15, xpBonus: 100,
     requiresRoad: true, premiumOnly: true, minVillageLevel: 1,
     description: 'Monumento de Viseu. Prémio de teste mensal.',
     upgradeCostMultiplier: 1, districtExclusive: 'viseu',
   },
-  // Açores
   lagoa_sete_cidades: {
     id: 'lagoa_sete_cidades', name: 'Sete Cidades', emoji: '🌋',
     category: 'monument', width: 2, height: 2,
-    costCoins: 0, costDiamonds: 0, maxLevel: 1,
+    costCoins: 0, costDiamonds: 0, resourceCosts: [], maxLevel: 1,
     citizenBonus: 30, defenseBonus: 10, xpBonus: 120,
     requiresRoad: true, premiumOnly: true, minVillageLevel: 1,
     description: 'Monumento dos Açores. Prémio de teste mensal.',
     upgradeCostMultiplier: 1, districtExclusive: 'acores',
   },
-  // Madeira
   monte_funchal: {
     id: 'monte_funchal', name: 'Monte do Funchal', emoji: '🚡',
     category: 'monument', width: 2, height: 2,
-    costCoins: 0, costDiamonds: 0, maxLevel: 1,
+    costCoins: 0, costDiamonds: 0, resourceCosts: [], maxLevel: 1,
     citizenBonus: 25, defenseBonus: 10, xpBonus: 110,
     requiresRoad: true, premiumOnly: true, minVillageLevel: 1,
     description: 'Monumento da Madeira. Prémio de teste mensal.',
