@@ -208,6 +208,13 @@ const GamePage = () => {
 
             {/* Achievements */}
             <AchievementsPanel achievements={achievements} unlocked={unlocked} />
+
+            {/* Settings */}
+            <SettingsPanel
+              studentId={studentData.id}
+              quizRemindersEnabled={(studentData as any).quiz_reminders_enabled ?? true}
+              onUpdate={refreshProfile}
+            />
           </div>
         </SheetContent>
       </Sheet>
