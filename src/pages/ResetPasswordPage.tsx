@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { validatePassword } from "@/lib/passwordValidation";
+import { PasswordInput } from "@/components/PasswordInput";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -41,8 +43,9 @@ const ResetPasswordPage = () => {
       return;
     }
     
-    if (password.length < 6) {
-      toast.error("A palavra-passe deve ter pelo menos 6 caracteres");
+    const pwValidation = validatePassword(password);
+    if (!pwValidation.isValid) {
+      toast.error("Palavra-passe insegura: " + pwValidation.errors[0]);
       return;
     }
 
@@ -109,15 +112,9 @@ const ResetPasswordPage = () => {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <Label className="font-body font-semibold">Nova Palavra-passe</Label>
-            <Input
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              placeholder="Mínimo 6 caracteres"
-              required
-              minLength={6}
-              className="mt-1"
-            />
+            <div className="mt-1">
+              <PasswordInput value={password} onChange={setPassword} />
+            </div>
           </div>
           
           <div>
