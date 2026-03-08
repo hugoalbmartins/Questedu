@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import logo from "@/assets/logo.png";
 import villageHero from "@/assets/village-hero.png";
 import { Button } from "@/components/ui/button";
-import { Shield, BookOpen, Users, Map, Cookie, FileText, Mail, MessageSquare, X } from "lucide-react";
+import { Shield, BookOpen, Users, Map, Cookie, FileText, Mail, MessageSquare, X, Smartphone, Monitor } from "lucide-react";
 import {
   Dialog,
   DialogContent,
