@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX unique_nickname_lower ON public.students (LOWER(nickname)) WHERE nickname IS NOT NULL;
