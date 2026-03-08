@@ -224,7 +224,8 @@ export const QuizModal = ({ student, onClose }: QuizModalProps) => {
               <div className="parchment-bg rounded-lg p-4 inline-flex items-center gap-2">
                 <reward.icon className={`w-6 h-6 ${reward.color}`} />
                 <span className="font-body font-bold">
-                  +{Math.round(reward.amount * (correctCount / 5))} {reward.label}
+                  +{Math.round(reward.amount * (correctCount / 5) * (isPremium ? 1.15 : 1))} {reward.label}
+                  {isPremium && <span className="text-gold text-xs ml-1">(+15%)</span>}
                 </span>
               </div>
             )}
