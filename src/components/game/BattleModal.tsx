@@ -30,6 +30,7 @@ export const BattleModal = ({
   onOpenChange,
   studentId,
   defenseLevel,
+  isPremium = false,
   onBattleEnd,
   onAnswerQuestion,
 }: BattleModalProps) => {
