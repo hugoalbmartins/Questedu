@@ -51,6 +51,21 @@ export const BuildingInfoModal = ({
 
           <p className="text-sm font-body text-muted-foreground">{def.description}</p>
 
+          {/* Resource costs display */}
+          {def.resourceCosts.length > 0 && (
+            <div className="flex items-center gap-2 flex-wrap text-xs text-muted-foreground">
+              <span className="font-semibold">Custo materiais:</span>
+              {def.resourceCosts.map(rc => {
+                const info = RESOURCE_INFO[rc.resource];
+                return (
+                  <span key={rc.resource} className="flex items-center gap-0.5">
+                    {info.emoji} {rc.amount} {info.label}
+                  </span>
+                );
+              })}
+            </div>
+          )}
+
           {/* Monument educational info button */}
           {isMonument && (
             <Button
