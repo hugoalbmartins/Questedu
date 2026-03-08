@@ -3,139 +3,116 @@ import { supabase } from '@/integrations/supabase/client';
 import { ZoomIn, ZoomOut, RotateCcw, Users, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-// Realistic district SVG paths (geographically accurate, simplified)
-// Layout: Islands (Azores/Madeira) on the LEFT, mainland on the RIGHT
-// ViewBox: 0 0 600 500
+// More geographically accurate district paths
+// ViewBox: 0 0 600 500 — Islands LEFT, Mainland RIGHT
 const districtPaths: Record<string, { path: string; labelX: number; labelY: number; label: string }> = {
-  // === ISLANDS (LEFT SIDE) ===
+  // === ISLANDS ===
   acores: {
     label: "Açores",
     labelX: 75, labelY: 105,
-    // Archipelago shape - multiple small islands
-    path: "M30,60 L45,55 L55,58 L60,65 L55,72 L40,75 L30,70Z M70,70 L85,65 L95,68 L100,75 L95,82 L80,85 L70,80Z M105,55 L120,50 L130,53 L135,60 L130,67 L115,70 L105,65Z M50,90 L65,85 L75,88 L80,95 L75,102 L60,105 L50,100Z M90,95 L105,90 L115,93 L120,100 L115,107 L100,110 L90,105Z",
+    path: "M25,65 C28,60 38,56 48,55 C55,54 62,56 65,60 C68,64 66,70 60,74 C54,78 42,79 34,76 C28,74 24,70 25,65Z M72,75 C76,70 86,67 96,68 C103,69 108,72 109,77 C110,82 106,87 98,89 C90,91 80,88 75,84 C71,81 70,78 72,75Z M108,58 C112,53 122,50 132,51 C138,52 142,55 142,60 C142,65 138,70 130,72 C122,73 113,70 110,66 C107,63 107,60 108,58Z M48,92 C52,88 62,86 70,88 C76,90 80,93 79,98 C78,103 72,107 64,108 C56,109 48,106 46,101 C44,97 45,94 48,92Z M92,97 C96,93 106,91 114,93 C120,95 123,99 122,104 C121,109 115,113 107,114 C99,114 92,111 90,106 C89,102 90,99 92,97Z",
   },
   madeira: {
     label: "Madeira",
-    labelX: 75, labelY: 260,
-    // Madeira + Porto Santo
-    path: "M40,235 L55,228 L90,230 L110,238 L108,250 L90,258 L55,260 L40,252Z M65,270 L80,265 L95,268 L100,275 L95,282 L80,285 L65,280Z",
+    labelX: 75, labelY: 255,
+    path: "M35,238 C40,230 55,226 75,227 C90,228 105,232 112,240 C116,245 114,252 108,257 C100,263 82,267 65,266 C48,265 36,259 33,252 C31,247 32,242 35,238Z M62,272 C66,268 76,266 86,268 C93,270 97,274 96,279 C95,284 88,288 80,288 C72,288 65,285 63,280 C61,277 61,274 62,272Z",
   },
-  // === MAINLAND (RIGHT SIDE) ===
+  // === MAINLAND ===
   viana_castelo: {
     label: "V. Castelo",
-    labelX: 255, labelY: 60,
-    path: "M230,30 L265,25 L280,35 L285,55 L275,70 L260,75 L240,68 L235,55 L230,42Z",
+    labelX: 248, labelY: 55,
+    path: "M222,28 L240,24 L258,26 L272,32 L280,42 L282,56 L278,68 L268,76 L255,78 L242,74 L232,66 L226,54 L222,42Z",
   },
   braga: {
     label: "Braga",
-    labelX: 305, labelY: 55,
-    path: "M280,35 L310,28 L330,35 L335,50 L328,65 L310,72 L290,68 L275,70 L285,55Z",
+    labelX: 298, labelY: 52,
+    path: "M272,32 L290,26 L308,28 L322,34 L330,44 L332,56 L326,66 L316,72 L302,74 L288,72 L278,68 L282,56 L280,42Z",
   },
   vila_real: {
     label: "Vila Real",
-    labelX: 355, labelY: 55,
-    path: "M330,35 L365,25 L390,30 L395,50 L385,65 L365,72 L345,68 L328,65 L335,50Z",
+    labelX: 350, labelY: 52,
+    path: "M322,34 L342,26 L362,24 L382,28 L392,38 L394,52 L388,64 L376,72 L360,76 L344,74 L332,68 L326,66 L332,56 L330,44Z",
   },
   braganca: {
     label: "Bragança",
-    labelX: 440, labelY: 45,
-    path: "M390,30 L420,20 L465,18 L480,25 L485,45 L475,62 L450,68 L420,65 L395,50Z",
+    labelX: 435, labelY: 40,
+    path: "M382,28 L405,18 L432,14 L458,16 L478,22 L488,34 L486,50 L478,64 L462,72 L442,76 L420,74 L400,68 L388,64 L394,52 L392,38Z",
   },
   porto: {
     label: "Porto",
-    labelX: 265, labelY: 100,
-    path: "M235,75 L260,75 L290,68 L310,72 L305,90 L295,105 L275,110 L250,105 L238,95 L230,85Z",
+    labelX: 258, labelY: 100,
+    path: "M226,78 L242,74 L255,78 L268,76 L288,72 L302,74 L306,86 L300,100 L288,110 L272,114 L254,112 L240,106 L230,96 L224,86Z",
   },
   aveiro: {
     label: "Aveiro",
-    labelX: 255, labelY: 140,
-    path: "M225,100 L250,105 L275,110 L280,130 L270,150 L250,155 L230,148 L220,130Z",
+    labelX: 246, labelY: 142,
+    path: "M218,114 L232,108 L254,112 L272,114 L278,128 L274,144 L264,156 L248,162 L232,158 L220,148 L214,134 L216,122Z",
   },
   viseu: {
     label: "Viseu",
-    labelX: 330, labelY: 110,
-    path: "M295,75 L328,65 L365,72 L380,85 L375,105 L360,118 L335,125 L310,120 L295,110 L295,90Z",
+    labelX: 325, labelY: 108,
+    path: "M288,72 L302,74 L316,72 L332,68 L344,74 L360,76 L370,86 L372,100 L366,114 L352,124 L334,128 L316,126 L300,120 L290,112 L288,100 L292,86Z",
   },
   guarda: {
     label: "Guarda",
-    labelX: 415, labelY: 110,
-    path: "M365,72 L420,65 L475,62 L478,85 L470,108 L445,120 L415,125 L390,118 L375,105 L380,85Z",
+    labelX: 410, labelY: 108,
+    path: "M360,76 L376,72 L400,68 L420,74 L442,76 L462,72 L472,84 L474,100 L468,114 L454,124 L436,128 L416,126 L396,122 L380,116 L372,100 L370,86Z",
   },
   coimbra: {
     label: "Coimbra",
-    labelX: 285, labelY: 175,
-    path: "M240,155 L270,150 L310,120 L335,125 L330,150 L315,170 L290,180 L265,185 L245,175Z",
+    labelX: 280, labelY: 178,
+    path: "M232,158 L248,162 L264,156 L278,150 L300,152 L316,158 L326,170 L322,186 L310,198 L292,204 L272,202 L254,196 L240,184 L234,172 L232,162Z",
   },
   castelo_branco: {
     label: "C. Branco",
-    labelX: 395, labelY: 165,
-    path: "M315,130 L360,118 L415,125 L445,120 L460,140 L455,170 L430,185 L395,190 L360,185 L330,175 L315,160Z",
+    labelX: 390, labelY: 168,
+    path: "M316,126 L334,128 L352,124 L380,116 L396,122 L416,126 L436,128 L454,138 L458,156 L452,174 L438,188 L416,196 L392,198 L368,194 L346,186 L330,176 L322,164 L318,148 L316,136Z",
   },
   leiria: {
     label: "Leiria",
-    labelX: 255, labelY: 215,
-    path: "M225,190 L245,175 L265,185 L290,180 L300,200 L290,220 L270,230 L245,228 L228,215Z",
+    labelX: 248, labelY: 222,
+    path: "M220,200 L240,196 L258,202 L276,210 L286,222 L284,238 L274,250 L258,256 L240,254 L226,244 L218,232 L216,218Z",
   },
   santarem: {
     label: "Santarém",
-    labelX: 325, labelY: 225,
-    path: "M280,195 L315,170 L345,180 L370,190 L380,210 L370,235 L345,245 L315,248 L290,240 L275,225Z",
+    labelX: 318, labelY: 234,
+    path: "M276,210 L296,206 L318,210 L342,218 L358,228 L366,244 L362,260 L348,274 L328,280 L308,278 L290,272 L276,260 L270,248 L272,234Z",
   },
   portalegre: {
     label: "Portalegre",
-    labelX: 430, labelY: 215,
-    path: "M370,190 L410,185 L455,170 L470,185 L475,210 L460,230 L435,240 L405,238 L380,230 L370,210Z",
+    labelX: 425, labelY: 222,
+    path: "M368,194 L392,198 L416,196 L438,200 L458,210 L468,226 L466,244 L454,258 L436,266 L414,268 L394,264 L378,254 L370,240 L366,226 L364,210Z",
   },
   lisboa: {
     label: "Lisboa",
-    labelX: 250, labelY: 270,
-    path: "M220,245 L245,228 L275,235 L290,250 L285,270 L270,285 L248,290 L230,282 L218,265Z",
+    labelX: 240, labelY: 288,
+    path: "M212,264 L228,258 L248,260 L266,266 L278,278 L280,294 L274,308 L260,318 L242,322 L226,318 L214,308 L208,294 L208,278Z",
   },
   setubal: {
     label: "Setúbal",
-    labelX: 280, labelY: 310,
-    path: "M248,290 L270,285 L300,290 L320,300 L325,320 L310,340 L285,345 L260,338 L245,320 L240,300Z",
+    labelX: 278, labelY: 336,
+    path: "M242,322 L260,318 L280,322 L300,330 L314,344 L318,360 L310,376 L294,386 L274,390 L256,384 L242,372 L234,356 L234,340Z",
   },
   evora: {
     label: "Évora",
-    labelX: 355, labelY: 290,
-    path: "M300,255 L345,245 L405,238 L420,255 L415,280 L400,300 L370,310 L340,308 L315,300 L295,285Z",
+    labelX: 348, labelY: 306,
+    path: "M290,272 L308,278 L328,280 L354,278 L378,282 L398,292 L408,308 L404,326 L392,340 L372,350 L348,354 L326,350 L306,342 L292,328 L284,312 L284,294Z",
   },
   beja: {
     label: "Beja",
-    labelX: 350, labelY: 370,
-    path: "M285,340 L315,330 L370,310 L400,300 L420,320 L430,350 L420,380 L395,400 L355,410 L315,405 L290,390 L275,365Z",
+    labelX: 350, labelY: 388,
+    path: "M292,360 L312,354 L348,354 L372,350 L398,356 L420,368 L432,386 L428,406 L416,422 L396,432 L370,436 L344,434 L318,426 L298,414 L286,398 L282,380Z",
   },
   faro: {
     label: "Faro",
-    labelX: 360, labelY: 440,
-    path: "M290,410 L330,405 L395,400 L430,410 L450,425 L445,445 L425,460 L380,470 L330,468 L290,458 L275,440 L278,420Z",
+    labelX: 360, labelY: 456,
+    path: "M286,434 L310,428 L344,434 L370,436 L400,438 L428,444 L448,454 L446,466 L434,476 L406,482 L372,484 L338,482 L306,478 L282,470 L274,458 L278,446Z",
   },
 };
 
-// Mapping from our district keys to display
-const districtKeyToId: Record<string, string> = {
-  viana_castelo: "viana_castelo",
-  braga: "braga",
-  vila_real: "vila_real",
-  braganca: "braganca",
-  porto: "porto",
-  aveiro: "aveiro",
-  viseu: "viseu",
-  guarda: "guarda",
-  coimbra: "coimbra",
-  castelo_branco: "castelo_branco",
-  leiria: "leiria",
-  santarem: "santarem",
-  portalegre: "portalegre",
-  lisboa: "lisboa",
-  setubal: "setubal",
-  evora: "evora",
-  beja: "beja",
-  faro: "faro",
-  acores: "acores",
-  madeira: "madeira",
-};
+const districtKeyToId: Record<string, string> = Object.fromEntries(
+  Object.keys(districtPaths).map(k => [k, k])
+);
 
 interface PlayerInDistrict {
   district: string;
@@ -155,11 +132,10 @@ export const PortugalMap = ({ studentId, district: myDistrict }: PortugalMapProp
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
   const [selectedDistrict, setSelectedDistrict] = useState<string | null>(null);
+  const [prevSelected, setPrevSelected] = useState<string | null>(null);
   const [districtData, setDistrictData] = useState<Record<string, PlayerInDistrict>>({});
   const [loading, setLoading] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
-
-  // Touch support
   const [lastTouchDist, setLastTouchDist] = useState<number | null>(null);
 
   useEffect(() => {
@@ -228,7 +204,6 @@ export const PortugalMap = ({ studentId, district: myDistrict }: PortugalMapProp
     return () => el.removeEventListener('wheel', handleWheel);
   }, [handleWheel]);
 
-  // Touch handlers
   const handleTouchStart = (e: React.TouchEvent) => {
     if (e.touches.length === 1) {
       setDragging(true);
@@ -250,8 +225,7 @@ export const PortugalMap = ({ studentId, district: myDistrict }: PortugalMapProp
       const dx = e.touches[0].clientX - e.touches[1].clientX;
       const dy = e.touches[0].clientY - e.touches[1].clientY;
       const dist = Math.sqrt(dx * dx + dy * dy);
-      const scale = dist / lastTouchDist;
-      setZoom(z => Math.max(0.5, Math.min(4, z * scale)));
+      setZoom(z => Math.max(0.5, Math.min(4, z * (dist / lastTouchDist))));
       setLastTouchDist(dist);
     }
   };
@@ -263,6 +237,7 @@ export const PortugalMap = ({ studentId, district: myDistrict }: PortugalMapProp
       setZoom(2.5);
       setPan({ x: -(info.labelX - 300), y: -(info.labelY - 250) });
     } else {
+      setPrevSelected(selectedDistrict);
       setSelectedDistrict(key);
     }
   };
@@ -297,7 +272,7 @@ export const PortugalMap = ({ studentId, district: myDistrict }: PortugalMapProp
       <div
         ref={containerRef}
         className="flex-1 relative overflow-hidden rounded-xl border-2 border-border cursor-grab active:cursor-grabbing touch-none select-none"
-        style={{ background: 'linear-gradient(180deg, hsl(210 50% 25%) 0%, hsl(210 60% 20%) 100%)' }}
+        style={{ background: 'linear-gradient(180deg, hsl(210 50% 25%) 0%, hsl(210 60% 18%) 100%)' }}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
@@ -314,23 +289,100 @@ export const PortugalMap = ({ studentId, district: myDistrict }: PortugalMapProp
             transformOrigin: 'center center',
           }}
         >
-          {/* Ocean background */}
           <defs>
             <linearGradient id="oceanGrad" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="hsl(210, 50%, 28%)" />
               <stop offset="100%" stopColor="hsl(210, 60%, 18%)" />
             </linearGradient>
-            <filter id="glow">
-              <feGaussianBlur stdDeviation="3" result="blur" />
+            {/* Glow filter for selected district */}
+            <filter id="selectedGlow" x="-30%" y="-30%" width="160%" height="160%">
+              <feGaussianBlur stdDeviation="4" result="blur" />
+              <feFlood floodColor="hsl(45, 90%, 60%)" floodOpacity="0.6" result="color" />
+              <feComposite in="color" in2="blur" operator="in" result="glow" />
               <feMerge>
-                <feMergeNode in="blur" />
+                <feMergeNode in="glow" />
+                <feMergeNode in="glow" />
                 <feMergeNode in="SourceGraphic" />
               </feMerge>
             </filter>
+            {/* Glow for "my district" */}
+            <filter id="myDistrictGlow" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="3" result="blur" />
+              <feFlood floodColor="hsl(45, 80%, 55%)" floodOpacity="0.4" result="color" />
+              <feComposite in="color" in2="blur" operator="in" result="glow" />
+              <feMerge>
+                <feMergeNode in="glow" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+            {/* Hover glow */}
+            <filter id="hoverGlow" x="-15%" y="-15%" width="130%" height="130%">
+              <feGaussianBlur stdDeviation="2" result="blur" />
+              <feFlood floodColor="hsl(140, 50%, 50%)" floodOpacity="0.3" result="color" />
+              <feComposite in="color" in2="blur" operator="in" result="glow" />
+              <feMerge>
+                <feMergeNode in="glow" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+            {/* Pulse animation for selected */}
+            <style>{`
+              @keyframes districtPulse {
+                0%, 100% { opacity: 1; }
+                50% { opacity: 0.7; }
+              }
+              @keyframes districtBounceIn {
+                0% { transform: scale(0.95); opacity: 0.5; }
+                50% { transform: scale(1.03); }
+                100% { transform: scale(1); opacity: 1; }
+              }
+              @keyframes badgePop {
+                0% { transform: scale(0); opacity: 0; }
+                60% { transform: scale(1.2); }
+                100% { transform: scale(1); opacity: 1; }
+              }
+              @keyframes glowPulse {
+                0%, 100% { filter: url(#selectedGlow); }
+                50% { filter: url(#selectedGlow) brightness(1.15); }
+              }
+              .district-path {
+                transition: fill 0.35s ease, stroke 0.3s ease, stroke-width 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
+                transform-box: fill-box;
+                transform-origin: center;
+              }
+              .district-path:hover {
+                filter: url(#hoverGlow);
+                stroke-width: 1.5;
+              }
+              .district-selected {
+                animation: districtBounceIn 0.4s ease-out forwards;
+                filter: url(#selectedGlow);
+              }
+              .district-selected-pulse {
+                animation: districtPulse 2s ease-in-out infinite;
+              }
+              .district-mine {
+                filter: url(#myDistrictGlow);
+              }
+              .badge-pop {
+                animation: badgePop 0.3s ease-out forwards;
+              }
+              .district-label {
+                transition: fill 0.3s ease, font-size 0.2s ease;
+                pointer-events: none;
+              }
+              .player-dot {
+                transition: r 0.2s ease, fill 0.2s ease;
+              }
+              .player-dot:hover {
+                r: 5;
+              }
+            `}</style>
           </defs>
+
           <rect x="0" y="0" width="600" height="500" fill="url(#oceanGrad)" />
 
-          {/* Subtle ocean wave lines */}
+          {/* Ocean wave lines */}
           {[80, 160, 320, 400].map((y, i) => (
             <path
               key={i}
@@ -342,18 +394,14 @@ export const PortugalMap = ({ studentId, district: myDistrict }: PortugalMapProp
             />
           ))}
 
-          {/* Separator line between islands and mainland */}
-          <line x1="160" y1="15" x2="160" y2="485" stroke="hsl(210, 30%, 35%)" strokeWidth="0.8" strokeDasharray="6,4" opacity="0.5" />
-          <text x="165" y="250" fill="hsl(210, 30%, 50%)" fontSize="10" fontStyle="italic" opacity="0.6"
-            transform="rotate(90, 165, 250)">Oceano Atlântico</text>
+          {/* Separator */}
+          <line x1="170" y1="15" x2="170" y2="485" stroke="hsl(210, 30%, 35%)" strokeWidth="0.8" strokeDasharray="6,4" opacity="0.5" />
+          <text x="175" y="250" fill="hsl(210, 30%, 50%)" fontSize="10" fontStyle="italic" opacity="0.6"
+            transform="rotate(90, 175, 250)">Oceano Atlântico</text>
 
           {/* Island labels */}
-          <text x="75" y="38" textAnchor="middle" fill="hsl(45, 60%, 70%)" fontSize="11" fontWeight="bold" opacity="0.8">
-            Açores
-          </text>
-          <text x="75" y="218" textAnchor="middle" fill="hsl(45, 60%, 70%)" fontSize="11" fontWeight="bold" opacity="0.8">
-            Madeira
-          </text>
+          <text x="75" y="38" textAnchor="middle" fill="hsl(45, 60%, 70%)" fontSize="11" fontWeight="bold" opacity="0.8">Açores</text>
+          <text x="75" y="218" textAnchor="middle" fill="hsl(45, 60%, 70%)" fontSize="11" fontWeight="bold" opacity="0.8">Madeira</text>
 
           {/* District regions */}
           {Object.entries(districtPaths).map(([key, info]) => {
@@ -364,7 +412,7 @@ export const PortugalMap = ({ studentId, district: myDistrict }: PortugalMapProp
             const intensity = Math.min(1, count / 10);
 
             const fillColor = isSelected
-              ? 'hsl(140, 50%, 40%)'
+              ? 'hsl(140, 55%, 42%)'
               : isMine
                 ? 'hsl(45, 70%, 45%)'
                 : count > 0
@@ -372,20 +420,27 @@ export const PortugalMap = ({ studentId, district: myDistrict }: PortugalMapProp
                   : 'hsl(140, 15%, 25%)';
 
             const strokeColor = isSelected
-              ? 'hsl(45, 90%, 60%)'
+              ? 'hsl(45, 90%, 65%)'
               : isMine
                 ? 'hsl(45, 80%, 55%)'
                 : 'hsl(140, 25%, 40%)';
 
+            const classNames = [
+              'district-path cursor-pointer',
+              isSelected ? 'district-selected district-selected-pulse' : '',
+              !isSelected && isMine ? 'district-mine' : '',
+            ].filter(Boolean).join(' ');
+
             return (
-              <g key={key} onClick={() => handleDistrictClick(key)} className="cursor-pointer">
+              <g key={key} onClick={() => handleDistrictClick(key)}>
                 <path
                   d={info.path}
                   fill={fillColor}
                   stroke={strokeColor}
-                  strokeWidth={isSelected ? 2 : 0.8}
-                  opacity={isSelected ? 1 : 0.92}
-                  style={{ transition: 'fill 0.2s, stroke-width 0.2s' }}
+                  strokeWidth={isSelected ? 2.5 : isMine ? 1.5 : 0.8}
+                  strokeLinejoin="round"
+                  opacity={isSelected ? 1 : selectedDistrict && !isSelected ? 0.6 : 0.92}
+                  className={classNames}
                 />
 
                 {/* District label */}
@@ -394,10 +449,11 @@ export const PortugalMap = ({ studentId, district: myDistrict }: PortugalMapProp
                     x={info.labelX}
                     y={info.labelY}
                     textAnchor="middle"
-                    fill={isSelected ? 'hsl(45, 90%, 80%)' : isMine ? 'hsl(45, 80%, 75%)' : 'hsl(140, 20%, 75%)'}
-                    fontSize={isSelected ? 11 : 9}
+                    fill={isSelected ? 'hsl(45, 90%, 85%)' : isMine ? 'hsl(45, 80%, 75%)' : 'hsl(140, 20%, 75%)'}
+                    fontSize={isSelected ? 12 : 9}
                     fontWeight={isSelected || isMine ? 'bold' : 'normal'}
-                    style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)', pointerEvents: 'none' }}
+                    className="district-label"
+                    style={{ textShadow: '1px 1px 3px rgba(0,0,0,0.9)' }}
                   >
                     {info.label}
                   </text>
@@ -405,15 +461,15 @@ export const PortugalMap = ({ studentId, district: myDistrict }: PortugalMapProp
 
                 {/* Player count badge */}
                 {count > 0 && (showPlayerCount || isSelected) && (
-                  <g>
+                  <g className={isSelected ? 'badge-pop' : ''}>
                     <rect
                       x={info.labelX + 18}
                       y={info.labelY - 15}
                       width={count >= 100 ? 30 : count >= 10 ? 24 : 18}
                       height={16}
-                      rx={4}
-                      fill="hsl(45, 80%, 50%)"
-                      stroke="hsl(45, 60%, 30%)"
+                      rx={8}
+                      fill={isSelected ? 'hsl(45, 90%, 55%)' : 'hsl(45, 80%, 50%)'}
+                      stroke={isSelected ? 'hsl(45, 70%, 35%)' : 'hsl(45, 60%, 30%)'}
                       strokeWidth="0.5"
                     />
                     <text
@@ -446,6 +502,7 @@ export const PortugalMap = ({ studentId, district: myDistrict }: PortugalMapProp
                         fill={isMe ? 'hsl(45, 90%, 55%)' : 'hsl(200, 70%, 60%)'}
                         stroke="#fff"
                         strokeWidth="0.5"
+                        className="player-dot"
                       />
                       {zoom >= 3 && (
                         <text
@@ -482,7 +539,11 @@ export const PortugalMap = ({ studentId, district: myDistrict }: PortugalMapProp
             <span>O teu distrito</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded-sm" style={{ background: 'hsl(140, 50%, 40%)' }} />
+            <div className="w-3 h-3 rounded-sm" style={{ background: 'hsl(140, 55%, 42%)' }} />
+            <span>Selecionado</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded-sm" style={{ background: 'hsl(140, 50%, 36%)' }} />
             <span>Com jogadores</span>
           </div>
           <div className="flex items-center gap-1.5">
@@ -494,7 +555,7 @@ export const PortugalMap = ({ studentId, district: myDistrict }: PortugalMapProp
 
       {/* Selected District Panel */}
       {selectedDistrict && (
-        <div className="mt-2 bg-card rounded-xl border border-border p-3 max-h-40 overflow-y-auto">
+        <div className="mt-2 bg-card rounded-xl border border-border p-3 max-h-40 overflow-y-auto animate-fade-in">
           <div className="flex items-center justify-between mb-2">
             <h3 className="font-display text-sm font-bold flex items-center gap-1.5">
               <MapPin className="w-4 h-4 text-primary" />
@@ -514,9 +575,10 @@ export const PortugalMap = ({ studentId, district: myDistrict }: PortugalMapProp
               {districtData[selectedDistrict].players.slice(0, 10).map((player, i) => (
                 <div
                   key={player.id}
-                  className={`flex items-center justify-between text-xs font-body px-2 py-1 rounded ${
+                  className={`flex items-center justify-between text-xs font-body px-2 py-1 rounded animate-fade-in ${
                     player.id === studentId ? 'bg-gold/10 border border-gold/30' : 'bg-muted/30'
                   }`}
+                  style={{ animationDelay: `${i * 50}ms` }}
                 >
                   <div className="flex items-center gap-2">
                     <span className="text-muted-foreground font-bold w-4">#{i + 1}</span>
