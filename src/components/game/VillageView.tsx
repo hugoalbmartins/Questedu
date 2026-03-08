@@ -56,6 +56,7 @@ export const VillageView = ({ student, onQuiz, onRefresh }: VillageViewProps) =>
   const [gridSize, setGridSize] = useState(MIN_GRID_SIZE);
   const [productionReady, setProductionReady] = useState<Set<string>>(new Set());
   const [showPremiumGate, setShowPremiumGate] = useState(false);
+  const [showTrade, setShowTrade] = useState(false);
 
   // Simulation state
   const [simState, setSimState] = useState<SimState | null>(null);
