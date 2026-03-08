@@ -202,16 +202,37 @@ const StudentRegisterPage = () => {
 
           <div className="p-3 border-2 border-primary/30 rounded-lg bg-primary/5">
             <Label className="font-body font-semibold text-primary">🎮 Nickname (nome no jogo) *</Label>
-            <Input 
-              value={formData.nickname} 
-              onChange={e => setFormData({...formData, nickname: e.target.value})} 
-              placeholder="Ex: SuperCavaleiro, PresidenteMax..."
-              required 
-              className="mt-1 border-primary/40 font-bold text-base" 
-              maxLength={20}
-            />
+            <div className="relative mt-1">
+              <Input 
+                value={formData.nickname} 
+                onChange={e => {
+                  const val = e.target.value.replace(/\s+/g, '_');
+                  setFormData({...formData, nickname: val});
+                  checkNicknameAvailability(val);
+                }} 
+                placeholder="Ex: SuperCavaleiro, PresidenteMax..."
+                required 
+                className={`pr-10 border-primary/40 font-bold text-base ${
+                  nicknameStatus === "available" ? "border-green-500 focus-visible:ring-green-500" :
+                  nicknameStatus === "taken" ? "border-destructive focus-visible:ring-destructive" : ""
+                }`}
+                maxLength={20}
+                minLength={3}
+              />
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                {nicknameStatus === "checking" && <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />}
+                {nicknameStatus === "available" && <CheckCircle className="w-5 h-5 text-green-500" />}
+                {nicknameStatus === "taken" && <XCircle className="w-5 h-5 text-destructive" />}
+              </div>
+            </div>
+            {nicknameStatus === "available" && (
+              <p className="text-xs text-green-600 font-body mt-1">✓ Nickname disponível!</p>
+            )}
+            {nicknameStatus === "taken" && (
+              <p className="text-xs text-destructive font-body mt-1">✗ Este nickname já está em uso. Escolhe outro.</p>
+            )}
             <p className="text-xs text-muted-foreground font-body mt-1">
-              ⚠️ Este será o teu nome de presidente e como os outros jogadores te vão encontrar. Escolhe bem!
+              ⚠️ Este será o teu nome de presidente e como os outros jogadores te vão encontrar. Mín. 3 caracteres.
             </p>
           </div>
           
