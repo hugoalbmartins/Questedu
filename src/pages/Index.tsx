@@ -218,6 +218,9 @@ const Index = () => {
                     <div className="font-body text-sm text-muted-foreground space-y-4">
                       <p><strong>Última atualização:</strong> Março 2026</p>
                       
+                      <h4 className="font-semibold text-foreground">Entidade Responsável</h4>
+                      <p>Hugo Alberto da Silva Martins<br />NIF: 218246587<br />Contacto: info@serv2all.pt</p>
+                      
                       <h4 className="font-semibold text-foreground">1. Aceitação dos Termos</h4>
                       <p>Ao aceder e utilizar o Questeduca, aceita estar vinculado a estes Termos de Utilização. Se não concordar com alguma parte destes termos, não deve utilizar o serviço.</p>
                       
