@@ -4,6 +4,7 @@ import { gridToIso, applyBuildingsToGrid } from '@/lib/gridLogic';
 import { BUILDING_SPRITES, getSpriteImage, preloadSprites } from '@/lib/sprites';
 import { updateParticles, drawParticles, addSmokeParticle, addSparkle, drawFlag, drawWaterShimmer } from '@/lib/canvasEffects';
 import { AnimatedCitizen, Complaint } from '@/lib/simulation';
+import { generateTerrain, drawTerrainElement, drawWildernessTile, getWildernessBorder, studentIdToSeed, TerrainElement } from '@/lib/terrainGeneration';
 
 interface IsometricCanvasProps {
   grid: GridTile[][];
