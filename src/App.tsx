@@ -19,6 +19,7 @@ import FAQPage from "./pages/FAQPage";
 import AssociationRegisterPage from "./pages/AssociationRegisterPage";
 import AdminDashboard from "./pages/AdminDashboard";
 import InstallPage from "./pages/InstallPage";
+import EmailVerifiedPage from "./pages/EmailVerifiedPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -33,6 +34,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/email-verified" element={<EmailVerifiedPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/register/parent" element={<ParentRegisterPage />} />
             <Route path="/register/student" element={<StudentRegisterPage />} />
