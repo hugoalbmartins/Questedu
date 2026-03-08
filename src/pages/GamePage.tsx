@@ -135,7 +135,13 @@ const GamePage = () => {
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
-      <GameHUD student={studentData} />
+      <GameHUD
+        student={studentData}
+        notifications={notifications}
+        unreadCount={unreadCount}
+        onMarkAsRead={markAsRead}
+        onMarkAllAsRead={markAllAsRead}
+      />
 
       {/* Side Menu */}
       <Sheet>
