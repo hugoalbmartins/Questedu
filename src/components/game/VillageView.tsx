@@ -336,6 +336,11 @@ export const VillageView = ({ student, onQuiz, onRefresh, onPremium }: VillageVi
 
     if (error) { toast.error('Erro ao construir!'); return; }
 
+    // Deduct natural resources
+    if (def.resourceCosts.length > 0) {
+      await spendResources(def.resourceCosts);
+    }
+
     await supabase.from('students').update({
       coins: student.coins - def.costCoins,
       diamonds: student.diamonds - def.costDiamonds,
