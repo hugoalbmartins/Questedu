@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import logo from "@/assets/logo.png";
 import villageHero from "@/assets/village-hero.png";
 import { Button } from "@/components/ui/button";
-import { Shield, BookOpen, Users, Map, ChevronDown, ChevronUp, Cookie, FileText, Mail } from "lucide-react";
+import { Shield, BookOpen, Users, Map, Cookie, FileText, Mail, MessageSquare, X } from "lucide-react";
 import {
   Accordion,
   AccordionContent,
@@ -17,16 +17,64 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
+import { sendEmail } from "@/lib/email";
 
 const Index = () => {
   const navigate = useNavigate();
   const [cookiesAccepted, setCookiesAccepted] = useState(
     localStorage.getItem("cookiesAccepted") === "true"
   );
+  const [contactOpen, setContactOpen] = useState(false);
+  const [contactForm, setContactForm] = useState({
+    name: "",
+    email: "",
+    type: "informacao",
+    message: "",
+  });
+  const [sendingContact, setSendingContact] = useState(false);
 
   const acceptCookies = () => {
     localStorage.setItem("cookiesAccepted", "true");
     setCookiesAccepted(true);
+  };
+
+  const handleContactSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSendingContact(true);
+
+    try {
+      const typeLabels: Record<string, string> = {
+        informacao: "Pedido de Informação",
+        sugestao: "Sugestão",
+        reclamacao: "Reclamação",
+        outro: "Outro",
+      };
+
+      await sendEmail({
+        to: "info@serv2all.pt",
+        subject: `[Questeduca] ${typeLabels[contactForm.type]} - ${contactForm.name}`,
+        html: `
+          <h2>${typeLabels[contactForm.type]}</h2>
+          <p><strong>Nome:</strong> ${contactForm.name}</p>
+          <p><strong>Email:</strong> ${contactForm.email}</p>
+          <p><strong>Mensagem:</strong></p>
+          <p>${contactForm.message.replace(/\n/g, '<br>')}</p>
+        `,
+      });
+
+      toast.success("Mensagem enviada com sucesso!");
+      setContactOpen(false);
+      setContactForm({ name: "", email: "", type: "informacao", message: "" });
+    } catch (error) {
+      toast.error("Erro ao enviar mensagem. Tente novamente.");
+    }
+
+    setSendingContact(false);
   };
 
   const faqItems = [
@@ -65,18 +113,78 @@ const Index = () => {
             <div className="flex items-start gap-3">
               <Cookie className="w-6 h-6 text-primary flex-shrink-0 mt-0.5" />
               <p className="font-body text-sm text-muted-foreground">
-                Utilizamos cookies essenciais para o funcionamento do site e cookies analíticos para melhorar a sua experiência. 
-                Ao continuar, aceita a nossa <Link to="/privacy" className="text-primary hover:underline">Política de Privacidade</Link>.
+                Utilizamos cookies essenciais para o funcionamento do site. 
+                Ao continuar, aceita a nossa Política de Privacidade.
               </p>
             </div>
-            <div className="flex gap-2">
-              <Button onClick={acceptCookies} size="sm" className="bg-primary text-primary-foreground">
-                Aceitar
-              </Button>
-            </div>
+            <Button onClick={acceptCookies} size="sm" className="bg-primary text-primary-foreground">
+              Aceitar
+            </Button>
           </div>
         </div>
       )}
+
+      {/* Floating Contact Button */}
+      <Dialog open={contactOpen} onOpenChange={setContactOpen}>
+        <DialogTrigger asChild>
+          <button className="fixed bottom-6 right-6 z-40 w-14 h-14 bg-primary text-primary-foreground rounded-full shadow-lg flex items-center justify-center hover:scale-105 transition-transform">
+            <MessageSquare className="w-6 h-6" />
+          </button>
+        </DialogTrigger>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-display text-xl">Contacte-nos</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleContactSubmit} className="space-y-4">
+            <div>
+              <Label className="font-body font-semibold">Nome</Label>
+              <Input
+                value={contactForm.name}
+                onChange={e => setContactForm({...contactForm, name: e.target.value})}
+                required
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label className="font-body font-semibold">Email</Label>
+              <Input
+                type="email"
+                value={contactForm.email}
+                onChange={e => setContactForm({...contactForm, email: e.target.value})}
+                required
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label className="font-body font-semibold">Tipo de Contacto</Label>
+              <Select value={contactForm.type} onValueChange={v => setContactForm({...contactForm, type: v})}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="informacao">Pedido de Informação</SelectItem>
+                  <SelectItem value="sugestao">Sugestão</SelectItem>
+                  <SelectItem value="reclamacao">Reclamação</SelectItem>
+                  <SelectItem value="outro">Outro</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="font-body font-semibold">Mensagem</Label>
+              <Textarea
+                value={contactForm.message}
+                onChange={e => setContactForm({...contactForm, message: e.target.value})}
+                required
+                rows={4}
+                className="mt-1"
+              />
+            </div>
+            <Button type="submit" className="w-full bg-primary text-primary-foreground font-bold" disabled={sendingContact}>
+              {sendingContact ? "A enviar..." : "Enviar Mensagem"}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {/* Hero Section */}
       <div className="relative">
@@ -303,18 +411,15 @@ const Index = () => {
                       <p><strong>Última atualização:</strong> Março 2026</p>
                       
                       <h4 className="font-semibold text-foreground">O que são Cookies?</h4>
-                      <p>Cookies são pequenos ficheiros de texto armazenados no seu dispositivo quando visita um website. São amplamente utilizados para fazer os websites funcionarem de forma mais eficiente.</p>
+                      <p>Cookies são pequenos ficheiros de texto armazenados no seu dispositivo quando visita um website.</p>
                       
                       <h4 className="font-semibold text-foreground">Cookies que Utilizamos</h4>
-                      <p><strong>Cookies Essenciais:</strong> Necessários para o funcionamento básico do site, incluindo autenticação e segurança. Não podem ser desativados.</p>
-                      <p><strong>Cookies de Sessão:</strong> Mantêm a sua sessão ativa enquanto utiliza a plataforma. São eliminados quando fecha o navegador.</p>
-                      <p><strong>Cookies de Preferências:</strong> Guardam as suas preferências, como o estado de aceitação de cookies.</p>
+                      <p><strong>Cookies Essenciais:</strong> Necessários para o funcionamento básico do site, incluindo autenticação e segurança.</p>
+                      <p><strong>Cookies de Sessão:</strong> Mantêm a sua sessão ativa enquanto utiliza a plataforma.</p>
+                      <p><strong>Cookies de Preferências:</strong> Guardam as suas preferências.</p>
                       
                       <h4 className="font-semibold text-foreground">Cookies de Terceiros</h4>
-                      <p>Não utilizamos cookies de publicidade ou rastreamento de terceiros. A privacidade das crianças é a nossa prioridade.</p>
-                      
-                      <h4 className="font-semibold text-foreground">Como Gerir Cookies</h4>
-                      <p>Pode configurar o seu navegador para recusar cookies, mas algumas funcionalidades do site podem não funcionar corretamente.</p>
+                      <p>Não utilizamos cookies de publicidade ou rastreamento de terceiros.</p>
                       
                       <h4 className="font-semibold text-foreground">Contacto</h4>
                       <p>Para questões sobre cookies, contacte: info@serv2all.pt</p>
