@@ -234,6 +234,35 @@ const StudentRegisterPage = () => {
             </Select>
           </div>
 
+          {/* School Selection */}
+          {schools.length > 0 && (
+            <div>
+              <Label className="font-body font-semibold">
+                Escola {parentDistrict ? `(${districtLabels[parentDistrict] || parentDistrict})` : ""}
+              </Label>
+              <Input
+                placeholder="Pesquisar escola..."
+                value={schoolSearch}
+                onChange={e => setSchoolSearch(e.target.value)}
+                className="mt-1 mb-2"
+              />
+              <Select value={formData.schoolId} onValueChange={v => setFormData({...formData, schoolId: v})}>
+                <SelectTrigger className="mt-1"><SelectValue placeholder="Seleciona a tua escola" /></SelectTrigger>
+                <SelectContent className="max-h-48">
+                  {schools
+                    .filter(s => s.name.toLowerCase().includes(schoolSearch.toLowerCase()) || 
+                                 (s.municipality || "").toLowerCase().includes(schoolSearch.toLowerCase()))
+                    .map(school => (
+                      <SelectItem key={school.id} value={school.id}>
+                        {school.name} — {school.municipality}
+                      </SelectItem>
+                    ))
+                  }
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           <Button 
             type="submit" 
             className="w-full bg-primary text-primary-foreground font-bold text-lg py-5" 
