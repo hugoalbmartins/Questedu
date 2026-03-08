@@ -11,9 +11,10 @@ import { AmbientMusic } from '@/lib/ambientMusic';
 import { addBuildParticles, addCoinParticle } from '@/lib/canvasEffects';
 import { gridToIso } from '@/lib/gridLogic';
 import { TILE_W, TILE_H } from '@/lib/gameTypes';
-import { calculateSimState, SimState, AnimatedCitizen, createAnimatedCitizen, updateCitizen, SIM_TICK_MS, SIM_RATES, Complaint } from '@/lib/simulation';
+import { calculateSimState, SimState, AnimatedCitizen, createAnimatedCitizen, updateCitizen, SIM_TICK_MS, SIM_RATES, Complaint, getCurrentSeason, SEASON_CONFIG } from '@/lib/simulation';
+import { TradePanel } from './TradePanel';
 import { toast } from 'sonner';
-import { BookOpen, Shield, Users, Sparkles, Music, Volume2, Maximize, Crown, Lock, Heart, Apple, Droplets, GraduationCap } from 'lucide-react';
+import { BookOpen, Shield, Users, Sparkles, Music, Volume2, Maximize, Crown, Lock, Heart, Apple, Droplets, GraduationCap, ArrowLeftRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface VillageViewProps {
@@ -55,6 +56,7 @@ export const VillageView = ({ student, onQuiz, onRefresh }: VillageViewProps) =>
   const [gridSize, setGridSize] = useState(MIN_GRID_SIZE);
   const [productionReady, setProductionReady] = useState<Set<string>>(new Set());
   const [showPremiumGate, setShowPremiumGate] = useState(false);
+  const [showTrade, setShowTrade] = useState(false);
 
   // Simulation state
   const [simState, setSimState] = useState<SimState | null>(null);
@@ -392,6 +394,11 @@ export const VillageView = ({ student, onQuiz, onRefresh }: VillageViewProps) =>
         {/* Simulation stats */}
         {simState && (
           <>
+            <div className="bg-card/90 backdrop-blur-sm rounded-lg px-2 py-1 flex items-center gap-1 text-xs font-body border border-border" style={{ borderColor: SEASON_CONFIG[simState.season].color + '80' }}>
+              <span>{SEASON_CONFIG[simState.season].emoji}</span>
+              <span className="font-bold">{SEASON_CONFIG[simState.season].label}</span>
+              <span className="text-muted-foreground">×{simState.seasonMultiplier}</span>
+            </div>
             <div className={`bg-card/90 backdrop-blur-sm rounded-lg px-2 py-1 flex items-center gap-1 text-xs font-body border ${simState.foodPerMin >= simState.foodConsumedPerMin ? 'border-green-500/50' : 'border-destructive/50'}`}>
               <Apple className="w-3.5 h-3.5 text-green-500" />
               <span className="font-bold">{simState.foodPerMin}/{simState.foodConsumedPerMin}</span>
@@ -442,6 +449,10 @@ export const VillageView = ({ student, onQuiz, onRefresh }: VillageViewProps) =>
           title={musicOn ? 'Desligar música' : 'Ligar música'}>
           {musicOn ? <Music className="w-4 h-4 text-primary" /> : <Volume2 className="w-4 h-4 text-muted-foreground" />}
         </Button>
+        <Button size="sm" variant="outline" onClick={() => { setShowTrade(true); SFX.click(); }}
+          className="h-8 bg-card/90 backdrop-blur-sm text-xs">
+          <ArrowLeftRight className="w-3.5 h-3.5 mr-1" />Trade
+        </Button>
         <Button size="sm" variant="outline" onClick={() => { setShowExpansion(true); SFX.click(); }}
           className="h-8 bg-card/90 backdrop-blur-sm text-xs">
           <Maximize className="w-3.5 h-3.5 mr-1" />Expandir
@@ -473,6 +484,14 @@ export const VillageView = ({ student, onQuiz, onRefresh }: VillageViewProps) =>
         building={infoBuilding} open={showInfo} onOpenChange={setShowInfo}
         onUpgrade={handleUpgrade} onDemolish={handleDemolish}
         coins={student.coins} diamonds={student.diamonds}
+      />
+
+      <TradePanel
+        studentId={student.id}
+        coins={student.coins}
+        open={showTrade}
+        onOpenChange={setShowTrade}
+        onRefresh={onRefresh}
       />
 
       <ExpansionPanel
