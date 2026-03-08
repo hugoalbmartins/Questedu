@@ -69,6 +69,11 @@ const GamePage = () => {
       .eq("id", studentData.id);
 
     refreshProfile();
+    // Check achievements after gaining rewards
+    if (studentData) {
+      const { count } = await supabase.from("quiz_history").select("*", { count: "exact", head: true }).eq("student_id", studentData.id).eq("answered_correctly", true);
+      checkAchievements({ correctQuizzes: count || 0 });
+    }
   };
 
   const handleBattleEnd = async (won: boolean, coins: number, diamonds: number, xp: number) => {
