@@ -573,6 +573,11 @@ const AdminDashboard = () => {
             </div>
           </TabsContent>
 
+          {/* PROMO CODES TAB */}
+          <TabsContent value="promos">
+            <PromoCodesTab />
+          </TabsContent>
+
           {/* CREATE USER TAB */}
           <TabsContent value="create">
             <div className="max-w-lg">
