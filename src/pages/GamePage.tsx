@@ -16,7 +16,7 @@ import { AchievementsPanel } from "@/components/game/AchievementsPanel";
 import { SettingsPanel } from "@/components/game/SettingsPanel";
 import { useAchievements } from "@/hooks/useAchievements";
 import { useNotifications } from "@/hooks/useNotifications";
-import { usePushNotifications } from "@/hooks/usePushNotifications";
+
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { toast } from "sonner";
