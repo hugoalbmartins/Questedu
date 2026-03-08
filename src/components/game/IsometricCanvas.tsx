@@ -459,6 +459,13 @@ export const IsometricCanvas = ({
             if (b) { onBuildingClick(b); setDragging(false); return; }
           }
           onTileClick(pos.gx, pos.gy);
+        } else if (onTerrainClick) {
+          // Clicked outside village grid — check for terrain elements
+          const worldPos = screenToWorldGrid(e.clientX, e.clientY);
+          if (worldPos) {
+            const el = findTerrainElement(worldPos.gx, worldPos.gy);
+            if (el) onTerrainClick(el);
+          }
         }
       }
     }
