@@ -8,7 +8,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { LogOut, Users, ShieldCheck, Building2, UserPlus, Trash2, Shield, Ban, CheckCircle, Pencil, Eye, EyeOff } from "lucide-react";
+import { LogOut, Users, ShieldCheck, Building2, UserPlus, Trash2, Shield, Ban, CheckCircle, Pencil, Eye, EyeOff, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 
@@ -57,6 +57,11 @@ const AdminDashboard = () => {
 
   // Delete confirm
   const [deleteUser, setDeleteUser] = useState<AdminUser | null>(null);
+
+  // Search & pagination
+  const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 15;
 
   // Stats
   const [stats, setStats] = useState({ totalStudents: 0, totalParents: 0, totalAssociations: 0, totalAdmins: 0 });
@@ -336,10 +341,45 @@ const AdminDashboard = () => {
     );
   }
 
-  // Filtered lists
-  const studentUsers = allUsers.filter(u => u.app_role === "student");
-  const parentUsers = allUsers.filter(u => u.app_role === "parent" && !u.admin_role);
-  const adminUsers = allUsers.filter(u => u.admin_role);
+  // Filtered lists with search
+  const q = searchQuery.toLowerCase();
+  const filterBySearch = (u: AdminUser) =>
+    !q || u.display_name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q);
+
+  const studentUsers = allUsers.filter(u => u.app_role === "student").filter(filterBySearch);
+  const parentUsers = allUsers.filter(u => u.app_role === "parent" && !u.admin_role).filter(filterBySearch);
+  const adminUsers = allUsers.filter(u => u.admin_role).filter(filterBySearch);
+
+  const allFiltered = [...studentUsers, ...parentUsers, ...adminUsers];
+  const totalPages = Math.max(1, Math.ceil(allFiltered.length / ITEMS_PER_PAGE));
+  const safePage = Math.min(currentPage, totalPages);
+
+  const paginatedStudents = studentUsers;
+  const paginatedParents = parentUsers;
+
+  const Pagination = ({ total, filtered }: { total: number; filtered: number }) => {
+    if (filtered <= ITEMS_PER_PAGE) return null;
+    const pages = Math.ceil(filtered / ITEMS_PER_PAGE);
+    return (
+      <div className="flex items-center justify-between mt-3 px-1">
+        <p className="font-body text-xs text-muted-foreground">{filtered} registos</p>
+        <div className="flex items-center gap-1">
+          <Button size="sm" variant="ghost" disabled={safePage <= 1} onClick={() => setCurrentPage(p => p - 1)}>
+            <ChevronLeft className="w-4 h-4" />
+          </Button>
+          <span className="font-body text-xs px-2">{safePage}/{pages}</span>
+          <Button size="sm" variant="ghost" disabled={safePage >= pages} onClick={() => setCurrentPage(p => p + 1)}>
+            <ChevronRight className="w-4 h-4" />
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
+  const paginate = (list: AdminUser[]) => {
+    const start = (safePage - 1) * ITEMS_PER_PAGE;
+    return list.slice(start, start + ITEMS_PER_PAGE);
+  };
 
   const UserRow = ({ u }: { u: AdminUser }) => (
     <tr className="border-b border-border/50">
@@ -439,18 +479,32 @@ const AdminDashboard = () => {
           {/* USERS TAB */}
           <TabsContent value="users">
             <div className="space-y-6">
+              {/* Search bar */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Pesquisar por nome ou email..."
+                  value={searchQuery}
+                  onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+                  className="pl-10"
+                />
+              </div>
+
               {/* Students */}
               <div>
                 <h2 className="font-display text-lg font-bold mb-2">Alunos ({studentUsers.length})</h2>
                 {studentUsers.length === 0 ? (
-                  <p className="font-body text-sm text-muted-foreground">Nenhum aluno.</p>
+                  <p className="font-body text-sm text-muted-foreground">Nenhum aluno encontrado.</p>
                 ) : (
-                  <div className="overflow-x-auto bg-card rounded-xl border border-border">
-                    <table className="w-full font-body text-sm">
-                      <thead><tr className="border-b border-border text-left"><th className="p-2">Nome</th><th className="p-2">Email</th><th className="p-2">Estado</th><th className="p-2">Ações</th></tr></thead>
-                      <tbody>{studentUsers.map(u => <UserRow key={u.id} u={u} />)}</tbody>
-                    </table>
-                  </div>
+                  <>
+                    <div className="overflow-x-auto bg-card rounded-xl border border-border">
+                      <table className="w-full font-body text-sm">
+                        <thead><tr className="border-b border-border text-left"><th className="p-2">Nome</th><th className="p-2">Email</th><th className="p-2">Estado</th><th className="p-2">Ações</th></tr></thead>
+                        <tbody>{paginate(studentUsers).map(u => <UserRow key={u.id} u={u} />)}</tbody>
+                      </table>
+                    </div>
+                    <Pagination total={studentUsers.length} filtered={studentUsers.length} />
+                  </>
                 )}
               </div>
 
@@ -458,14 +512,17 @@ const AdminDashboard = () => {
               <div>
                 <h2 className="font-display text-lg font-bold mb-2">Pais ({parentUsers.length})</h2>
                 {parentUsers.length === 0 ? (
-                  <p className="font-body text-sm text-muted-foreground">Nenhum pai.</p>
+                  <p className="font-body text-sm text-muted-foreground">Nenhum pai encontrado.</p>
                 ) : (
-                  <div className="overflow-x-auto bg-card rounded-xl border border-border">
-                    <table className="w-full font-body text-sm">
-                      <thead><tr className="border-b border-border text-left"><th className="p-2">Nome</th><th className="p-2">Email</th><th className="p-2">Estado</th><th className="p-2">Ações</th></tr></thead>
-                      <tbody>{parentUsers.map(u => <UserRow key={u.id} u={u} />)}</tbody>
-                    </table>
-                  </div>
+                  <>
+                    <div className="overflow-x-auto bg-card rounded-xl border border-border">
+                      <table className="w-full font-body text-sm">
+                        <thead><tr className="border-b border-border text-left"><th className="p-2">Nome</th><th className="p-2">Email</th><th className="p-2">Estado</th><th className="p-2">Ações</th></tr></thead>
+                        <tbody>{paginate(parentUsers).map(u => <UserRow key={u.id} u={u} />)}</tbody>
+                      </table>
+                    </div>
+                    <Pagination total={parentUsers.length} filtered={parentUsers.length} />
+                  </>
                 )}
               </div>
             </div>
