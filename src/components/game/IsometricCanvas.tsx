@@ -134,16 +134,20 @@ export const IsometricCanvas = ({
 
     const time = timeRef.current;
 
+    // Pre-compute water tile positions
+    const waterTileSet = new Set<string>();
+    for (const el of terrainElements) {
+      if (el.type === 'river_tile' || el.type === 'lake_tile') {
+        waterTileSet.add(`${Math.floor(el.gx)},${Math.floor(el.gy)}`);
+      }
+    }
+
     // Draw wilderness tiles (outside village grid)
     const wb = wildernessBorder;
     for (let y = -wb; y < gridSize + wb; y++) {
       for (let x = -wb; x < gridSize + wb; x++) {
-        if (x >= 0 && x < gridSize && y >= 0 && y < gridSize) continue; // skip village tiles
-        // Check if there's a water tile here
-        const hasWater = terrainElements.some(
-          el => (el.type === 'river_tile' || el.type === 'lake_tile') && Math.floor(el.gx) === x && Math.floor(el.gy) === y
-        );
-        if (!hasWater) {
+        if (x >= 0 && x < gridSize && y >= 0 && y < gridSize) continue;
+        if (!waterTileSet.has(`${x},${y}`)) {
           drawWildernessTile(ctx, x, y, TILE_W, TILE_H, gridSize);
         }
       }
