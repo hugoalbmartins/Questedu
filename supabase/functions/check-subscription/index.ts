@@ -186,8 +186,31 @@ serve(async (req) => {
         logStep("Updated student premium status");
       }
     } else {
-      // No active subscription - reset premium if needed
+      // No active Stripe subscription - check for admin-granted premium
       if (studentId) {
+        const { data: student } = await supabaseClient
+          .from("students")
+          .select("is_premium, premium_expires_at, subscription_type")
+          .eq("id", studentId)
+          .single();
+
+        // If admin-granted and still valid, keep premium
+        if (student?.subscription_type === "admin_grant" && student?.premium_expires_at) {
+          const expiresAt = new Date(student.premium_expires_at);
+          if (expiresAt > new Date()) {
+            logStep("Admin-granted premium still valid", { expires: student.premium_expires_at });
+            return new Response(JSON.stringify({
+              subscribed: true,
+              subscription_end: student.premium_expires_at,
+              subscription_type: "admin_grant",
+            }), {
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+              status: 200,
+            });
+          }
+        }
+
+        // Otherwise reset premium
         await supabaseClient
           .from("students")
           .update({

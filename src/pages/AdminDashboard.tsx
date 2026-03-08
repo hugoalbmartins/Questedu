@@ -8,8 +8,9 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { LogOut, Users, ShieldCheck, Building2, UserPlus, Trash2, Shield, Ban, CheckCircle, Pencil, Eye, EyeOff, Search, ChevronLeft, ChevronRight, Tag, MailCheck } from "lucide-react";
+import { LogOut, Users, ShieldCheck, Building2, UserPlus, Trash2, Shield, Ban, CheckCircle, Pencil, Eye, EyeOff, Search, ChevronLeft, ChevronRight, Tag, MailCheck, Crown } from "lucide-react";
 import { PromoCodesTab } from "@/components/admin/PromoCodesTab";
+import { GrantPremiumTab } from "@/components/admin/GrantPremiumTab";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 
@@ -479,7 +480,7 @@ const AdminDashboard = () => {
         </div>
 
         <Tabs defaultValue="users">
-          <TabsList className="w-full grid grid-cols-5 mb-6">
+          <TabsList className="w-full grid grid-cols-6 mb-6">
             <TabsTrigger value="users" className="font-body text-xs">
               <Users className="w-4 h-4 mr-1" /> Utilizadores
             </TabsTrigger>
@@ -488,6 +489,9 @@ const AdminDashboard = () => {
             </TabsTrigger>
             <TabsTrigger value="promos" className="font-body text-xs">
               <Tag className="w-4 h-4 mr-1" /> Promos
+            </TabsTrigger>
+            <TabsTrigger value="premium" className="font-body text-xs">
+              <Crown className="w-4 h-4 mr-1" /> Premium
             </TabsTrigger>
             <TabsTrigger value="create" className="font-body text-xs">
               <UserPlus className="w-4 h-4 mr-1" /> Criar
@@ -593,6 +597,11 @@ const AdminDashboard = () => {
           {/* PROMO CODES TAB */}
           <TabsContent value="promos">
             <PromoCodesTab />
+          </TabsContent>
+
+          {/* GRANT PREMIUM TAB */}
+          <TabsContent value="premium">
+            <GrantPremiumTab />
           </TabsContent>
 
           {/* CREATE USER TAB */}

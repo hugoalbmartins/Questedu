@@ -62,9 +62,15 @@ serve(async (req) => {
     }
 
     // Increment usage
+    const newUses = (promo.current_uses || 0) + 1;
+    const updateData: Record<string, any> = { current_uses: newUses };
+    // If single-use code (max_uses = 1), deactivate it
+    if (promo.max_uses && newUses >= promo.max_uses) {
+      updateData.is_active = false;
+    }
     await supabaseClient
       .from("promo_codes")
-      .update({ current_uses: promo.current_uses + 1 })
+      .update(updateData)
       .eq("id", promo.id);
 
     return new Response(JSON.stringify({

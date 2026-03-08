@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LogOut, Users, BookOpen, MessageCircle, Shield, Settings, Plus, Trash2, MapPin, Save, Crown, Check, X } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
+import { PremiumModal } from "@/components/game/PremiumModal";
 
 const schoolYears = [
   { value: "1", label: "1º Ano" },
@@ -46,6 +47,7 @@ const ParentDashboard = () => {
   const [savingDistrict, setSavingDistrict] = useState(false);
   const [pendingFriendships, setPendingFriendships] = useState<any[]>([]);
   const [checkingOutChild, setCheckingOutChild] = useState<string | null>(null);
+  const [premiumChild, setPremiumChild] = useState<any>(null);
 
   useEffect(() => {
     if (profile) {
@@ -236,18 +238,8 @@ const ParentDashboard = () => {
     loadPendingFriendships();
   };
 
-  const handleUpgradeChild = async (childId: string) => {
-    setCheckingOutChild(childId);
-    try {
-      const { data, error } = await supabase.functions.invoke("create-checkout", {
-        body: { studentId: childId },
-      });
-      if (error) throw error;
-      if (data?.url) window.open(data.url, "_blank");
-    } catch (error: any) {
-      toast.error("Erro ao iniciar pagamento: " + error.message);
-    }
-    setCheckingOutChild(null);
+  const handleUpgradeChild = (child: any) => {
+    setPremiumChild(child);
   };
 
   const handleManageSubscription = async () => {
@@ -351,11 +343,10 @@ const ParentDashboard = () => {
                           <Button
                             size="sm"
                             className="text-xs bg-gold text-foreground h-7"
-                            onClick={() => handleUpgradeChild(child.id)}
-                            disabled={checkingOutChild === child.id}
+                            onClick={() => handleUpgradeChild(child)}
                           >
                             <Crown className="w-3 h-3 mr-1" />
-                            {checkingOutChild === child.id ? "..." : "Ativar Premium — €4,99/ano"}
+                            Ativar Premium
                           </Button>
                         )}
                       </div>
@@ -560,6 +551,19 @@ const ParentDashboard = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Premium Modal */}
+      {premiumChild && (
+        <PremiumModal
+          open={!!premiumChild}
+          onOpenChange={(open) => !open && setPremiumChild(null)}
+          studentId={premiumChild.id}
+          isPremium={premiumChild.is_premium}
+          associationCode={premiumChild.association_code}
+          createdAt={premiumChild.created_at}
+          subscriptionType={premiumChild.subscription_type}
+        />
+      )}
     </div>
   );
 };
