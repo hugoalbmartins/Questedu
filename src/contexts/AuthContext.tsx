@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, ReactNode, useRef } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -28,22 +28,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
   const [studentData, setStudentData] = useState<any>(null);
+  const profileFetchInProgress = useRef(false);
 
   const fetchProfile = async (userId: string) => {
-    const { data: profileData } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("user_id", userId)
-      .single();
-    setProfile(profileData);
-
-    if (profileData?.role === "student") {
-      const { data: student } = await supabase
-        .from("students")
+    if (profileFetchInProgress.current) return;
+    profileFetchInProgress.current = true;
+    
+    try {
+      const { data: profileData } = await supabase
+        .from("profiles")
         .select("*")
         .eq("user_id", userId)
         .single();
-      setStudentData(student);
+      setProfile(profileData);
+
+      if (profileData?.role === "student") {
+        const { data: student } = await supabase
+          .from("students")
+          .select("*")
+          .eq("user_id", userId)
+          .single();
+        setStudentData(student);
+      } else {
+        setStudentData(null);
+      }
+    } finally {
+      profileFetchInProgress.current = false;
     }
   };
 
@@ -52,24 +62,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
+    let initialSessionHandled = false;
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
-          setTimeout(() => fetchProfile(session.user.id), 0);
+          // Use setTimeout to avoid deadlock with Supabase auth
+          setTimeout(async () => {
+            await fetchProfile(session.user.id);
+            setLoading(false);
+          }, 0);
         } else {
           setProfile(null);
           setStudentData(null);
+          setLoading(false);
         }
-        setLoading(false);
       }
     );
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (initialSessionHandled) return;
+      initialSessionHandled = true;
       setSession(session);
       setUser(session?.user ?? null);
-      if (session?.user) fetchProfile(session.user.id);
+      if (session?.user) {
+        await fetchProfile(session.user.id);
+      }
       setLoading(false);
     });
 

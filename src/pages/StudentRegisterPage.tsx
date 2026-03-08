@@ -177,18 +177,18 @@ const StudentRegisterPage = () => {
             />
           </div>
 
-          <div>
-            <Label className="font-body font-semibold">Nickname (nome no jogo)</Label>
+          <div className="p-3 border-2 border-primary/30 rounded-lg bg-primary/5">
+            <Label className="font-body font-semibold text-primary">🎮 Nickname (nome no jogo) *</Label>
             <Input 
               value={formData.nickname} 
               onChange={e => setFormData({...formData, nickname: e.target.value})} 
               placeholder="Ex: SuperCavaleiro, PresidenteMax..."
               required 
-              className="mt-1" 
+              className="mt-1 border-primary/40 font-bold text-base" 
               maxLength={20}
             />
             <p className="text-xs text-muted-foreground font-body mt-1">
-              Este será o teu nome de presidente e como os outros jogadores te vão encontrar.
+              ⚠️ Este será o teu nome de presidente e como os outros jogadores te vão encontrar. Escolhe bem!
             </p>
           </div>
           
