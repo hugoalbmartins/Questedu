@@ -342,11 +342,10 @@ const ParentDashboard = () => {
                           <Button
                             size="sm"
                             className="text-xs bg-gold text-foreground h-7"
-                            onClick={() => handleUpgradeChild(child.id)}
-                            disabled={checkingOutChild === child.id}
+                            onClick={() => handleUpgradeChild(child)}
                           >
                             <Crown className="w-3 h-3 mr-1" />
-                            {checkingOutChild === child.id ? "..." : "Ativar Premium — €4,99/ano"}
+                            Ativar Premium
                           </Button>
                         )}
                       </div>

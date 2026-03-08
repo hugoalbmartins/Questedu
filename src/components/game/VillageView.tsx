@@ -592,7 +592,7 @@ export const VillageView = ({ student, onQuiz, onRefresh, onPremium }: VillageVi
             <Crown className="w-12 h-12 mx-auto text-gold" />
             <h2 className="font-display text-xl font-bold">Conteúdo Premium 👑</h2>
             <p className="font-body text-sm text-muted-foreground">
-              Desbloqueia todas as funcionalidades com o plano Premium por apenas <strong>4,99€/ano</strong>:
+              Desbloqueia todas as funcionalidades com o plano Premium a partir de <strong>€1,99/mês</strong>:
             </p>
             <ul className="text-left text-sm font-body space-y-2">
               <li className="flex items-center gap-2">✅ Edifícios e decorações ilimitados</li>
