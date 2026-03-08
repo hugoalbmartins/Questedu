@@ -239,7 +239,7 @@ const GamePage = () => {
 
       {/* Main View */}
       <div className="pt-20 pb-20">
-        {view === "village" && <VillageView student={studentData} onQuiz={() => setShowQuiz(true)} onRefresh={() => { refreshProfile(); checkBuildingAchievements(); }} onPremium={() => setShowPremium(true)} />}
+        {view === "village" && <VillageView student={studentData} onQuiz={() => setShowQuiz(true)} onRefresh={() => { refreshProfile(); checkBuildingAchievements(); }} />}
         {view === "map" && <PortugalMap studentId={studentData.id} district={studentData.district} />}
         {view === "chat" && <ChatPanel studentId={studentData.id} />}
       </div>
