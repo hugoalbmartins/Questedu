@@ -8,8 +8,11 @@ import { MIN_GRID_SIZE, BUILDING_DEFS, EXPANSION_LEVELS, PlacedBuilding } from '
 import { createEmptyGrid, applyBuildingsToGrid, canPlace, hasRoadAccess, getUpgradeCost, getTotalStats } from '@/lib/gridLogic';
 import { SFX } from '@/lib/sounds';
 import { AmbientMusic } from '@/lib/ambientMusic';
+import { addBuildParticles, addCoinParticle } from '@/lib/canvasEffects';
+import { gridToIso } from '@/lib/gridLogic';
+import { TILE_W, TILE_H } from '@/lib/gameTypes';
 import { toast } from 'sonner';
-import { BookOpen, Shield, Users, Sparkles, Music, Volume2, Maximize } from 'lucide-react';
+import { BookOpen, Shield, Users, Sparkles, Music, Volume2, Maximize, Crown, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface VillageViewProps {
@@ -24,10 +27,18 @@ interface VillageViewProps {
     is_premium: boolean;
     district?: string | null;
     xp: number;
+    max_xp_free: number;
   };
   onQuiz: () => void;
   onRefresh: () => void;
 }
+
+// Production rates (coins per minute per level)
+const PRODUCTION_RATES: Record<string, number> = {
+  workshop: 2,
+  market: 4,
+};
+const PRODUCTION_INTERVAL_MS = 60000; // 1 minute
 
 export const VillageView = ({ student, onQuiz, onRefresh }: VillageViewProps) => {
   const [buildings, setBuildings] = useState<PlacedBuilding[]>([]);
@@ -40,60 +51,123 @@ export const VillageView = ({ student, onQuiz, onRefresh }: VillageViewProps) =>
   const [loading, setLoading] = useState(true);
   const [musicOn, setMusicOn] = useState(false);
   const [gridSize, setGridSize] = useState(MIN_GRID_SIZE);
+  const [productionReady, setProductionReady] = useState<Set<string>>(new Set());
+  const [showPremiumGate, setShowPremiumGate] = useState(false);
 
   const baseGrid = createEmptyGrid(gridSize);
   const fullGrid = applyBuildingsToGrid(baseGrid, buildings);
   const stats = getTotalStats(buildings);
 
-  // Determine current expansion level from village_level
+  // Free user limits
+  const isFree = !student.is_premium;
+  const FREE_BUILDING_LIMIT = 15;
+  const FREE_CATEGORIES = ['infrastructure', 'residential', 'production', 'military'];
+  const xpLimited = isFree && student.xp >= student.max_xp_free;
+
   useEffect(() => {
     const expIdx = Math.min(student.village_level - 1, EXPANSION_LEVELS.length - 1);
     setGridSize(EXPANSION_LEVELS[Math.max(0, expIdx)].size);
   }, [student.village_level]);
 
-  // Load buildings from DB
-  useEffect(() => {
-    loadBuildings();
-  }, [student.id]);
+  useEffect(() => { loadBuildings(); }, [student.id]);
+  useEffect(() => { return () => { AmbientMusic.stop(); }; }, []);
 
-  // Cleanup music on unmount
+  // Passive production timer
   useEffect(() => {
-    return () => { AmbientMusic.stop(); };
-  }, []);
+    if (buildings.length === 0) return;
+    const interval = setInterval(() => {
+      const producers = buildings.filter(b => PRODUCTION_RATES[b.defId]);
+      if (producers.length > 0) {
+        setProductionReady(prev => {
+          const next = new Set(prev);
+          producers.forEach(b => next.add(b.id));
+          return next;
+        });
+      }
+    }, PRODUCTION_INTERVAL_MS);
+
+    // Also trigger initial check after 10 seconds for demo
+    const quickCheck = setTimeout(() => {
+      const producers = buildings.filter(b => PRODUCTION_RATES[b.defId]);
+      if (producers.length > 0) {
+        setProductionReady(prev => {
+          const next = new Set(prev);
+          producers.forEach(b => next.add(b.id));
+          return next;
+        });
+      }
+    }, 10000);
+
+    return () => { clearInterval(interval); clearTimeout(quickCheck); };
+  }, [buildings]);
 
   const loadBuildings = async () => {
     const { data } = await supabase
       .from('buildings')
       .select('*')
       .eq('student_id', student.id);
-
     if (data) {
       setBuildings(data.map(b => ({
-        id: b.id,
-        defId: b.building_type,
-        x: b.position_x,
-        y: b.position_y,
-        level: b.level,
-        dbId: b.id,
+        id: b.id, defId: b.building_type,
+        x: b.position_x, y: b.position_y,
+        level: b.level, dbId: b.id,
       })));
     }
     setLoading(false);
   };
 
   const toggleMusic = () => {
-    if (musicOn) {
-      AmbientMusic.stop();
-      setMusicOn(false);
-    } else {
-      AmbientMusic.start();
-      setMusicOn(true);
+    if (musicOn) { AmbientMusic.stop(); setMusicOn(false); }
+    else { AmbientMusic.start(); setMusicOn(true); }
+  };
+
+  const collectProduction = async (building: PlacedBuilding) => {
+    const rate = PRODUCTION_RATES[building.defId];
+    if (!rate) return;
+    const coinsEarned = rate * building.level;
+
+    await supabase.from('students').update({
+      coins: student.coins + coinsEarned,
+    }).eq('id', student.id);
+
+    // Coin particles
+    const def = BUILDING_DEFS[building.defId];
+    if (def) {
+      const cx = building.x + def.width / 2 - 0.5;
+      const cy = building.y + def.height / 2 - 0.5;
+      const { sx, sy } = gridToIso(cx, cy, TILE_W, TILE_H);
+      for (let i = 0; i < 5; i++) addCoinParticle(sx, sy - 15);
     }
+
+    SFX.coins();
+    toast.success(`+${coinsEarned} moedas recolhidas! 🪙`);
+    setProductionReady(prev => {
+      const next = new Set(prev);
+      next.delete(building.id);
+      return next;
+    });
+    onRefresh();
   };
 
   const handleTileClick = useCallback(async (gx: number, gy: number) => {
     if (!selectedBuilding) return;
     const def = BUILDING_DEFS[selectedBuilding];
     if (!def) return;
+
+    // Premium checks
+    if (isFree) {
+      if (def.premiumOnly) {
+        setShowPremiumGate(true); SFX.wrong(); return;
+      }
+      if (!FREE_CATEGORIES.includes(def.category)) {
+        toast.error('Categoria Premium! Faz upgrade para desbloquear 👑');
+        SFX.wrong(); return;
+      }
+      if (buildings.length >= FREE_BUILDING_LIMIT) {
+        toast.error(`Limite gratuito: ${FREE_BUILDING_LIMIT} edifícios. Faz upgrade para construir mais! 👑`);
+        SFX.wrong(); setShowPremiumGate(true); return;
+      }
+    }
 
     if (!canPlace(fullGrid, gx, gy, def.width, def.height)) {
       toast.error('Espaço ocupado!'); SFX.wrong(); return;
@@ -103,12 +177,6 @@ export const VillageView = ({ student, onQuiz, onRefresh }: VillageViewProps) =>
     }
     if (student.coins < def.costCoins || student.diamonds < def.costDiamonds) {
       toast.error('Recursos insuficientes!'); SFX.wrong(); return;
-    }
-    if (student.village_level < def.minVillageLevel) {
-      toast.error(`Requer nível ${def.minVillageLevel} da aldeia!`); SFX.wrong(); return;
-    }
-    if (def.premiumOnly && !student.is_premium) {
-      toast.error('Conteúdo exclusivo Premium! 👑'); SFX.wrong(); return;
     }
 
     const { data, error } = await supabase
@@ -123,13 +191,17 @@ export const VillageView = ({ student, onQuiz, onRefresh }: VillageViewProps) =>
       diamonds: student.diamonds - def.costDiamonds,
     }).eq('id', student.id);
 
+    // Build particles
+    const { sx, sy } = gridToIso(gx, gy, TILE_W, TILE_H);
+    addBuildParticles(sx, sy);
+
     SFX.place();
     toast.success(`${def.name} construído! 🏗️`);
     setBuildings(prev => [...prev, { id: data.id, defId: def.id, x: gx, y: gy, level: 1, dbId: data.id }]);
     setSelectedBuilding(null);
     setGhostPos(null);
     onRefresh();
-  }, [selectedBuilding, fullGrid, student, onRefresh]);
+  }, [selectedBuilding, fullGrid, student, onRefresh, isFree, buildings.length]);
 
   const handleTileHover = useCallback((gx: number, gy: number) => {
     if (!selectedBuilding) return;
@@ -143,13 +215,27 @@ export const VillageView = ({ student, onQuiz, onRefresh }: VillageViewProps) =>
   }, [selectedBuilding, fullGrid]);
 
   const handleBuildingClick = useCallback((building: PlacedBuilding) => {
-    setInfoBuilding(building); setShowInfo(true); SFX.click();
-  }, []);
+    // If production ready, collect instead of showing info
+    if (productionReady.has(building.id)) {
+      collectProduction(building);
+      return;
+    }
+    setInfoBuilding(building);
+    setShowInfo(true);
+    SFX.click();
+  }, [productionReady, student]);
 
   const handleUpgrade = async (building: PlacedBuilding) => {
     const def = BUILDING_DEFS[building.defId];
     if (!def) return;
     const cost = getUpgradeCost(building.defId, building.level);
+
+    // Free users can only upgrade to level 3
+    if (isFree && building.level >= 3) {
+      toast.error('Limite gratuito: Nível 3. Faz upgrade para evoluir mais! 👑');
+      SFX.wrong(); setShowPremiumGate(true); return;
+    }
+
     if (student.coins < cost.coins || student.diamonds < cost.diamonds) {
       toast.error('Recursos insuficientes!'); SFX.wrong(); return;
     }
@@ -167,22 +253,25 @@ export const VillageView = ({ student, onQuiz, onRefresh }: VillageViewProps) =>
     const def = BUILDING_DEFS[building.defId];
     await supabase.from('buildings').delete().eq('id', building.dbId);
     if (def) {
-      const refundCoins = Math.floor(def.costCoins * 0.5);
-      if (refundCoins > 0) {
-        await supabase.from('students').update({ coins: student.coins + refundCoins }).eq('id', student.id);
-      }
+      const refund = Math.floor(def.costCoins * 0.5);
+      if (refund > 0) await supabase.from('students').update({ coins: student.coins + refund }).eq('id', student.id);
     }
     SFX.demolish();
-    toast.info(`${def?.name || 'Edifício'} demolido. Recebeste 50% de volta.`);
+    toast.info(`${def?.name || 'Edifício'} demolido. 50% devolvido.`);
     setBuildings(prev => prev.filter(b => b.id !== building.id));
     onRefresh();
   };
 
   const handleExpand = async () => {
     const currentIdx = EXPANSION_LEVELS.findIndex(l => l.size === gridSize);
-    if (currentIdx < 0 || currentIdx >= EXPANSION_LEVELS.length - 1) {
-      toast.error('Território máximo atingido!'); return;
+    if (currentIdx < 0 || currentIdx >= EXPANSION_LEVELS.length - 1) return;
+
+    // Free users limited to 12x12
+    if (isFree && gridSize >= 12) {
+      toast.error('Expansão Premium! Limite gratuito: 12×12 👑');
+      SFX.wrong(); setShowPremiumGate(true); return;
     }
+
     const next = EXPANSION_LEVELS[currentIdx + 1];
     if (student.coins < next.cost || student.diamonds < next.diamonds) {
       toast.error('Recursos insuficientes!'); SFX.wrong(); return;
@@ -227,82 +316,95 @@ export const VillageView = ({ student, onQuiz, onRefresh }: VillageViewProps) =>
           <Maximize className="w-3.5 h-3.5 text-muted-foreground" />
           <span className="font-bold">{gridSize}×{gridSize}</span>
         </div>
+        {isFree && (
+          <div className="bg-card/90 backdrop-blur-sm rounded-lg px-2 py-1 flex items-center gap-1 text-xs font-body border border-gold/50">
+            <Lock className="w-3 h-3 text-gold" />
+            <span className="font-bold text-gold">{buildings.length}/{FREE_BUILDING_LIMIT}</span>
+          </div>
+        )}
       </div>
+
+      {/* XP limit warning for free users */}
+      {xpLimited && (
+        <div className="absolute top-12 left-2 right-16 z-20 bg-destructive/90 text-destructive-foreground text-xs font-body px-3 py-1.5 rounded-lg backdrop-blur-sm animate-pulse">
+          <Crown className="w-3 h-3 inline mr-1" />
+          XP máximo gratuito atingido! Faz upgrade Premium para continuar a evoluir.
+        </div>
+      )}
 
       {/* Top right buttons */}
       <div className="absolute top-2 right-2 z-20 flex gap-1.5">
-        <Button
-          size="icon"
-          variant="outline"
-          onClick={toggleMusic}
+        <Button size="icon" variant="outline" onClick={toggleMusic}
           className="h-8 w-8 bg-card/90 backdrop-blur-sm"
-          title={musicOn ? 'Desligar música' : 'Ligar música'}
-        >
+          title={musicOn ? 'Desligar música' : 'Ligar música'}>
           {musicOn ? <Music className="w-4 h-4 text-primary" /> : <Volume2 className="w-4 h-4 text-muted-foreground" />}
         </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => { setShowExpansion(true); SFX.click(); }}
-          className="h-8 bg-card/90 backdrop-blur-sm text-xs"
-        >
-          <Maximize className="w-3.5 h-3.5 mr-1" />
-          Expandir
+        <Button size="sm" variant="outline" onClick={() => { setShowExpansion(true); SFX.click(); }}
+          className="h-8 bg-card/90 backdrop-blur-sm text-xs">
+          <Maximize className="w-3.5 h-3.5 mr-1" />Expandir
         </Button>
-        <Button
-          size="sm"
-          onClick={() => { onQuiz(); SFX.click(); }}
-          className="h-8 bg-primary text-primary-foreground font-bold animate-pulse shadow-lg"
-        >
-          <BookOpen className="w-4 h-4 mr-1" />
-          Quiz
+        <Button size="sm" onClick={() => { onQuiz(); SFX.click(); }}
+          className="h-8 bg-primary text-primary-foreground font-bold animate-pulse shadow-lg">
+          <BookOpen className="w-4 h-4 mr-1" />Quiz
         </Button>
       </div>
 
       {/* Canvas */}
       <IsometricCanvas
-        grid={baseGrid}
-        buildings={buildings}
-        gridSize={gridSize}
-        selectedBuilding={selectedBuilding}
-        ghostPos={ghostPos}
-        canPlaceGhost={canPlaceGhost}
-        onTileClick={handleTileClick}
-        onTileHover={handleTileHover}
-        onBuildingClick={handleBuildingClick}
+        grid={baseGrid} buildings={buildings} gridSize={gridSize}
+        selectedBuilding={selectedBuilding} ghostPos={ghostPos} canPlaceGhost={canPlaceGhost}
+        productionReady={productionReady}
+        onTileClick={handleTileClick} onTileHover={handleTileHover} onBuildingClick={handleBuildingClick}
       />
 
       {/* Build Menu */}
       <BuildMenu
-        selectedBuilding={selectedBuilding}
-        onSelect={setSelectedBuilding}
-        coins={student.coins}
-        diamonds={student.diamonds}
-        villageLevel={student.village_level}
-        isPremium={student.is_premium}
+        selectedBuilding={selectedBuilding} onSelect={setSelectedBuilding}
+        coins={student.coins} diamonds={student.diamonds}
+        villageLevel={student.village_level} isPremium={student.is_premium}
         district={student.district}
       />
 
-      {/* Building Info Modal */}
       <BuildingInfoModal
-        building={infoBuilding}
-        open={showInfo}
-        onOpenChange={setShowInfo}
-        onUpgrade={handleUpgrade}
-        onDemolish={handleDemolish}
-        coins={student.coins}
-        diamonds={student.diamonds}
+        building={infoBuilding} open={showInfo} onOpenChange={setShowInfo}
+        onUpgrade={handleUpgrade} onDemolish={handleDemolish}
+        coins={student.coins} diamonds={student.diamonds}
       />
 
-      {/* Expansion Panel */}
       <ExpansionPanel
-        open={showExpansion}
-        onOpenChange={setShowExpansion}
-        currentSize={gridSize}
-        coins={student.coins}
-        diamonds={student.diamonds}
+        open={showExpansion} onOpenChange={setShowExpansion}
+        currentSize={gridSize} coins={student.coins} diamonds={student.diamonds}
         onExpand={handleExpand}
       />
+
+      {/* Premium Gate Modal */}
+      {showPremiumGate && (
+        <div className="fixed inset-0 z-50 bg-foreground/50 flex items-center justify-center p-4" onClick={() => setShowPremiumGate(false)}>
+          <div className="bg-card rounded-xl p-6 max-w-sm w-full text-center space-y-4 border-2 border-gold" onClick={e => e.stopPropagation()}>
+            <Crown className="w-12 h-12 mx-auto text-gold" />
+            <h2 className="font-display text-xl font-bold">Conteúdo Premium 👑</h2>
+            <p className="font-body text-sm text-muted-foreground">
+              Desbloqueia todas as funcionalidades com o plano Premium por apenas <strong>4,99€/ano</strong>:
+            </p>
+            <ul className="text-left text-sm font-body space-y-2">
+              <li className="flex items-center gap-2">✅ Edifícios e decorações ilimitados</li>
+              <li className="flex items-center gap-2">✅ Evolução até nível 5</li>
+              <li className="flex items-center gap-2">✅ Expansão até 20×20</li>
+              <li className="flex items-center gap-2">✅ Monumentos exclusivos do teu distrito</li>
+              <li className="flex items-center gap-2">✅ XP ilimitado</li>
+              <li className="flex items-center gap-2">✅ Decorações exclusivas (estátuas, jardins especiais)</li>
+            </ul>
+            <div className="flex gap-2">
+              <Button variant="outline" className="flex-1" onClick={() => setShowPremiumGate(false)}>
+                Mais tarde
+              </Button>
+              <Button className="flex-1 bg-gold text-gold-foreground" onClick={() => setShowPremiumGate(false)}>
+                <Crown className="w-4 h-4 mr-1" /> Fazer Upgrade
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
