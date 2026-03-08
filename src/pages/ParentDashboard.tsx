@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, Users, BookOpen, MessageCircle, Shield, Settings, Plus, Trash2 } from "lucide-react";
+import { LogOut, Users, BookOpen, MessageCircle, Shield, Settings, Plus, Trash2, MapPin, Save } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 
@@ -18,14 +18,38 @@ const schoolYears = [
   { value: "4", label: "4º Ano" },
 ];
 
+const districts = [
+  { value: "aveiro", label: "Aveiro" }, { value: "beja", label: "Beja" },
+  { value: "braga", label: "Braga" }, { value: "braganca", label: "Bragança" },
+  { value: "castelo_branco", label: "Castelo Branco" }, { value: "coimbra", label: "Coimbra" },
+  { value: "evora", label: "Évora" }, { value: "faro", label: "Faro" },
+  { value: "guarda", label: "Guarda" }, { value: "leiria", label: "Leiria" },
+  { value: "lisboa", label: "Lisboa" }, { value: "portalegre", label: "Portalegre" },
+  { value: "porto", label: "Porto" }, { value: "santarem", label: "Santarém" },
+  { value: "setubal", label: "Setúbal" }, { value: "viana_castelo", label: "Viana do Castelo" },
+  { value: "vila_real", label: "Vila Real" }, { value: "viseu", label: "Viseu" },
+  { value: "acores", label: "Açores" }, { value: "madeira", label: "Madeira" },
+];
+
+const districtLabels: Record<string, string> = {};
+districts.forEach(d => { districtLabels[d.value] = d.label; });
+
 const ParentDashboard = () => {
-  const { user, profile, isParent, loading, signOut } = useAuth();
+  const { user, profile, isParent, loading, signOut, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const [children, setChildren] = useState<any[]>([]);
   const [authorizedEmails, setAuthorizedEmails] = useState<any[]>([]);
   const [newEmail, setNewEmail] = useState("");
   const [newSchoolYear, setNewSchoolYear] = useState("1");
   const [addingEmail, setAddingEmail] = useState(false);
+  const [editDistrict, setEditDistrict] = useState("");
+  const [savingDistrict, setSavingDistrict] = useState(false);
+
+  useEffect(() => {
+    if (profile) {
+      setEditDistrict(profile.district || "");
+    }
+  }, [profile]);
 
   useEffect(() => {
     if (!loading && !user) navigate("/login");
@@ -97,6 +121,25 @@ const ParentDashboard = () => {
       toast.success("Email removido");
       loadAuthorizedEmails();
     }
+  };
+
+  const handleSaveDistrict = async () => {
+    if (!editDistrict) {
+      toast.error("Selecione um distrito");
+      return;
+    }
+    setSavingDistrict(true);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ district: editDistrict as any })
+      .eq("user_id", user!.id);
+    if (error) {
+      toast.error("Erro ao guardar distrito: " + error.message);
+    } else {
+      toast.success("Distrito atualizado!");
+      await refreshProfile();
+    }
+    setSavingDistrict(false);
   };
 
   if (loading) {
@@ -287,12 +330,36 @@ const ParentDashboard = () => {
                 </div>
                 <div className="parchment-bg rounded-lg p-4">
                   <h3 className="font-body font-bold mb-2">Informações da Conta</h3>
-                  <p className="font-body text-sm text-muted-foreground">
+                  <p className="font-body text-sm text-muted-foreground mb-3">
                     Email: {profile?.email}
                   </p>
-                  <p className="font-body text-sm text-muted-foreground">
-                    Distrito: {profile?.district || "Não definido"}
-                  </p>
+                  <div>
+                    <Label className="font-body font-semibold text-sm flex items-center gap-1">
+                      <MapPin className="w-4 h-4" /> Distrito
+                    </Label>
+                    <div className="flex gap-2 mt-1">
+                      <Select value={editDistrict} onValueChange={setEditDistrict}>
+                        <SelectTrigger className="flex-1">
+                          <SelectValue placeholder="Selecione o distrito" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {districts.map(d => (
+                            <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button 
+                        onClick={handleSaveDistrict} 
+                        disabled={savingDistrict || editDistrict === (profile?.district || "")} 
+                        size="sm"
+                      >
+                        <Save className="w-4 h-4 mr-1" /> Guardar
+                      </Button>
+                    </div>
+                    <p className="font-body text-xs text-muted-foreground mt-1">
+                      O distrito determina a localização no mapa e os monumentos do jogo.
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
