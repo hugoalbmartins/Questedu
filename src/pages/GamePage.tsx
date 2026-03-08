@@ -12,7 +12,6 @@ import { MissionsPanel } from "@/components/game/MissionsPanel";
 import { BattleModal } from "@/components/game/BattleModal";
 import { RankingsPanel } from "@/components/game/RankingsPanel";
 import { MonthlyTestModal } from "@/components/game/MonthlyTestModal";
-import { PremiumModal } from "@/components/game/PremiumModal";
 import { AchievementsPanel } from "@/components/game/AchievementsPanel";
 import { SettingsPanel } from "@/components/game/SettingsPanel";
 import { useAchievements } from "@/hooks/useAchievements";
@@ -36,7 +35,6 @@ const GamePage = () => {
   const [showBattle, setShowBattle] = useState(false);
   const [showMonthlyTest, setShowMonthlyTest] = useState(false);
   const [battleQuizCallback, setBattleQuizCallback] = useState<(() => Promise<boolean>) | null>(null);
-  const [showPremium, setShowPremium] = useState(false);
   const { achievements, unlocked, checkAchievements } = useAchievements(studentData?.id);
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications(studentData?.id);
   useEffect(() => {
@@ -199,14 +197,17 @@ const GamePage = () => {
                 <GraduationCap className="w-6 h-6 text-primary" />
                 <span className="text-xs">Testes</span>
               </Button>
-              <Button 
-                variant="outline" 
-                className="flex flex-col gap-2 h-auto py-4"
-                onClick={() => setShowPremium(true)}
-              >
-                <Crown className="w-6 h-6 text-gold" />
-                <span className="text-xs">Premium</span>
-              </Button>
+              {studentData.is_premium ? (
+                <div className="flex flex-col gap-2 h-auto py-4 items-center text-xs text-gold border border-gold/30 rounded-md px-2">
+                  <Crown className="w-6 h-6 text-gold" />
+                  <span>Premium ✓</span>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2 h-auto py-4 items-center text-xs text-muted-foreground border border-border rounded-md px-2">
+                  <Crown className="w-6 h-6 text-muted-foreground" />
+                  <span>Free</span>
+                </div>
+              )}
             </div>
 
             {/* Missions */}
@@ -237,7 +238,7 @@ const GamePage = () => {
 
       {/* Main View */}
       <div className="pt-20 pb-20">
-        {view === "village" && <VillageView student={studentData} onQuiz={() => setShowQuiz(true)} onRefresh={() => { refreshProfile(); checkBuildingAchievements(); }} onPremium={() => setShowPremium(true)} />}
+        {view === "village" && <VillageView student={studentData} onQuiz={() => setShowQuiz(true)} onRefresh={() => { refreshProfile(); checkBuildingAchievements(); }} />}
         {view === "map" && <PortugalMap studentId={studentData.id} district={studentData.district} />}
         {view === "chat" && <ChatPanel studentId={studentData.id} />}
       </div>
@@ -327,15 +328,6 @@ const GamePage = () => {
         schoolYear={studentData.school_year}
         onTestComplete={handleClaimMissionReward}
         onStartTest={handleMonthlyTestStart}
-      />
-
-      <PremiumModal
-        open={showPremium}
-        onOpenChange={setShowPremium}
-        studentId={studentData.id}
-        isPremium={studentData.is_premium || false}
-        associationCode={(studentData as any).association_code}
-        createdAt={studentData.created_at}
       />
     </div>
   );

@@ -605,8 +605,8 @@ export const VillageView = ({ student, onQuiz, onRefresh, onPremium }: VillageVi
               <Button variant="outline" className="flex-1" onClick={() => setShowPremiumGate(false)}>
                 Mais tarde
               </Button>
-              <Button className="flex-1 bg-gold text-gold-foreground" onClick={() => { setShowPremiumGate(false); onPremium?.(); }}>
-                <Crown className="w-4 h-4 mr-1" /> Fazer Upgrade
+              <Button className="flex-1 bg-gold text-gold-foreground" onClick={() => setShowPremiumGate(false)}>
+                <Crown className="w-4 h-4 mr-1" /> Pede ao teu encarregado!
               </Button>
             </div>
           </div>

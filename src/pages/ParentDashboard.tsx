@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, Users, BookOpen, MessageCircle, Shield, Settings, Plus, Trash2, MapPin, Save } from "lucide-react";
+import { LogOut, Users, BookOpen, MessageCircle, Shield, Settings, Plus, Trash2, MapPin, Save, Crown, Check, X } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 
@@ -44,6 +44,8 @@ const ParentDashboard = () => {
   const [addingEmail, setAddingEmail] = useState(false);
   const [editDistrict, setEditDistrict] = useState("");
   const [savingDistrict, setSavingDistrict] = useState(false);
+  const [pendingFriendships, setPendingFriendships] = useState<any[]>([]);
+  const [checkingOutChild, setCheckingOutChild] = useState<string | null>(null);
 
   useEffect(() => {
     if (profile) {
@@ -60,6 +62,7 @@ const ParentDashboard = () => {
     if (user) {
       loadChildren();
       loadAuthorizedEmails();
+      loadPendingFriendships();
     }
   }, [user]);
 
@@ -141,6 +144,122 @@ const ParentDashboard = () => {
     }
     setSavingDistrict(false);
   };
+  const loadPendingFriendships = async () => {
+    if (!user) return;
+    // Get all children IDs
+    const { data: kids } = await supabase
+      .from("students")
+      .select("id, display_name, nickname")
+      .eq("parent_id", user.id);
+    if (!kids || kids.length === 0) return;
+
+    const kidIds = kids.map(k => k.id);
+    const kidMap = new Map(kids.map(k => [k.id, k]));
+
+    // Get all pending friendships involving my children
+    const { data: friendships } = await supabase
+      .from("friendships")
+      .select("*")
+      .eq("status", "pending_parent_approval")
+      .or(kidIds.map(id => `requester_id.eq.${id}`).join(",") + "," + kidIds.map(id => `receiver_id.eq.${id}`).join(","));
+
+    if (!friendships) return;
+
+    // Get other player info
+    const otherIds = friendships.map(f => {
+      const myChildId = kidIds.find(id => id === f.requester_id || id === f.receiver_id);
+      return f.requester_id === myChildId ? f.receiver_id : f.requester_id;
+    });
+    const { data: otherPlayers } = await supabase
+      .from("students")
+      .select("id, nickname, display_name")
+      .in("id", [...new Set(otherIds)]);
+
+    const playerMap = new Map(otherPlayers?.map(p => [p.id, p]) || []);
+
+    const enriched = friendships.map(f => {
+      const myChildId = kidIds.find(id => id === f.requester_id || id === f.receiver_id)!;
+      const otherId = f.requester_id === myChildId ? f.receiver_id : f.requester_id;
+      const isRequester = f.requester_id === myChildId;
+      return {
+        ...f,
+        myChild: kidMap.get(myChildId),
+        otherPlayer: playerMap.get(otherId),
+        isRequester,
+        needsMyApproval: isRequester ? !f.requester_parent_approved : !f.receiver_parent_approved,
+      };
+    });
+
+    setPendingFriendships(enriched);
+  };
+
+  const handleApproveFriendship = async (friendshipId: string, isRequester: boolean) => {
+    const updateField = isRequester ? "requester_parent_approved" : "receiver_parent_approved";
+
+    // First update my approval
+    const { error } = await supabase
+      .from("friendships")
+      .update({ [updateField]: true })
+      .eq("id", friendshipId);
+
+    if (error) {
+      toast.error("Erro ao aprovar: " + error.message);
+      return;
+    }
+
+    // Check if both parents approved - if so, set status to approved
+    const { data: updated } = await supabase
+      .from("friendships")
+      .select("*")
+      .eq("id", friendshipId)
+      .single();
+
+    if (updated && updated.requester_parent_approved && updated.receiver_parent_approved) {
+      await supabase
+        .from("friendships")
+        .update({ status: "approved" })
+        .eq("id", friendshipId);
+      toast.success("Amizade aprovada por ambos os encarregados! 🎉");
+    } else {
+      toast.success("Aprovado! A aguardar o outro encarregado de educação.");
+    }
+
+    loadPendingFriendships();
+  };
+
+  const handleRejectFriendship = async (friendshipId: string) => {
+    await supabase
+      .from("friendships")
+      .update({ status: "rejected" })
+      .eq("id", friendshipId);
+    toast.info("Pedido de amizade rejeitado.");
+    loadPendingFriendships();
+  };
+
+  const handleUpgradeChild = async (childId: string) => {
+    setCheckingOutChild(childId);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-checkout", {
+        body: { studentId: childId },
+      });
+      if (error) throw error;
+      if (data?.url) window.open(data.url, "_blank");
+    } catch (error: any) {
+      toast.error("Erro ao iniciar pagamento: " + error.message);
+    }
+    setCheckingOutChild(null);
+  };
+
+  const handleManageSubscription = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke("customer-portal");
+      if (error) throw error;
+      if (data?.url) window.open(data.url, "_blank");
+    } catch (error: any) {
+      toast.error("Erro: " + error.message);
+    }
+  };
+
 
   if (loading) {
     return (
@@ -213,10 +332,32 @@ const ParentDashboard = () => {
                           {child.school_year}º Ano • Nível {child.village_level}
                         </p>
                       </div>
-                      <div className="flex gap-2 text-xs font-body">
-                        <span className="bg-gold/20 px-2 py-1 rounded">🪙 {child.coins}</span>
-                        <span className="bg-diamond/20 px-2 py-1 rounded">💎 {child.diamonds}</span>
-                        <span className="bg-citizen/20 px-2 py-1 rounded">👥 {child.citizens}</span>
+                      <div className="flex flex-col items-end gap-2">
+                        <div className="flex gap-2 text-xs font-body">
+                          <span className="bg-gold/20 px-2 py-1 rounded">🪙 {child.coins}</span>
+                          <span className="bg-diamond/20 px-2 py-1 rounded">💎 {child.diamonds}</span>
+                          <span className="bg-citizen/20 px-2 py-1 rounded">👥 {child.citizens}</span>
+                        </div>
+                        {child.is_premium ? (
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-body text-gold flex items-center gap-1">
+                              <Crown className="w-3 h-3" /> Premium ativo
+                            </span>
+                            <Button variant="ghost" size="sm" className="text-xs h-6" onClick={handleManageSubscription}>
+                              Gerir
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button
+                            size="sm"
+                            className="text-xs bg-gold text-foreground h-7"
+                            onClick={() => handleUpgradeChild(child.id)}
+                            disabled={checkingOutChild === child.id}
+                          >
+                            <Crown className="w-3 h-3 mr-1" />
+                            {checkingOutChild === child.id ? "..." : "Ativar Premium — €4,99/ano"}
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -303,15 +444,68 @@ const ParentDashboard = () => {
           </TabsContent>
 
           <TabsContent value="social">
-            <div className="game-border bg-card p-6 text-center">
-              <Shield className="w-12 h-12 mx-auto mb-3 text-secondary" />
-              <h2 className="font-display text-xl font-bold mb-2">Controlo Social</h2>
-              <p className="font-body text-muted-foreground">
-                Gerir amizades e monitorizar conversas dos seus educandos.
-              </p>
-              <p className="font-body text-sm text-muted-foreground mt-4">
-                Os pedidos de amizade dos seus educandos aparecerão aqui para aprovação.
-              </p>
+            <div className="space-y-4">
+              <div className="game-border bg-card p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Shield className="w-5 h-5 text-secondary" />
+                  <h2 className="font-display text-lg font-bold">Controlo Social</h2>
+                </div>
+                <p className="font-body text-sm text-muted-foreground mb-4">
+                  Aprove ou rejeite os pedidos de amizade dos seus educandos. A amizade só é ativada quando ambos os encarregados aprovam.
+                </p>
+
+                {pendingFriendships.length === 0 ? (
+                  <div className="text-center py-6">
+                    <Shield className="w-10 h-10 mx-auto mb-2 text-muted-foreground" />
+                    <p className="font-body text-sm text-muted-foreground">
+                      Nenhum pedido de amizade pendente.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {pendingFriendships.map((f: any) => (
+                      <div key={f.id} className="border border-border rounded-lg p-3">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-body text-sm">
+                              <strong>{f.myChild?.nickname || f.myChild?.display_name}</strong>
+                              {f.isRequester ? " quer ser amigo de " : " recebeu pedido de "}
+                              <strong>{f.otherPlayer?.nickname || f.otherPlayer?.display_name || "Jogador"}</strong>
+                            </p>
+                            <div className="font-body text-[10px] text-muted-foreground mt-1 flex gap-3">
+                              <span>Pai de quem pede: {f.requester_parent_approved ? "✅ Aprovado" : "⏳ Pendente"}</span>
+                              <span>Pai do solicitado: {f.receiver_parent_approved ? "✅ Aprovado" : "⏳ Pendente"}</span>
+                            </div>
+                          </div>
+                          {f.needsMyApproval && (
+                            <div className="flex gap-2 shrink-0">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-8 text-green-600 border-green-300"
+                                onClick={() => handleApproveFriendship(f.id, f.isRequester)}
+                              >
+                                <Check className="w-4 h-4 mr-1" /> Aprovar
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-8 text-destructive border-destructive/30"
+                                onClick={() => handleRejectFriendship(f.id)}
+                              >
+                                <X className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          )}
+                          {!f.needsMyApproval && (
+                            <span className="text-xs font-body text-green-600">✅ Aprovado por si</span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </TabsContent>
 
