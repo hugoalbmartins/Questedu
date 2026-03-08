@@ -953,6 +953,7 @@ export type Database = {
           max_xp_free: number
           parent_id: string
           premium_expires_at: string | null
+          quiz_reminders_enabled: boolean
           school_id: string | null
           school_name: string | null
           school_year: Database["public"]["Enums"]["school_year"]
@@ -977,6 +978,7 @@ export type Database = {
           max_xp_free?: number
           parent_id: string
           premium_expires_at?: string | null
+          quiz_reminders_enabled?: boolean
           school_id?: string | null
           school_name?: string | null
           school_year?: Database["public"]["Enums"]["school_year"]
@@ -1001,6 +1003,7 @@ export type Database = {
           max_xp_free?: number
           parent_id?: string
           premium_expires_at?: string | null
+          quiz_reminders_enabled?: boolean
           school_id?: string | null
           school_name?: string | null
           school_year?: Database["public"]["Enums"]["school_year"]
