@@ -36,7 +36,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .from("profiles")
         .select("*")
         .eq("user_id", userId)
-        .single();
+        .maybeSingle();
       
       if (profileError) {
         console.error("Error fetching profile:", profileError);
@@ -44,15 +44,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setStudentData(null);
         return;
       }
+
+      if (!profileData) {
+        console.warn("No profile found for user:", userId);
+        setProfile(null);
+        setStudentData(null);
+        return;
+      }
       
       setProfile(profileData);
 
-      if (profileData?.role === "student") {
+      if (profileData.role === "student") {
         const { data: student, error: studentError } = await supabase
           .from("students")
           .select("*")
           .eq("user_id", userId)
-          .single();
+          .maybeSingle();
         if (studentError) {
           console.error("Error fetching student:", studentError);
         }
