@@ -15,6 +15,7 @@ import { MonthlyTestModal } from "@/components/game/MonthlyTestModal";
 import { PremiumModal } from "@/components/game/PremiumModal";
 import { AchievementsPanel } from "@/components/game/AchievementsPanel";
 import { useAchievements } from "@/hooks/useAchievements";
+import { useNotifications } from "@/hooks/useNotifications";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { toast } from "sonner";
@@ -36,6 +37,7 @@ const GamePage = () => {
   const [battleQuizCallback, setBattleQuizCallback] = useState<(() => Promise<boolean>) | null>(null);
   const [showPremium, setShowPremium] = useState(false);
   const { achievements, unlocked, checkAchievements } = useAchievements(studentData?.id);
+  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications(studentData?.id);
   useEffect(() => {
     if (!loading && !user) navigate("/login");
     if (!loading && user && !isStudent) navigate("/parent");
@@ -133,7 +135,13 @@ const GamePage = () => {
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
-      <GameHUD student={studentData} />
+      <GameHUD
+        student={studentData}
+        notifications={notifications}
+        unreadCount={unreadCount}
+        onMarkAsRead={markAsRead}
+        onMarkAllAsRead={markAllAsRead}
+      />
 
       {/* Side Menu */}
       <Sheet>
