@@ -76,6 +76,37 @@ export const IsometricCanvas = ({
     return null;
   }, [camera, zoom, gridSize, originX]);
 
+  // Convert screen coords to fractional grid coords (for terrain element detection, supports outside grid)
+  const screenToWorldGrid = useCallback((clientX: number, clientY: number) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return null;
+    const rect = canvas.getBoundingClientRect();
+    const w = canvas.clientWidth;
+    const h = canvas.clientHeight;
+    const mx = (clientX - rect.left - w / 2) / zoom - camera.x + originX;
+    const my = (clientY - rect.top - h / 2) / zoom - camera.y + originY;
+    const gx = (mx / (TILE_W / 2) + my / (TILE_H / 2)) / 2;
+    const gy = (my / (TILE_H / 2) - mx / (TILE_W / 2)) / 2;
+    return { gx, gy };
+  }, [camera, zoom, originX]);
+
+  // Find nearest terrain element to world coords
+  const findTerrainElement = useCallback((worldGx: number, worldGy: number): TerrainElement | null => {
+    let closest: TerrainElement | null = null;
+    let closestDist = 1.5; // max click distance in grid units
+    for (const el of terrainElements) {
+      if (el.type === 'river_tile' || el.type === 'lake_tile' || el.type === 'bush') continue;
+      const dx = el.gx - worldGx;
+      const dy = el.gy - worldGy;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < closestDist) {
+        closestDist = dist;
+        closest = el;
+      }
+    }
+    return closest;
+  }, [terrainElements]);
+
   // Animation loop
   useEffect(() => {
     let running = true;
