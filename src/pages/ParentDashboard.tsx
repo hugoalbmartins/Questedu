@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LogOut, Users, BookOpen, MessageCircle, Shield, Settings, Plus, Trash2, MapPin, Save, Crown, Check, X } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
+import { PremiumModal } from "@/components/game/PremiumModal";
 
 const schoolYears = [
   { value: "1", label: "1º Ano" },
