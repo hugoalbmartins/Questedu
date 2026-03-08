@@ -69,7 +69,7 @@ export const VillageView = ({ student, onQuiz, onRefresh, onPremium }: VillageVi
   const citizenAnimRef = useRef<number>(0);
 
   // Natural resources
-  const { resources, gather, isOnCooldown, isGatherable } = useResources(student.id);
+  const { resources, gather, isOnCooldown, isGatherable, spendResources } = useResources(student.id);
 
   const handleTerrainClick = useCallback(async (element: TerrainElement) => {
     if (!isGatherable(element.type)) return;
