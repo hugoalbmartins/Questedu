@@ -23,7 +23,7 @@ const TERRAIN_TO_RESOURCE: Partial<Record<TerrainElementType, { resource: Natura
   rock_small: { resource: 'stone', amount: [1, 3], cooldownMs: 30000, label: 'Pedra', emoji: '🪨' },
   rock_large: { resource: 'stone', amount: [3, 6], cooldownMs: 60000, label: 'Pedra', emoji: '🪨' },
   iron_ore: { resource: 'iron', amount: [1, 3], cooldownMs: 120000, label: 'Ferro', emoji: '⛏️' },
-  coal_ore: { resource: 'coal', amount: [2, 4], cooldownMs: 90000, label: 'Carvão', emoji: '�ite' },
+  coal_ore: { resource: 'coal', amount: [2, 4], cooldownMs: 90000, label: 'Carvão', emoji: '⬛' },
   sheep: { resource: 'food', amount: [3, 6], cooldownMs: 60000, label: 'Alimento', emoji: '🍖' },
   rabbit: { resource: 'food', amount: [1, 3], cooldownMs: 30000, label: 'Alimento', emoji: '🍖' },
   deer: { resource: 'leather', amount: [2, 4], cooldownMs: 90000, label: 'Pele', emoji: '🦌' },
