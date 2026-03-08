@@ -116,12 +116,12 @@ export function useResources(studentId: string | undefined) {
 
     // Upsert resource
     const currentAmount = resources[info.resource];
-    const { error } = await supabase
-      .from('player_resources')
+    const { error } = await (supabase
+      .from('player_resources' as any)
       .upsert(
         { student_id: studentId, resource_type: info.resource, amount: currentAmount + amount, updated_at: new Date().toISOString() },
         { onConflict: 'student_id,resource_type' }
-      );
+      ) as any);
 
     if (error) {
       toast.error('Erro ao recolher recurso.');
