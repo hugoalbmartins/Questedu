@@ -44,6 +44,8 @@ const ParentDashboard = () => {
   const [addingEmail, setAddingEmail] = useState(false);
   const [editDistrict, setEditDistrict] = useState("");
   const [savingDistrict, setSavingDistrict] = useState(false);
+  const [pendingFriendships, setPendingFriendships] = useState<any[]>([]);
+  const [checkingOutChild, setCheckingOutChild] = useState<string | null>(null);
 
   useEffect(() => {
     if (profile) {
