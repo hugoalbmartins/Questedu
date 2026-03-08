@@ -1,14 +1,24 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { VillageView } from "@/components/game/VillageView";
 import { GameHUD } from "@/components/game/GameHUD";
 import { QuizModal } from "@/components/game/QuizModal";
 import { PortugalMap } from "@/components/game/PortugalMap";
 import { ChatPanel } from "@/components/game/ChatPanel";
+import { ShopModal } from "@/components/game/ShopModal";
+import { MissionsPanel } from "@/components/game/MissionsPanel";
+import { BattleModal } from "@/components/game/BattleModal";
+import { RankingsPanel } from "@/components/game/RankingsPanel";
+import { MonthlyTestModal } from "@/components/game/MonthlyTestModal";
 import { Button } from "@/components/ui/button";
-import { Map, MessageCircle, BookOpen, LogOut, Home } from "lucide-react";
-import { useEffect } from "react";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { toast } from "sonner";
+import { 
+  Map, MessageCircle, BookOpen, LogOut, Home, 
+  ShoppingBag, Target, Swords, Trophy, Menu, GraduationCap 
+} from "lucide-react";
 
 type GameView = "village" | "map" | "chat";
 
@@ -17,11 +27,83 @@ const GamePage = () => {
   const navigate = useNavigate();
   const [view, setView] = useState<GameView>("village");
   const [showQuiz, setShowQuiz] = useState(false);
+  const [showShop, setShowShop] = useState(false);
+  const [showBattle, setShowBattle] = useState(false);
+  const [showMonthlyTest, setShowMonthlyTest] = useState(false);
+  const [battleQuizCallback, setBattleQuizCallback] = useState<(() => Promise<boolean>) | null>(null);
 
   useEffect(() => {
     if (!loading && !user) navigate("/login");
     if (!loading && user && !isStudent) navigate("/parent");
   }, [user, isStudent, loading]);
+
+  // Random battle trigger
+  useEffect(() => {
+    if (!studentData) return;
+    
+    // 10% chance of battle every 2 minutes of gameplay
+    const battleInterval = setInterval(() => {
+      if (Math.random() < 0.1 && !showQuiz && !showBattle && !showShop) {
+        toast.info("⚠️ A tua aldeia está a ser atacada!", { duration: 3000 });
+        setTimeout(() => setShowBattle(true), 1000);
+      }
+    }, 120000);
+
+    return () => clearInterval(battleInterval);
+  }, [studentData, showQuiz, showBattle, showShop]);
+
+  const handleClaimMissionReward = async (coins: number, diamonds: number, xp: number) => {
+    if (!studentData) return;
+    
+    await supabase
+      .from("students")
+      .update({
+        coins: studentData.coins + coins,
+        diamonds: studentData.diamonds + diamonds,
+        xp: studentData.xp + xp,
+      })
+      .eq("id", studentData.id);
+
+    refreshProfile();
+  };
+
+  const handleBattleEnd = async (won: boolean, coins: number, diamonds: number, xp: number) => {
+    if (!studentData) return;
+    
+    if (won) {
+      await supabase
+        .from("students")
+        .update({
+          coins: studentData.coins + coins,
+          diamonds: studentData.diamonds + diamonds,
+          xp: studentData.xp + xp,
+        })
+        .eq("id", studentData.id);
+      
+      toast.success(`Ganhaste ${coins} moedas e ${xp} XP! 🎉`);
+    } else {
+      toast.error("Perdeste a batalha. Estuda mais para ficares mais forte!");
+    }
+
+    setShowBattle(false);
+    refreshProfile();
+  };
+
+  const handleBattleAnswerQuestion = useCallback((): Promise<boolean> => {
+    return new Promise((resolve) => {
+      // This will be called when attack button is pressed in battle
+      // For simplicity, we'll simulate with a random correct/incorrect
+      // In a full implementation, this would show the quiz modal
+      const correct = Math.random() > 0.3; // 70% success rate for demo
+      setTimeout(() => resolve(correct), 500);
+    });
+  }, []);
+
+  const handleMonthlyTestStart = (testId: string, questionCount: number) => {
+    // For now, redirect to quiz with test mode
+    toast.info(`Teste mensal iniciado! ${questionCount} perguntas.`);
+    setShowQuiz(true);
+  };
 
   if (loading || !studentData) {
     return (
@@ -34,6 +116,71 @@ const GamePage = () => {
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
       <GameHUD student={studentData} />
+
+      {/* Side Menu */}
+      <Sheet>
+        <SheetTrigger asChild>
+          <Button 
+            variant="outline" 
+            size="icon" 
+            className="fixed top-16 right-4 z-40"
+          >
+            <Menu className="w-5 h-5" />
+          </Button>
+        </SheetTrigger>
+        <SheetContent className="w-80 overflow-y-auto">
+          <div className="space-y-6 py-4">
+            {/* Quick Actions */}
+            <div className="grid grid-cols-2 gap-2">
+              <Button 
+                variant="outline" 
+                className="flex flex-col gap-2 h-auto py-4"
+                onClick={() => setShowShop(true)}
+              >
+                <ShoppingBag className="w-6 h-6 text-gold" />
+                <span className="text-xs">Loja</span>
+              </Button>
+              <Button 
+                variant="outline" 
+                className="flex flex-col gap-2 h-auto py-4"
+                onClick={() => setShowBattle(true)}
+              >
+                <Swords className="w-6 h-6 text-destructive" />
+                <span className="text-xs">Batalhar</span>
+              </Button>
+              <Button 
+                variant="outline" 
+                className="flex flex-col gap-2 h-auto py-4"
+                onClick={() => setShowMonthlyTest(true)}
+              >
+                <GraduationCap className="w-6 h-6 text-primary" />
+                <span className="text-xs">Testes</span>
+              </Button>
+              <Button 
+                variant="outline" 
+                className="flex flex-col gap-2 h-auto py-4"
+                onClick={() => setView("map")}
+              >
+                <Trophy className="w-6 h-6 text-gold" />
+                <span className="text-xs">Rankings</span>
+              </Button>
+            </div>
+
+            {/* Missions */}
+            <MissionsPanel 
+              studentId={studentData.id} 
+              onClaimReward={handleClaimMissionReward}
+            />
+
+            {/* Rankings */}
+            <RankingsPanel 
+              studentId={studentData.id}
+              district={studentData.district}
+              schoolName={(studentData as any).school_name}
+            />
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* Main View */}
       <div className="pt-20 pb-20">
@@ -58,7 +205,7 @@ const GamePage = () => {
             variant="default"
             size="sm" 
             onClick={() => setShowQuiz(true)}
-            className="flex flex-col gap-1 h-auto py-2 bg-primary text-primary-foreground animate-pulse-gold"
+            className="flex flex-col gap-1 h-auto py-2 bg-primary text-primary-foreground"
           >
             <BookOpen className="w-5 h-5" />
             <span className="text-xs font-body">Quiz</span>
@@ -93,13 +240,41 @@ const GamePage = () => {
         </div>
       </div>
 
-      {/* Quiz Modal */}
+      {/* Modals */}
       {showQuiz && (
         <QuizModal 
           student={studentData} 
           onClose={() => { setShowQuiz(false); refreshProfile(); }} 
         />
       )}
+
+      <ShopModal
+        open={showShop}
+        onOpenChange={setShowShop}
+        studentId={studentData.id}
+        coins={studentData.coins}
+        diamonds={studentData.diamonds}
+        villageLevel={studentData.village_level}
+        onPurchase={refreshProfile}
+      />
+
+      <BattleModal
+        open={showBattle}
+        onOpenChange={setShowBattle}
+        studentId={studentData.id}
+        defenseLevel={studentData.defense_level}
+        onBattleEnd={handleBattleEnd}
+        onAnswerQuestion={handleBattleAnswerQuestion}
+      />
+
+      <MonthlyTestModal
+        open={showMonthlyTest}
+        onOpenChange={setShowMonthlyTest}
+        studentId={studentData.id}
+        schoolYear={studentData.school_year}
+        onTestComplete={handleClaimMissionReward}
+        onStartTest={handleMonthlyTestStart}
+      />
     </div>
   );
 };
