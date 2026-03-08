@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { validatePassword } from "@/lib/passwordValidation";
 import { PasswordInput } from "@/components/PasswordInput";
 import { useNavigate, Link } from "react-router-dom";
@@ -32,6 +32,27 @@ const StudentRegisterPage = () => {
   const [schools, setSchools] = useState<any[]>([]);
   const [schoolSearch, setSchoolSearch] = useState("");
   const [parentDistrict, setParentDistrict] = useState<string | null>(null);
+  const [nicknameStatus, setNicknameStatus] = useState<"idle" | "checking" | "available" | "taken">("idle");
+  const nicknameTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Debounced nickname availability check
+  const checkNicknameAvailability = useCallback((nickname: string) => {
+    if (nicknameTimer.current) clearTimeout(nicknameTimer.current);
+    const trimmed = nickname.trim();
+    if (!trimmed || trimmed.length < 3) {
+      setNicknameStatus("idle");
+      return;
+    }
+    setNicknameStatus("checking");
+    nicknameTimer.current = setTimeout(async () => {
+      const { data } = await supabase
+        .from("students")
+        .select("id")
+        .ilike("nickname", trimmed)
+        .limit(1);
+      setNicknameStatus(data && data.length > 0 ? "taken" : "available");
+    }, 400);
+  }, []);
 
   const loadSchools = async (district: string) => {
     const { data } = await supabase
@@ -86,8 +107,13 @@ const StudentRegisterPage = () => {
       return;
     }
 
-    if (!formData.nickname.trim()) {
-      toast.error("Deves escolher um nickname para o jogo");
+    if (!formData.nickname.trim() || formData.nickname.trim().length < 3) {
+      toast.error("O nickname deve ter pelo menos 3 caracteres");
+      return;
+    }
+
+    if (nicknameStatus === "taken") {
+      toast.error("Este nickname já está em uso. Escolhe outro.");
       return;
     }
     
@@ -176,16 +202,37 @@ const StudentRegisterPage = () => {
 
           <div className="p-3 border-2 border-primary/30 rounded-lg bg-primary/5">
             <Label className="font-body font-semibold text-primary">🎮 Nickname (nome no jogo) *</Label>
-            <Input 
-              value={formData.nickname} 
-              onChange={e => setFormData({...formData, nickname: e.target.value})} 
-              placeholder="Ex: SuperCavaleiro, PresidenteMax..."
-              required 
-              className="mt-1 border-primary/40 font-bold text-base" 
-              maxLength={20}
-            />
+            <div className="relative mt-1">
+              <Input 
+                value={formData.nickname} 
+                onChange={e => {
+                  const val = e.target.value.replace(/\s+/g, '_');
+                  setFormData({...formData, nickname: val});
+                  checkNicknameAvailability(val);
+                }} 
+                placeholder="Ex: SuperCavaleiro, PresidenteMax..."
+                required 
+                className={`pr-10 border-primary/40 font-bold text-base ${
+                  nicknameStatus === "available" ? "border-green-500 focus-visible:ring-green-500" :
+                  nicknameStatus === "taken" ? "border-destructive focus-visible:ring-destructive" : ""
+                }`}
+                maxLength={20}
+                minLength={3}
+              />
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                {nicknameStatus === "checking" && <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />}
+                {nicknameStatus === "available" && <CheckCircle className="w-5 h-5 text-green-500" />}
+                {nicknameStatus === "taken" && <XCircle className="w-5 h-5 text-destructive" />}
+              </div>
+            </div>
+            {nicknameStatus === "available" && (
+              <p className="text-xs text-green-600 font-body mt-1">✓ Nickname disponível!</p>
+            )}
+            {nicknameStatus === "taken" && (
+              <p className="text-xs text-destructive font-body mt-1">✗ Este nickname já está em uso. Escolhe outro.</p>
+            )}
             <p className="text-xs text-muted-foreground font-body mt-1">
-              ⚠️ Este será o teu nome de presidente e como os outros jogadores te vão encontrar. Escolhe bem!
+              ⚠️ Este será o teu nome de presidente e como os outros jogadores te vão encontrar. Mín. 3 caracteres.
             </p>
           </div>
           
@@ -273,7 +320,7 @@ const StudentRegisterPage = () => {
           <Button 
             type="submit" 
             className="w-full bg-primary text-primary-foreground font-bold text-lg py-5" 
-            disabled={loading || emailStatus !== "authorized"}
+            disabled={loading || emailStatus !== "authorized" || nicknameStatus === "taken" || nicknameStatus === "checking"}
           >
             {loading ? "A registar..." : "⚔️ Registar"}
           </Button>
