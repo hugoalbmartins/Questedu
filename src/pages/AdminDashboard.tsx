@@ -401,7 +401,7 @@ const AdminDashboard = () => {
         ) : (
           <span className="text-xs px-2 py-0.5 rounded bg-secondary/20 text-secondary">Ativo</span>
         )}
-        {!u.email_confirmed && (
+        {u.email_confirmed === false && (
           <span className="ml-1 text-xs px-2 py-0.5 rounded bg-accent/20 text-accent">Não confirmado</span>
         )}
         {u.admin_role && (
@@ -415,7 +415,7 @@ const AdminDashboard = () => {
           <Button size="sm" variant="ghost" onClick={() => openEdit(u)} title="Editar">
             <Pencil className="w-3 h-3" />
           </Button>
-          {!u.email_confirmed && (
+          {u.email_confirmed === false && (
             <Button size="sm" variant="ghost" onClick={() => handleConfirmEmail(u.id)} title="Confirmar email" className="text-accent">
               <MailCheck className="w-3 h-3" />
             </Button>
