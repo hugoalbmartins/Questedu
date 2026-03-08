@@ -43,8 +43,9 @@ const ResetPasswordPage = () => {
       return;
     }
     
-    if (password.length < 6) {
-      toast.error("A palavra-passe deve ter pelo menos 6 caracteres");
+    const pwValidation = validatePassword(password);
+    if (!pwValidation.isValid) {
+      toast.error("Palavra-passe insegura: " + pwValidation.errors[0]);
       return;
     }
 
