@@ -237,6 +237,90 @@ serve(async (req) => {
       });
     }
 
+    // GRANT PREMIUM without Stripe
+    if (action === "grant_premium") {
+      const { email, apply_to_all, months } = params;
+      if (!months || months < 1) {
+        return new Response(JSON.stringify({ error: "months is required" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const expiresAt = new Date();
+      expiresAt.setMonth(expiresAt.getMonth() + months);
+      const premiumExpiresAt = expiresAt.toISOString();
+
+      if (apply_to_all) {
+        const { data: allStudents, error: fetchErr } = await supabase
+          .from("students")
+          .select("id");
+        if (fetchErr) throw fetchErr;
+
+        let count = 0;
+        for (const s of (allStudents || [])) {
+          await supabase
+            .from("students")
+            .update({
+              is_premium: true,
+              premium_expires_at: premiumExpiresAt,
+              subscription_type: "admin_grant",
+            })
+            .eq("id", s.id);
+          count++;
+        }
+
+        return new Response(JSON.stringify({ success: true, message: `Premium concedido a ${count} alunos por ${months} meses.` }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      } else {
+        if (!email) {
+          return new Response(JSON.stringify({ error: "email is required when not apply_to_all" }), {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        // Find user by email
+        const { data: { users: foundUsers } } = await supabase.auth.admin.listUsers({ perPage: 1000 });
+        const targetUser = foundUsers?.find((u: any) => u.email?.toLowerCase() === email.toLowerCase());
+        if (!targetUser) {
+          return new Response(JSON.stringify({ error: "Utilizador não encontrado" }), {
+            status: 404,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        // Find students for this user (as student or as parent's children)
+        const { data: students } = await supabase
+          .from("students")
+          .select("id")
+          .or(`user_id.eq.${targetUser.id},parent_id.eq.${targetUser.id}`);
+
+        if (!students || students.length === 0) {
+          return new Response(JSON.stringify({ error: "Nenhum aluno encontrado para este utilizador" }), {
+            status: 404,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        for (const s of students) {
+          await supabase
+            .from("students")
+            .update({
+              is_premium: true,
+              premium_expires_at: premiumExpiresAt,
+              subscription_type: "admin_grant",
+            })
+            .eq("id", s.id);
+        }
+
+        return new Response(JSON.stringify({ success: true, message: `Premium concedido a ${students.length} aluno(s) por ${months} meses.` }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
     return new Response(JSON.stringify({ error: "Invalid action" }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
