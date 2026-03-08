@@ -69,10 +69,30 @@ const AdminDashboard = () => {
   // Stats
   const [stats, setStats] = useState({ totalStudents: 0, totalParents: 0, totalAssociations: 0, totalAdmins: 0 });
 
+  const initialCheckDone = useState(false);
+
   useEffect(() => {
-    checkSession();
+    let mounted = true;
+
+    const init = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!mounted) return;
+      if (session?.user) {
+        setCurrentUser(session.user);
+        setIsLoggedIn(true);
+        await verifyAdmin(session.user);
+      } else {
+        setLoading(false);
+      }
+      initialCheckDone[1](true);
+    };
+
+    init();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!mounted) return;
+      // Skip if initial check hasn't completed yet to avoid race condition
+      if (!initialCheckDone[0]) return;
       if (session?.user) {
         setCurrentUser(session.user);
         setIsLoggedIn(true);
@@ -85,19 +105,11 @@ const AdminDashboard = () => {
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
-
-  const checkSession = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.user) {
-      setCurrentUser(session.user);
-      setIsLoggedIn(true);
-      await verifyAdmin(session.user);
-    } else {
-      setLoading(false);
-    }
-  };
 
   const verifyAdmin = async (u: any) => {
     try {
