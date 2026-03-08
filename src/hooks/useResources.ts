@@ -67,11 +67,11 @@ export function useResources(studentId: string | undefined) {
 
       // Load recent gathering cooldowns
       const fiveMinAgo = new Date(Date.now() - 120000).toISOString();
-      const { data: logs } = await supabase
-        .from('gathering_log')
+      const { data: logs } = await (supabase
+        .from('gathering_log' as any)
         .select('terrain_element_id, gathered_at')
         .eq('student_id', studentId)
-        .gte('gathered_at', fiveMinAgo);
+        .gte('gathered_at', fiveMinAgo)) as any;
 
       if (logs) {
         const cd = new Map<number, number>();
