@@ -26,7 +26,6 @@ serve(async (req) => {
     const user = userData.user;
     if (!user) throw new Error("Not authenticated");
 
-    // Check admin
     const { data: isAdmin } = await supabaseClient.rpc("is_admin", { _user_id: user.id });
     if (!isAdmin) throw new Error("Unauthorized");
 
@@ -40,13 +39,22 @@ serve(async (req) => {
     }
 
     if (action === "create") {
-      const { code, discount_percent, discount_amount, max_uses, target_user_id, expires_at } = params;
+      const { code, discount_percent, discount_amount, max_uses, expires_at, target_email } = params;
+
+      // Resolve target_email to user_id if provided
+      let target_user_id = null;
+      if (target_email) {
+        const { data: targetUser } = await supabaseClient.auth.admin.listUsers();
+        const found = targetUser?.users?.find((u: any) => u.email === target_email.toLowerCase());
+        if (found) target_user_id = found.id;
+      }
+
       const { data, error } = await supabaseClient.from("promo_codes").insert({
         code: code.trim().toUpperCase(),
         discount_percent: discount_percent || 0,
         discount_amount: discount_amount || 0,
         max_uses: max_uses || 1,
-        target_user_id: target_user_id || null,
+        target_user_id,
         expires_at: expires_at || null,
         created_by: user.id,
       }).select().single();
@@ -57,6 +65,23 @@ serve(async (req) => {
       });
     }
 
+    if (action === "toggle") {
+      const { code_id, is_active } = params;
+      await supabaseClient.from("promo_codes").update({ is_active }).eq("id", code_id);
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (action === "delete") {
+      const { code_id } = params;
+      await supabaseClient.from("promo_codes").delete().eq("id", code_id);
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Legacy support
     if (action === "deactivate") {
       await supabaseClient.from("promo_codes").update({ is_active: false }).eq("id", params.id);
       return new Response(JSON.stringify({ success: true }), {
