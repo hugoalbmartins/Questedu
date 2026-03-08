@@ -8,7 +8,8 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { LogOut, Users, ShieldCheck, Building2, UserPlus, Trash2, Shield, Ban, CheckCircle, Pencil, Eye, EyeOff, Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { LogOut, Users, ShieldCheck, Building2, UserPlus, Trash2, Shield, Ban, CheckCircle, Pencil, Eye, EyeOff, Search, ChevronLeft, ChevronRight, Tag } from "lucide-react";
+import { PromoCodesTab } from "@/components/admin/PromoCodesTab";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 
@@ -461,12 +462,15 @@ const AdminDashboard = () => {
         </div>
 
         <Tabs defaultValue="users">
-          <TabsList className="w-full grid grid-cols-4 mb-6">
+          <TabsList className="w-full grid grid-cols-5 mb-6">
             <TabsTrigger value="users" className="font-body text-xs">
               <Users className="w-4 h-4 mr-1" /> Utilizadores
             </TabsTrigger>
             <TabsTrigger value="associations" className="font-body text-xs">
               <Building2 className="w-4 h-4 mr-1" /> Associações
+            </TabsTrigger>
+            <TabsTrigger value="promos" className="font-body text-xs">
+              <Tag className="w-4 h-4 mr-1" /> Promos
             </TabsTrigger>
             <TabsTrigger value="create" className="font-body text-xs">
               <UserPlus className="w-4 h-4 mr-1" /> Criar
@@ -567,6 +571,11 @@ const AdminDashboard = () => {
                 ))
               )}
             </div>
+          </TabsContent>
+
+          {/* PROMO CODES TAB */}
+          <TabsContent value="promos">
+            <PromoCodesTab />
           </TabsContent>
 
           {/* CREATE USER TAB */}
