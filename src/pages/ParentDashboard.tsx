@@ -551,6 +551,19 @@ const ParentDashboard = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Premium Modal */}
+      {premiumChild && (
+        <PremiumModal
+          open={!!premiumChild}
+          onOpenChange={(open) => !open && setPremiumChild(null)}
+          studentId={premiumChild.id}
+          isPremium={premiumChild.is_premium}
+          associationCode={premiumChild.association_code}
+          createdAt={premiumChild.created_at}
+          subscriptionType={premiumChild.subscription_type}
+        />
+      )}
     </div>
   );
 };
