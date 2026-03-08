@@ -14,6 +14,7 @@ import { RankingsPanel } from "@/components/game/RankingsPanel";
 import { MonthlyTestModal } from "@/components/game/MonthlyTestModal";
 import { PremiumModal } from "@/components/game/PremiumModal";
 import { AchievementsPanel } from "@/components/game/AchievementsPanel";
+import { SettingsPanel } from "@/components/game/SettingsPanel";
 import { useAchievements } from "@/hooks/useAchievements";
 import { useNotifications } from "@/hooks/useNotifications";
 import { Button } from "@/components/ui/button";
@@ -207,6 +208,13 @@ const GamePage = () => {
 
             {/* Achievements */}
             <AchievementsPanel achievements={achievements} unlocked={unlocked} />
+
+            {/* Settings */}
+            <SettingsPanel
+              studentId={studentData.id}
+              quizRemindersEnabled={(studentData as any).quiz_reminders_enabled ?? true}
+              onUpdate={refreshProfile}
+            />
           </div>
         </SheetContent>
       </Sheet>
