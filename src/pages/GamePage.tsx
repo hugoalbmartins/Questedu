@@ -199,14 +199,17 @@ const GamePage = () => {
                 <GraduationCap className="w-6 h-6 text-primary" />
                 <span className="text-xs">Testes</span>
               </Button>
-              <Button 
-                variant="outline" 
-                className="flex flex-col gap-2 h-auto py-4"
-                onClick={() => setShowPremium(true)}
-              >
-                <Crown className="w-6 h-6 text-gold" />
-                <span className="text-xs">Premium</span>
-              </Button>
+              {studentData.is_premium ? (
+                <div className="flex flex-col gap-2 h-auto py-4 items-center text-xs text-gold border border-gold/30 rounded-md px-2">
+                  <Crown className="w-6 h-6 text-gold" />
+                  <span>Premium ✓</span>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2 h-auto py-4 items-center text-xs text-muted-foreground border border-border rounded-md px-2">
+                  <Crown className="w-6 h-6 text-muted-foreground" />
+                  <span>Free</span>
+                </div>
+              )}
             </div>
 
             {/* Missions */}
