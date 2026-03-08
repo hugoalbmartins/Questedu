@@ -228,15 +228,9 @@ const StudentRegisterPage = () => {
           
           <div>
             <Label className="font-body font-semibold">Palavra-passe</Label>
-            <Input 
-              type="password" 
-              value={formData.password} 
-              onChange={e => setFormData({...formData, password: e.target.value})} 
-              placeholder="Mínimo 6 caracteres"
-              required 
-              minLength={6} 
-              className="mt-1" 
-            />
+            <div className="mt-1">
+              <PasswordInput value={formData.password} onChange={v => setFormData({...formData, password: v})} />
+            </div>
           </div>
           
           <div>

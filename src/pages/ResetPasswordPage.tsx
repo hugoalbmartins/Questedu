@@ -112,15 +112,9 @@ const ResetPasswordPage = () => {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <Label className="font-body font-semibold">Nova Palavra-passe</Label>
-            <Input
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              placeholder="Mínimo 6 caracteres"
-              required
-              minLength={6}
-              className="mt-1"
-            />
+            <div className="mt-1">
+              <PasswordInput value={password} onChange={setPassword} />
+            </div>
           </div>
           
           <div>
