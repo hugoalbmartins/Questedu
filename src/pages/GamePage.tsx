@@ -32,6 +32,7 @@ const GamePage = () => {
   const [showBattle, setShowBattle] = useState(false);
   const [showMonthlyTest, setShowMonthlyTest] = useState(false);
   const [battleQuizCallback, setBattleQuizCallback] = useState<(() => Promise<boolean>) | null>(null);
+  const [showPremium, setShowPremium] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) navigate("/login");
