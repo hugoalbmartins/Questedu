@@ -1,8 +1,20 @@
 // ====== Isometric Game Types ======
 
-export const GRID_SIZE = 20; // 20x20 tiles
+export const MAX_GRID_SIZE = 20; // max expandable size
+export const MIN_GRID_SIZE = 8;  // starting size
 export const TILE_W = 64;   // isometric tile width
 export const TILE_H = 32;   // isometric tile height
+
+// Expansion costs per level (8→10, 10→12, ..., 18→20)
+export const EXPANSION_LEVELS = [
+  { size: 8,  cost: 0,    diamonds: 0,  label: 'Início' },
+  { size: 10, cost: 100,  diamonds: 0,  label: 'Pequena Expansão' },
+  { size: 12, cost: 250,  diamonds: 2,  label: 'Expansão Média' },
+  { size: 14, cost: 500,  diamonds: 5,  label: 'Grande Expansão' },
+  { size: 16, cost: 1000, diamonds: 10, label: 'Expansão Épica' },
+  { size: 18, cost: 2000, diamonds: 20, label: 'Expansão Lendária' },
+  { size: 20, cost: 5000, diamonds: 50, label: 'Território Máximo' },
+];
 
 export type TileType = 'grass' | 'road' | 'water' | 'wall';
 
