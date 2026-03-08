@@ -394,6 +394,11 @@ export const VillageView = ({ student, onQuiz, onRefresh }: VillageViewProps) =>
         {/* Simulation stats */}
         {simState && (
           <>
+            <div className="bg-card/90 backdrop-blur-sm rounded-lg px-2 py-1 flex items-center gap-1 text-xs font-body border border-border" style={{ borderColor: SEASON_CONFIG[simState.season].color + '80' }}>
+              <span>{SEASON_CONFIG[simState.season].emoji}</span>
+              <span className="font-bold">{SEASON_CONFIG[simState.season].label}</span>
+              <span className="text-muted-foreground">×{simState.seasonMultiplier}</span>
+            </div>
             <div className={`bg-card/90 backdrop-blur-sm rounded-lg px-2 py-1 flex items-center gap-1 text-xs font-body border ${simState.foodPerMin >= simState.foodConsumedPerMin ? 'border-green-500/50' : 'border-destructive/50'}`}>
               <Apple className="w-3.5 h-3.5 text-green-500" />
               <span className="font-bold">{simState.foodPerMin}/{simState.foodConsumedPerMin}</span>
