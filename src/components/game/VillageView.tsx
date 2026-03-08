@@ -3,11 +3,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { IsometricCanvas } from './IsometricCanvas';
 import { BuildMenu } from './BuildMenu';
 import { BuildingInfoModal } from './BuildingInfoModal';
-import { GRID_SIZE, BUILDING_DEFS, PlacedBuilding } from '@/lib/gameTypes';
+import { ExpansionPanel } from './ExpansionPanel';
+import { MIN_GRID_SIZE, BUILDING_DEFS, EXPANSION_LEVELS, PlacedBuilding } from '@/lib/gameTypes';
 import { createEmptyGrid, applyBuildingsToGrid, canPlace, hasRoadAccess, getUpgradeCost, getTotalStats } from '@/lib/gridLogic';
 import { SFX } from '@/lib/sounds';
+import { AmbientMusic } from '@/lib/ambientMusic';
 import { toast } from 'sonner';
-import { BookOpen, Shield, Users, Sparkles } from 'lucide-react';
+import { BookOpen, Shield, Users, Sparkles, Music, MusicOff, Maximize } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface VillageViewProps {
@@ -34,16 +36,30 @@ export const VillageView = ({ student, onQuiz, onRefresh }: VillageViewProps) =>
   const [canPlaceGhost, setCanPlaceGhost] = useState(false);
   const [infoBuilding, setInfoBuilding] = useState<PlacedBuilding | null>(null);
   const [showInfo, setShowInfo] = useState(false);
+  const [showExpansion, setShowExpansion] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [musicOn, setMusicOn] = useState(false);
+  const [gridSize, setGridSize] = useState(MIN_GRID_SIZE);
 
-  const baseGrid = createEmptyGrid();
+  const baseGrid = createEmptyGrid(gridSize);
   const fullGrid = applyBuildingsToGrid(baseGrid, buildings);
   const stats = getTotalStats(buildings);
+
+  // Determine current expansion level from village_level
+  useEffect(() => {
+    const expIdx = Math.min(student.village_level - 1, EXPANSION_LEVELS.length - 1);
+    setGridSize(EXPANSION_LEVELS[Math.max(0, expIdx)].size);
+  }, [student.village_level]);
 
   // Load buildings from DB
   useEffect(() => {
     loadBuildings();
   }, [student.id]);
+
+  // Cleanup music on unmount
+  useEffect(() => {
+    return () => { AmbientMusic.stop(); };
+  }, []);
 
   const loadBuildings = async () => {
     const { data } = await supabase
@@ -64,80 +80,52 @@ export const VillageView = ({ student, onQuiz, onRefresh }: VillageViewProps) =>
     setLoading(false);
   };
 
+  const toggleMusic = () => {
+    if (musicOn) {
+      AmbientMusic.stop();
+      setMusicOn(false);
+    } else {
+      AmbientMusic.start();
+      setMusicOn(true);
+    }
+  };
+
   const handleTileClick = useCallback(async (gx: number, gy: number) => {
     if (!selectedBuilding) return;
     const def = BUILDING_DEFS[selectedBuilding];
     if (!def) return;
 
-    // Validation
     if (!canPlace(fullGrid, gx, gy, def.width, def.height)) {
-      toast.error('Espaço ocupado!');
-      SFX.wrong();
-      return;
+      toast.error('Espaço ocupado!'); SFX.wrong(); return;
     }
-
     if (def.requiresRoad && !hasRoadAccess(fullGrid, gx, gy, def.width, def.height)) {
-      toast.error('Precisa de estrada adjacente!');
-      SFX.wrong();
-      return;
+      toast.error('Precisa de estrada adjacente!'); SFX.wrong(); return;
     }
-
     if (student.coins < def.costCoins || student.diamonds < def.costDiamonds) {
-      toast.error('Recursos insuficientes!');
-      SFX.wrong();
-      return;
+      toast.error('Recursos insuficientes!'); SFX.wrong(); return;
     }
-
     if (student.village_level < def.minVillageLevel) {
-      toast.error(`Requer nível ${def.minVillageLevel} da aldeia!`);
-      SFX.wrong();
-      return;
+      toast.error(`Requer nível ${def.minVillageLevel} da aldeia!`); SFX.wrong(); return;
     }
-
     if (def.premiumOnly && !student.is_premium) {
-      toast.error('Conteúdo exclusivo Premium! 👑');
-      SFX.wrong();
-      return;
+      toast.error('Conteúdo exclusivo Premium! 👑'); SFX.wrong(); return;
     }
 
-    // Place building
     const { data, error } = await supabase
       .from('buildings')
-      .insert({
-        student_id: student.id,
-        building_type: def.id,
-        position_x: gx,
-        position_y: gy,
-        level: 1,
-      })
-      .select()
-      .single();
+      .insert({ student_id: student.id, building_type: def.id, position_x: gx, position_y: gy, level: 1 })
+      .select().single();
 
-    if (error) {
-      toast.error('Erro ao construir!');
-      return;
-    }
+    if (error) { toast.error('Erro ao construir!'); return; }
 
-    // Deduct resources
-    await supabase
-      .from('students')
-      .update({
-        coins: student.coins - def.costCoins,
-        diamonds: student.diamonds - def.costDiamonds,
-      })
-      .eq('id', student.id);
+    await supabase.from('students').update({
+      coins: student.coins - def.costCoins,
+      diamonds: student.diamonds - def.costDiamonds,
+    }).eq('id', student.id);
 
     SFX.place();
     toast.success(`${def.name} construído! 🏗️`);
-
-    setBuildings(prev => [...prev, {
-      id: data.id,
-      defId: def.id,
-      x: gx,
-      y: gy,
-      level: 1,
-      dbId: data.id,
-    }]);
+    setBuildings(prev => [...prev, { id: data.id, defId: def.id, x: gx, y: gy, level: 1, dbId: data.id }]);
     setSelectedBuilding(null);
     setGhostPos(null);
     onRefresh();
@@ -155,35 +143,20 @@ export const VillageView = ({ student, onQuiz, onRefresh }: VillageViewProps) =>
   }, [selectedBuilding, fullGrid]);
 
   const handleBuildingClick = useCallback((building: PlacedBuilding) => {
-    setInfoBuilding(building);
-    setShowInfo(true);
-    SFX.click();
+    setInfoBuilding(building); setShowInfo(true); SFX.click();
   }, []);
 
   const handleUpgrade = async (building: PlacedBuilding) => {
     const def = BUILDING_DEFS[building.defId];
     if (!def) return;
     const cost = getUpgradeCost(building.defId, building.level);
-
     if (student.coins < cost.coins || student.diamonds < cost.diamonds) {
-      toast.error('Recursos insuficientes!');
-      SFX.wrong();
-      return;
+      toast.error('Recursos insuficientes!'); SFX.wrong(); return;
     }
-
-    await supabase
-      .from('buildings')
-      .update({ level: building.level + 1 })
-      .eq('id', building.dbId);
-
-    await supabase
-      .from('students')
-      .update({
-        coins: student.coins - cost.coins,
-        diamonds: student.diamonds - cost.diamonds,
-      })
-      .eq('id', student.id);
-
+    await supabase.from('buildings').update({ level: building.level + 1 }).eq('id', building.dbId);
+    await supabase.from('students').update({
+      coins: student.coins - cost.coins, diamonds: student.diamonds - cost.diamonds,
+    }).eq('id', student.id);
     SFX.upgrade();
     toast.success(`${def.name} evoluiu para nível ${building.level + 1}! ⬆️`);
     setBuildings(prev => prev.map(b => b.id === building.id ? { ...b, level: b.level + 1 } : b));
@@ -193,21 +166,36 @@ export const VillageView = ({ student, onQuiz, onRefresh }: VillageViewProps) =>
   const handleDemolish = async (building: PlacedBuilding) => {
     const def = BUILDING_DEFS[building.defId];
     await supabase.from('buildings').delete().eq('id', building.dbId);
-
-    // Refund 50%
     if (def) {
       const refundCoins = Math.floor(def.costCoins * 0.5);
       if (refundCoins > 0) {
-        await supabase
-          .from('students')
-          .update({ coins: student.coins + refundCoins })
-          .eq('id', student.id);
+        await supabase.from('students').update({ coins: student.coins + refundCoins }).eq('id', student.id);
       }
     }
-
     SFX.demolish();
     toast.info(`${def?.name || 'Edifício'} demolido. Recebeste 50% de volta.`);
     setBuildings(prev => prev.filter(b => b.id !== building.id));
+    onRefresh();
+  };
+
+  const handleExpand = async () => {
+    const currentIdx = EXPANSION_LEVELS.findIndex(l => l.size === gridSize);
+    if (currentIdx < 0 || currentIdx >= EXPANSION_LEVELS.length - 1) {
+      toast.error('Território máximo atingido!'); return;
+    }
+    const next = EXPANSION_LEVELS[currentIdx + 1];
+    if (student.coins < next.cost || student.diamonds < next.diamonds) {
+      toast.error('Recursos insuficientes!'); SFX.wrong(); return;
+    }
+    await supabase.from('students').update({
+      village_level: student.village_level + 1,
+      coins: student.coins - next.cost,
+      diamonds: student.diamonds - next.diamonds,
+    }).eq('id', student.id);
+    SFX.upgrade();
+    toast.success(`Território expandido para ${next.size}×${next.size}! 🗺️`);
+    setGridSize(next.size);
+    setShowExpansion(false);
     onRefresh();
   };
 
@@ -222,7 +210,7 @@ export const VillageView = ({ student, onQuiz, onRefresh }: VillageViewProps) =>
   return (
     <div className="relative h-[calc(100vh-10rem)]">
       {/* Stats overlay */}
-      <div className="absolute top-2 left-2 z-20 flex gap-2">
+      <div className="absolute top-2 left-2 z-20 flex gap-1.5 flex-wrap">
         <div className="bg-card/90 backdrop-blur-sm rounded-lg px-2 py-1 flex items-center gap-1 text-xs font-body border border-border">
           <Users className="w-3.5 h-3.5 text-citizen" />
           <span className="font-bold">{stats.citizens}</span>
@@ -235,14 +223,36 @@ export const VillageView = ({ student, onQuiz, onRefresh }: VillageViewProps) =>
           <Sparkles className="w-3.5 h-3.5 text-primary" />
           <span className="font-bold">{stats.xp} XP</span>
         </div>
+        <div className="bg-card/90 backdrop-blur-sm rounded-lg px-2 py-1 flex items-center gap-1 text-xs font-body border border-border">
+          <Maximize className="w-3.5 h-3.5 text-muted-foreground" />
+          <span className="font-bold">{gridSize}×{gridSize}</span>
+        </div>
       </div>
 
-      {/* Quiz button */}
-      <div className="absolute top-2 right-2 z-20">
+      {/* Top right buttons */}
+      <div className="absolute top-2 right-2 z-20 flex gap-1.5">
+        <Button
+          size="icon"
+          variant="outline"
+          onClick={toggleMusic}
+          className="h-8 w-8 bg-card/90 backdrop-blur-sm"
+          title={musicOn ? 'Desligar música' : 'Ligar música'}
+        >
+          {musicOn ? <Music className="w-4 h-4 text-primary" /> : <MusicOff className="w-4 h-4 text-muted-foreground" />}
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => { setShowExpansion(true); SFX.click(); }}
+          className="h-8 bg-card/90 backdrop-blur-sm text-xs"
+        >
+          <Maximize className="w-3.5 h-3.5 mr-1" />
+          Expandir
+        </Button>
         <Button
           size="sm"
           onClick={() => { onQuiz(); SFX.click(); }}
-          className="bg-primary text-primary-foreground font-bold animate-pulse shadow-lg"
+          className="h-8 bg-primary text-primary-foreground font-bold animate-pulse shadow-lg"
         >
           <BookOpen className="w-4 h-4 mr-1" />
           Quiz
@@ -253,6 +263,7 @@ export const VillageView = ({ student, onQuiz, onRefresh }: VillageViewProps) =>
       <IsometricCanvas
         grid={baseGrid}
         buildings={buildings}
+        gridSize={gridSize}
         selectedBuilding={selectedBuilding}
         ghostPos={ghostPos}
         canPlaceGhost={canPlaceGhost}
@@ -281,6 +292,16 @@ export const VillageView = ({ student, onQuiz, onRefresh }: VillageViewProps) =>
         onDemolish={handleDemolish}
         coins={student.coins}
         diamonds={student.diamonds}
+      />
+
+      {/* Expansion Panel */}
+      <ExpansionPanel
+        open={showExpansion}
+        onOpenChange={setShowExpansion}
+        currentSize={gridSize}
+        coins={student.coins}
+        diamonds={student.diamonds}
+        onExpand={handleExpand}
       />
     </div>
   );
