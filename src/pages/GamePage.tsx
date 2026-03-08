@@ -18,7 +18,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { toast } from "sonner";
 import { 
   Map, MessageCircle, BookOpen, LogOut, Home, 
-  ShoppingBag, Target, Swords, Trophy, Menu, GraduationCap 
+  ShoppingBag, Target, Swords, Trophy, Menu, GraduationCap, Crown 
 } from "lucide-react";
 
 type GameView = "village" | "map" | "chat";
