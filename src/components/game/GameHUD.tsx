@@ -1,4 +1,15 @@
 import { Coins, Diamond, Users } from "lucide-react";
+import { NotificationBell } from "./NotificationBell";
+
+interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  icon: string;
+  type: string;
+  read: boolean;
+  created_at: string;
+}
 
 interface GameHUDProps {
   student: {
@@ -10,9 +21,13 @@ interface GameHUDProps {
     village_level: number;
     xp: number;
   };
+  notifications?: Notification[];
+  unreadCount?: number;
+  onMarkAsRead?: (id: string) => void;
+  onMarkAllAsRead?: () => void;
 }
 
-export const GameHUD = ({ student }: GameHUDProps) => {
+export const GameHUD = ({ student, notifications = [], unreadCount = 0, onMarkAsRead, onMarkAllAsRead }: GameHUDProps) => {
   return (
     <div className="fixed top-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-sm border-b-2 border-border">
       <div className="flex items-center justify-between px-4 py-2 max-w-4xl mx-auto">
@@ -30,7 +45,7 @@ export const GameHUD = ({ student }: GameHUDProps) => {
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <div className="flex items-center gap-1 bg-gold/20 px-2 py-1 rounded-lg">
             <Coins className="w-4 h-4 text-gold" />
             <span className="font-body text-xs font-bold">{student.coins}</span>
@@ -43,6 +58,12 @@ export const GameHUD = ({ student }: GameHUDProps) => {
             <Users className="w-4 h-4 text-citizen" />
             <span className="font-body text-xs font-bold">{student.citizens}</span>
           </div>
+          <NotificationBell
+            notifications={notifications}
+            unreadCount={unreadCount}
+            onMarkAsRead={onMarkAsRead || (() => {})}
+            onMarkAllAsRead={onMarkAllAsRead || (() => {})}
+          />
         </div>
       </div>
     </div>
