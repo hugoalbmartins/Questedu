@@ -599,6 +599,11 @@ const AdminDashboard = () => {
             <PromoCodesTab />
           </TabsContent>
 
+          {/* GRANT PREMIUM TAB */}
+          <TabsContent value="premium">
+            <GrantPremiumTab />
+          </TabsContent>
+
           {/* CREATE USER TAB */}
           <TabsContent value="create">
             <div className="max-w-lg">
