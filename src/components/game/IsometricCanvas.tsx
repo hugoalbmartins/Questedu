@@ -1,10 +1,11 @@
 import { useRef, useState, useCallback, useEffect, useMemo } from 'react';
-import { GRID_SIZE, TILE_W, TILE_H, BUILDING_DEFS, PlacedBuilding, GridTile } from '@/lib/gameTypes';
+import { TILE_W, TILE_H, BUILDING_DEFS, PlacedBuilding, GridTile } from '@/lib/gameTypes';
 import { gridToIso, applyBuildingsToGrid } from '@/lib/gridLogic';
 
 interface IsometricCanvasProps {
   grid: GridTile[][];
   buildings: PlacedBuilding[];
+  gridSize: number;
   selectedBuilding: string | null;
   ghostPos: { x: number; y: number } | null;
   canPlaceGhost: boolean;
@@ -13,15 +14,15 @@ interface IsometricCanvasProps {
   onBuildingClick: (building: PlacedBuilding) => void;
 }
 
-// Colors
 const GRASS_COLORS = ['#4a7c3f', '#4e8243', '#467838', '#528645'];
 const ROAD_COLOR = '#a09070';
 const ROAD_BORDER = '#7a6a55';
 const WALL_COLOR = '#6b6b6b';
 const WATER_COLOR = '#4a90d9';
+const VOID_COLOR = '#1a3010';
 
 export const IsometricCanvas = ({
-  grid, buildings, selectedBuilding, ghostPos, canPlaceGhost,
+  grid, buildings, gridSize, selectedBuilding, ghostPos, canPlaceGhost,
   onTileClick, onTileHover, onBuildingClick,
 }: IsometricCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -33,24 +34,23 @@ export const IsometricCanvas = ({
 
   const fullGrid = useMemo(() => applyBuildingsToGrid(grid, buildings), [grid, buildings]);
 
-  // Center offset
-  const originX = (GRID_SIZE * TILE_W) / 2;
+  const originX = (gridSize * TILE_W) / 2;
   const originY = 50;
 
   const screenToGrid = useCallback((clientX: number, clientY: number) => {
     const canvas = canvasRef.current;
     if (!canvas) return null;
     const rect = canvas.getBoundingClientRect();
-    const mx = (clientX - rect.left - canvas.width / 2) / zoom - camera.x + originX;
-    const my = (clientY - rect.top - canvas.height / 2) / zoom - camera.y + originY;
-    // Invert iso transform
+    const w = canvas.clientWidth;
+    const h = canvas.clientHeight;
+    const mx = (clientX - rect.left - w / 2) / zoom - camera.x + originX;
+    const my = (clientY - rect.top - h / 2) / zoom - camera.y + originY;
     const gx = Math.floor((mx / (TILE_W / 2) + my / (TILE_H / 2)) / 2);
     const gy = Math.floor((my / (TILE_H / 2) - mx / (TILE_W / 2)) / 2);
-    if (gx >= 0 && gx < GRID_SIZE && gy >= 0 && gy < GRID_SIZE) return { gx, gy };
+    if (gx >= 0 && gx < gridSize && gy >= 0 && gy < gridSize) return { gx, gy };
     return null;
-  }, [camera, zoom]);
+  }, [camera, zoom, gridSize, originX]);
 
-  // Draw
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -65,9 +65,7 @@ export const IsometricCanvas = ({
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
     ctx.clearRect(0, 0, w, h);
-    
-    // Background
-    ctx.fillStyle = '#2d4a1e';
+    ctx.fillStyle = VOID_COLOR;
     ctx.fillRect(0, 0, w, h);
 
     ctx.save();
@@ -76,12 +74,11 @@ export const IsometricCanvas = ({
     ctx.translate(camera.x - originX, camera.y - originY);
 
     // Draw tiles
-    for (let y = 0; y < GRID_SIZE; y++) {
-      for (let x = 0; x < GRID_SIZE; x++) {
+    for (let y = 0; y < gridSize; y++) {
+      for (let x = 0; x < gridSize; x++) {
         const tile = fullGrid[y]?.[x];
         if (!tile) continue;
         const { sx, sy } = gridToIso(x, y, TILE_W, TILE_H);
-        
         drawIsoDiamond(ctx, sx, sy, tile.type, x, y);
       }
     }
@@ -100,7 +97,6 @@ export const IsometricCanvas = ({
             ctx.globalAlpha = 1;
           }
         }
-        // Ghost emoji
         const { sx, sy } = gridToIso(ghostPos.x, ghostPos.y, TILE_W, TILE_H);
         ctx.globalAlpha = 0.7;
         ctx.font = `${20 + (def.width - 1) * 8}px serif`;
@@ -110,31 +106,26 @@ export const IsometricCanvas = ({
       }
     }
 
-    // Draw buildings (sorted by y for depth)
+    // Draw buildings (sorted by depth)
     const sorted = [...buildings].sort((a, b) => (a.y + a.x) - (b.y + b.x));
     for (const b of sorted) {
       const def = BUILDING_DEFS[b.defId];
       if (!def || def.id === 'road' || def.id === 'wall') continue;
-      
-      // Center of building
       const cx = b.x + def.width / 2 - 0.5;
       const cy = b.y + def.height / 2 - 0.5;
       const { sx, sy } = gridToIso(cx, cy, TILE_W, TILE_H);
-      
-      // Shadow
+
       ctx.fillStyle = 'rgba(0,0,0,0.2)';
       ctx.beginPath();
       ctx.ellipse(sx, sy + 4, 16 * def.width, 8 * def.height, 0, 0, Math.PI * 2);
       ctx.fill();
-      
-      // Building emoji with size based on building size and level
+
       const baseSize = 22 + (def.width - 1) * 10;
       const levelSize = baseSize + (b.level - 1) * 3;
       ctx.font = `${levelSize}px serif`;
       ctx.textAlign = 'center';
       ctx.fillText(def.emoji, sx, sy - 6 - (b.level - 1) * 2);
-      
-      // Level badge
+
       if (b.level > 1) {
         ctx.fillStyle = '#f5a623';
         ctx.beginPath();
@@ -147,7 +138,7 @@ export const IsometricCanvas = ({
     }
 
     ctx.restore();
-  }, [fullGrid, buildings, camera, zoom, ghostPos, selectedBuilding, canPlaceGhost]);
+  }, [fullGrid, buildings, camera, zoom, ghostPos, selectedBuilding, canPlaceGhost, gridSize, originX]);
 
   function drawIsoDiamond(ctx: CanvasRenderingContext2D, sx: number, sy: number, type: string, x: number, y: number) {
     let color: string;
@@ -173,7 +164,6 @@ export const IsometricCanvas = ({
     ctx.closePath();
   }
 
-  // Handlers
   const handleMouseDown = (e: React.MouseEvent) => {
     setDragging(true);
     setDragStart({ x: e.clientX, y: e.clientY });
@@ -197,7 +187,6 @@ export const IsometricCanvas = ({
       if (dist < 5) {
         const pos = screenToGrid(e.clientX, e.clientY);
         if (pos) {
-          // Check if clicking existing building
           const tile = fullGrid[pos.gy]?.[pos.gx];
           if (tile?.buildingId && !selectedBuilding) {
             const b = buildings.find(b => b.id === tile.buildingId);
@@ -215,7 +204,6 @@ export const IsometricCanvas = ({
     setZoom(z => Math.max(0.4, Math.min(2.5, z - e.deltaY * 0.001)));
   };
 
-  // Touch support
   const handleTouchStart = (e: React.TouchEvent) => {
     if (e.touches.length === 1) {
       setDragging(true);
