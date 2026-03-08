@@ -39,7 +39,10 @@ serve(async (req) => {
     }
 
     if (action === "create") {
-      const { code, discount_percent, discount_amount, max_uses, expires_at, target_email } = params;
+      const {
+        code, discount_percent, discount_amount, max_uses, expires_at,
+        target_email, promo_type, free_months, discount_duration_months
+      } = params;
 
       // Resolve target_email to user_id if provided
       let target_user_id = null;
@@ -51,8 +54,11 @@ serve(async (req) => {
 
       const { data, error } = await supabaseClient.from("promo_codes").insert({
         code: code.trim().toUpperCase(),
+        promo_type: promo_type || "discount",
         discount_percent: discount_percent || 0,
         discount_amount: discount_amount || 0,
+        free_months: free_months || 0,
+        discount_duration_months: discount_duration_months || 0,
         max_uses: max_uses || 1,
         target_user_id,
         expires_at: expires_at || null,
@@ -76,6 +82,43 @@ serve(async (req) => {
     if (action === "delete") {
       const { code_id } = params;
       await supabaseClient.from("promo_codes").delete().eq("id", code_id);
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // === Subscription Discounts ===
+    if (action === "list_discounts") {
+      const { data } = await supabaseClient
+        .from("subscription_discounts")
+        .select("*, students(display_name, nickname)")
+        .order("created_at", { ascending: false });
+      return new Response(JSON.stringify({ discounts: data }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (action === "create_discount") {
+      const { student_id, apply_to_all, discount_percent, target_months, notes } = params;
+
+      const { data, error } = await supabaseClient.from("subscription_discounts").insert({
+        student_id: apply_to_all ? null : student_id,
+        apply_to_all: apply_to_all || false,
+        discount_percent: discount_percent || 0,
+        target_months: target_months || [],
+        notes: notes || null,
+        created_by: user.id,
+      }).select().single();
+
+      if (error) throw new Error(error.message);
+      return new Response(JSON.stringify({ discount: data }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (action === "delete_discount") {
+      const { discount_id } = params;
+      await supabaseClient.from("subscription_discounts").delete().eq("id", discount_id);
       return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

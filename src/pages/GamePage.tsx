@@ -38,18 +38,6 @@ const GamePage = () => {
   const [battleQuizCallback, setBattleQuizCallback] = useState<(() => Promise<boolean>) | null>(null);
   const { achievements, unlocked, checkAchievements } = useAchievements(studentData?.id);
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications(studentData?.id);
-  usePushNotifications(studentData?.id);
-
-  // Listen for push notification actions (quiz/battle deep links)
-  useEffect(() => {
-    const handler = (e: Event) => {
-      const detail = (e as CustomEvent).detail;
-      if (detail?.action === "quiz") setShowQuiz(true);
-      if (detail?.action === "battle") setShowBattle(true);
-    };
-    window.addEventListener("push-action", handler);
-    return () => window.removeEventListener("push-action", handler);
-  }, []);
 
   useEffect(() => {
     if (!loading && !user) navigate("/login");
