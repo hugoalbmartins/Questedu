@@ -332,10 +332,32 @@ const ParentDashboard = () => {
                           {child.school_year}º Ano • Nível {child.village_level}
                         </p>
                       </div>
-                      <div className="flex gap-2 text-xs font-body">
-                        <span className="bg-gold/20 px-2 py-1 rounded">🪙 {child.coins}</span>
-                        <span className="bg-diamond/20 px-2 py-1 rounded">💎 {child.diamonds}</span>
-                        <span className="bg-citizen/20 px-2 py-1 rounded">👥 {child.citizens}</span>
+                      <div className="flex flex-col items-end gap-2">
+                        <div className="flex gap-2 text-xs font-body">
+                          <span className="bg-gold/20 px-2 py-1 rounded">🪙 {child.coins}</span>
+                          <span className="bg-diamond/20 px-2 py-1 rounded">💎 {child.diamonds}</span>
+                          <span className="bg-citizen/20 px-2 py-1 rounded">👥 {child.citizens}</span>
+                        </div>
+                        {child.is_premium ? (
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-body text-gold flex items-center gap-1">
+                              <Crown className="w-3 h-3" /> Premium ativo
+                            </span>
+                            <Button variant="ghost" size="sm" className="text-xs h-6" onClick={handleManageSubscription}>
+                              Gerir
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button
+                            size="sm"
+                            className="text-xs bg-gold text-foreground h-7"
+                            onClick={() => handleUpgradeChild(child.id)}
+                            disabled={checkingOutChild === child.id}
+                          >
+                            <Crown className="w-3 h-3 mr-1" />
+                            {checkingOutChild === child.id ? "..." : "Ativar Premium — €4,99/ano"}
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </div>
