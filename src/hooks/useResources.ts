@@ -42,7 +42,7 @@ export const RESOURCE_INFO: Record<NaturalResource, { emoji: string; label: stri
 
 const DEFAULT_RESOURCES: ResourceAmounts = { wood: 0, stone: 0, iron: 0, coal: 0, food: 0, leather: 0, fish: 0 };
 
-export function useResources(studentId: string | undefined) {
+export function useResources(studentId: string | undefined, isPremium: boolean = false) {
   const [resources, setResources] = useState<ResourceAmounts>({ ...DEFAULT_RESOURCES });
   const [cooldowns, setCooldowns] = useState<Map<number, number>>(new Map());
   const [loading, setLoading] = useState(true);
@@ -111,8 +111,9 @@ export function useResources(studentId: string | undefined) {
       return false;
     }
 
-    // Calculate random amount
-    const amount = info.amount[0] + Math.floor(Math.random() * (info.amount[1] - info.amount[0] + 1));
+    // Calculate random amount with premium bonus
+    const baseAmount = info.amount[0] + Math.floor(Math.random() * (info.amount[1] - info.amount[0] + 1));
+    const amount = isPremium ? Math.round(baseAmount * 1.15) : baseAmount;
 
     // Upsert resource
     const currentAmount = resources[info.resource];

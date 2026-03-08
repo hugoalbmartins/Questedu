@@ -11,8 +11,9 @@ interface BattleModalProps {
   onOpenChange: (open: boolean) => void;
   studentId: string;
   defenseLevel: number;
+  isPremium?: boolean;
   onBattleEnd: (won: boolean, coins: number, diamonds: number, xp: number) => void;
-  onAnswerQuestion: () => Promise<boolean>; // Returns true if answered correctly
+  onAnswerQuestion: () => Promise<boolean>;
 }
 
 const enemies = [
@@ -29,6 +30,7 @@ export const BattleModal = ({
   onOpenChange,
   studentId,
   defenseLevel,
+  isPremium = false,
   onBattleEnd,
   onAnswerQuestion,
 }: BattleModalProps) => {
@@ -83,9 +85,10 @@ export const BattleModal = ({
       
       if (newEnemyHealth <= 0) {
         // Victory!
-        const rewardCoins = 10 + (battle.turn * 5);
-        const rewardDiamonds = Math.random() > 0.7 ? 1 : 0;
-        const rewardXp = 50 + (battle.turn * 10);
+        const premiumMult = isPremium ? 1.15 : 1;
+        const rewardCoins = Math.round((10 + (battle.turn * 5)) * premiumMult);
+        const rewardDiamonds = Math.random() > 0.7 ? (isPremium ? 2 : 1) : 0;
+        const rewardXp = Math.round((50 + (battle.turn * 10)) * premiumMult);
         
         setBattle({ ...battle, enemyHealth: 0, phase: "victory" });
         

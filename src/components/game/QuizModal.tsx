@@ -133,7 +133,9 @@ export const QuizModal = ({ student, onClose }: QuizModalProps) => {
     } else {
       setQuizComplete(true);
       if (correctCount >= 3) {
-        const rewardAmount = Math.round(reward.amount * (correctCount / 5));
+        const premiumMultiplier = isPremium ? 1.15 : 1;
+        const rewardAmount = Math.round(reward.amount * (correctCount / 5) * premiumMultiplier);
+        const xpGain = Math.round(correctCount * 10 * premiumMultiplier);
         const { data: currentStudent } = await supabase
           .from("students")
           .select("coins, diamonds, citizens, xp")
@@ -145,7 +147,7 @@ export const QuizModal = ({ student, onClose }: QuizModalProps) => {
           if (reward.type === "coins") updateData.coins = currentStudent.coins + rewardAmount;
           else if (reward.type === "diamonds") updateData.diamonds = currentStudent.diamonds + rewardAmount;
           else updateData.citizens = currentStudent.citizens + rewardAmount;
-          updateData.xp = currentStudent.xp + correctCount * 10;
+          updateData.xp = currentStudent.xp + xpGain;
 
           await supabase.from("students").update(updateData).eq("id", student.id);
         }
@@ -168,14 +170,14 @@ export const QuizModal = ({ student, onClose }: QuizModalProps) => {
               Chegaste aos 50% de evolução do {student.school_year}º ano na versão gratuita.
             </p>
             <p className="font-body text-muted-foreground mb-6">
-              Para continuares a evoluir e desbloquear 100% do conteúdo, ativa o <strong>Questeduca Premium</strong> por apenas <strong>€4,99/ano escolar</strong>.
+              Para continuares a evoluir e desbloquear 100% do conteúdo, ativa o <strong>Questeduca Premium</strong> a partir de <strong>€1,99/mês</strong>.
             </p>
             <Button 
               className="bg-gold text-foreground font-bold px-8 py-3"
               onClick={async () => {
                 try {
                   const { data, error } = await supabase.functions.invoke("create-checkout", {
-                    body: { studentId: student.id },
+                    body: { studentId: student.id, plan: "monthly" },
                   });
                   if (error) throw error;
                   if (data?.url) window.open(data.url, "_blank");
@@ -185,7 +187,7 @@ export const QuizModal = ({ student, onClose }: QuizModalProps) => {
               }}
             >
               <Crown className="w-5 h-5 mr-2" />
-              Ativar Premium — €4,99
+              Ativar Premium — €1,99/mês
             </Button>
             <p className="font-body text-xs text-muted-foreground mt-3">
               Pede ao teu encarregado de educação para ativar.
@@ -222,7 +224,8 @@ export const QuizModal = ({ student, onClose }: QuizModalProps) => {
               <div className="parchment-bg rounded-lg p-4 inline-flex items-center gap-2">
                 <reward.icon className={`w-6 h-6 ${reward.color}`} />
                 <span className="font-body font-bold">
-                  +{Math.round(reward.amount * (correctCount / 5))} {reward.label}
+                  +{Math.round(reward.amount * (correctCount / 5) * (isPremium ? 1.15 : 1))} {reward.label}
+                  {isPremium && <span className="text-gold text-xs ml-1">(+15%)</span>}
                 </span>
               </div>
             )}

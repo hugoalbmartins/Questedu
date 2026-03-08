@@ -317,6 +317,7 @@ const GamePage = () => {
         onOpenChange={setShowBattle}
         studentId={studentData.id}
         defenseLevel={studentData.defense_level}
+        isPremium={studentData.is_premium}
         onBattleEnd={handleBattleEnd}
         onAnswerQuestion={handleBattleAnswerQuestion}
       />

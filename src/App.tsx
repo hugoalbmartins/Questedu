@@ -20,6 +20,7 @@ import AssociationRegisterPage from "./pages/AssociationRegisterPage";
 import AdminDashboard from "./pages/AdminDashboard";
 import InstallPage from "./pages/InstallPage";
 import EmailVerifiedPage from "./pages/EmailVerifiedPage";
+import AssociationDashboard from "./pages/AssociationDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -48,6 +49,7 @@ const App = () => (
             <Route path="/register/association" element={<AssociationRegisterPage />} />
             <Route path="/administratorquest" element={<AdminDashboard />} />
             <Route path="/install" element={<InstallPage />} />
+            <Route path="/association" element={<AssociationDashboard />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
