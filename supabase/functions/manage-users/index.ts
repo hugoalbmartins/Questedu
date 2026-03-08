@@ -62,6 +62,7 @@ serve(async (req) => {
           created_at: u.created_at,
           banned: u.banned_until ? true : false,
           banned_until: u.banned_until,
+          email_confirmed: !!u.email_confirmed_at,
           display_name: profile?.display_name || student?.display_name || u.email,
           app_role: profile?.role || null,
           admin_role: role?.role || null,
@@ -210,6 +211,26 @@ serve(async (req) => {
           await supabase.from("user_roles").insert({ user_id, role: admin_role });
         }
       }
+
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // CONFIRM user email (force-confirm without email link)
+    if (action === "confirm") {
+      const { user_id } = params;
+      if (!user_id) {
+        return new Response(JSON.stringify({ error: "user_id required" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const { error } = await supabase.auth.admin.updateUserById(user_id, {
+        email_confirm: true,
+      });
+      if (error) throw error;
 
       return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

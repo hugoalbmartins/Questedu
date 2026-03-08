@@ -8,7 +8,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { LogOut, Users, ShieldCheck, Building2, UserPlus, Trash2, Shield, Ban, CheckCircle, Pencil, Eye, EyeOff, Search, ChevronLeft, ChevronRight, Tag } from "lucide-react";
+import { LogOut, Users, ShieldCheck, Building2, UserPlus, Trash2, Shield, Ban, CheckCircle, Pencil, Eye, EyeOff, Search, ChevronLeft, ChevronRight, Tag, MailCheck } from "lucide-react";
 import { PromoCodesTab } from "@/components/admin/PromoCodesTab";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
@@ -19,6 +19,7 @@ interface AdminUser {
   created_at: string;
   banned: boolean;
   banned_until: string | null;
+  email_confirmed: boolean;
   display_name: string;
   app_role: string | null;
   admin_role: string | null;
@@ -233,6 +234,14 @@ const AdminDashboard = () => {
     else { toast.success("Suspensão removida."); loadUsers(); }
   };
 
+  const handleConfirmEmail = async (userId: string) => {
+    const { data, error } = await supabase.functions.invoke("manage-users", {
+      body: { action: "confirm", user_id: userId },
+    });
+    if (error || data?.error) toast.error(data?.error || "Erro ao confirmar.");
+    else { toast.success("Email confirmado com sucesso!"); loadUsers(); }
+  };
+
   const handleDelete = async () => {
     if (!deleteUser) return;
     const { data, error } = await supabase.functions.invoke("manage-users", {
@@ -392,6 +401,9 @@ const AdminDashboard = () => {
         ) : (
           <span className="text-xs px-2 py-0.5 rounded bg-secondary/20 text-secondary">Ativo</span>
         )}
+        {!u.email_confirmed && (
+          <span className="ml-1 text-xs px-2 py-0.5 rounded bg-accent/20 text-accent">Não confirmado</span>
+        )}
         {u.admin_role && (
           <span className="ml-1 text-xs px-2 py-0.5 rounded bg-primary/20 text-primary">
             {u.admin_role === "super_admin" ? "Super Admin" : "Admin"}
@@ -403,6 +415,11 @@ const AdminDashboard = () => {
           <Button size="sm" variant="ghost" onClick={() => openEdit(u)} title="Editar">
             <Pencil className="w-3 h-3" />
           </Button>
+          {!u.email_confirmed && (
+            <Button size="sm" variant="ghost" onClick={() => handleConfirmEmail(u.id)} title="Confirmar email" className="text-accent">
+              <MailCheck className="w-3 h-3" />
+            </Button>
+          )}
           {u.banned ? (
             <Button size="sm" variant="ghost" onClick={() => handleUnsuspend(u.id)} title="Reativar" className="text-secondary">
               <CheckCircle className="w-3 h-3" />
