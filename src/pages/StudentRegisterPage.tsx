@@ -32,6 +32,9 @@ const StudentRegisterPage = () => {
   const [schools, setSchools] = useState<any[]>([]);
   const [schoolSearch, setSchoolSearch] = useState("");
   const [parentDistrict, setParentDistrict] = useState<string | null>(null);
+  const [schoolDistrictFilter, setSchoolDistrictFilter] = useState<string>("");
+  const [schoolMunicipalityFilter, setSchoolMunicipalityFilter] = useState<string>("");
+  const [allSchoolsLoaded, setAllSchoolsLoaded] = useState(false);
   const [nicknameStatus, setNicknameStatus] = useState<"idle" | "checking" | "available" | "taken">("idle");
   const nicknameTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
