@@ -297,6 +297,41 @@ export type Database = {
           },
         ]
       }
+      gathering_log: {
+        Row: {
+          amount: number
+          gathered_at: string
+          id: string
+          resource_type: Database["public"]["Enums"]["resource_type_natural"]
+          student_id: string
+          terrain_element_id: number
+        }
+        Insert: {
+          amount?: number
+          gathered_at?: string
+          id?: string
+          resource_type: Database["public"]["Enums"]["resource_type_natural"]
+          student_id: string
+          terrain_element_id: number
+        }
+        Update: {
+          amount?: number
+          gathered_at?: string
+          id?: string
+          resource_type?: Database["public"]["Enums"]["resource_type_natural"]
+          student_id?: string
+          terrain_element_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gathering_log_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       missions: {
         Row: {
           created_at: string | null
@@ -746,6 +781,38 @@ export type Database = {
           },
           {
             foreignKeyName: "player_missions_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      player_resources: {
+        Row: {
+          amount: number
+          id: string
+          resource_type: Database["public"]["Enums"]["resource_type_natural"]
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          id?: string
+          resource_type: Database["public"]["Enums"]["resource_type_natural"]
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          id?: string
+          resource_type?: Database["public"]["Enums"]["resource_type_natural"]
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "player_resources_student_id_fkey"
             columns: ["student_id"]
             isOneToOne: false
             referencedRelation: "students"
@@ -1264,6 +1331,14 @@ export type Database = {
       item_rarity: "common" | "rare" | "epic" | "legendary"
       mission_type: "daily" | "weekly" | "monthly"
       resource_type: "coins" | "diamonds" | "citizens"
+      resource_type_natural:
+        | "wood"
+        | "stone"
+        | "iron"
+        | "coal"
+        | "food"
+        | "leather"
+        | "fish"
       school_year: "1" | "2" | "3" | "4"
       shop_item_type: "building" | "decoration" | "powerup" | "defense"
       subject: "portugues" | "matematica" | "estudo_meio" | "ingles"
@@ -1422,6 +1497,15 @@ export const Constants = {
       item_rarity: ["common", "rare", "epic", "legendary"],
       mission_type: ["daily", "weekly", "monthly"],
       resource_type: ["coins", "diamonds", "citizens"],
+      resource_type_natural: [
+        "wood",
+        "stone",
+        "iron",
+        "coal",
+        "food",
+        "leather",
+        "fish",
+      ],
       school_year: ["1", "2", "3", "4"],
       shop_item_type: ["building", "decoration", "powerup", "defense"],
       subject: ["portugues", "matematica", "estudo_meio", "ingles"],
