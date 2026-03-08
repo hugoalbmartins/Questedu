@@ -218,6 +218,9 @@ const Index = () => {
                     <div className="font-body text-sm text-muted-foreground space-y-4">
                       <p><strong>Última atualização:</strong> Março 2026</p>
                       
+                      <h4 className="font-semibold text-foreground">Entidade Responsável</h4>
+                      <p>Hugo Alberto da Silva Martins<br />NIF: 218246587<br />Contacto: info@serv2all.pt</p>
+                      
                       <h4 className="font-semibold text-foreground">1. Aceitação dos Termos</h4>
                       <p>Ao aceder e utilizar o Questeduca, aceita estar vinculado a estes Termos de Utilização. Se não concordar com alguma parte destes termos, não deve utilizar o serviço.</p>
                       
@@ -257,7 +260,7 @@ const Index = () => {
                       <p>Em conformidade com o Regulamento Geral sobre a Proteção de Dados (RGPD) - Regulamento (UE) 2016/679.</p>
                       
                       <h4 className="font-semibold text-foreground">1. Responsável pelo Tratamento</h4>
-                      <p>Hugo Alberto da Silva Martins<br />NIF: 218246587<br />Contacto: info@serv2all.pt</p>
+                      <p>O responsável pelo tratamento dos dados é identificado nos Termos de Utilização. Para contacto: info@serv2all.pt</p>
                       
                       <h4 className="font-semibold text-foreground">2. Dados Recolhidos</h4>
                       <p>Recolhemos: nome, email, distrito, ano de escolaridade, dados de progresso no jogo e interações sociais dentro da plataforma.</p>
@@ -324,13 +327,9 @@ const Index = () => {
             {/* Contact */}
             <div>
               <h3 className="font-display font-bold mb-3">Contacto</h3>
-              <p className="font-body text-sm text-muted-foreground mb-2">
+              <p className="font-body text-sm text-muted-foreground">
                 <Mail className="w-4 h-4 inline mr-1" />
                 info@serv2all.pt
-              </p>
-              <p className="font-body text-xs text-muted-foreground">
-                Hugo Alberto da Silva Martins<br />
-                NIF: 218246587
               </p>
             </div>
           </div>
