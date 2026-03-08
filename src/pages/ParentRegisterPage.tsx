@@ -105,10 +105,8 @@ const ParentRegisterPage = () => {
   };
 
   const handleGoogleSignIn = async () => {
-    const { error } = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
-    });
-    if (error) toast.error("Erro com Google: " + error.message);
+    const { error } = await signInWithGoogle("/parent");
+    if (error) toast.error("Erro com Google: " + (error as any).message);
   };
 
   return (
