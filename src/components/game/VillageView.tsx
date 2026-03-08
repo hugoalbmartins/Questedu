@@ -34,6 +34,7 @@ interface VillageViewProps {
   };
   onQuiz: () => void;
   onRefresh: () => void;
+  onPremium?: () => void;
 }
 
 // Production rates (coins per minute per level)
