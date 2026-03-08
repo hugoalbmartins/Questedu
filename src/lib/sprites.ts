@@ -28,6 +28,13 @@ export const BUILDING_SPRITES: Record<string, SpriteRegion> = {
   barracks: { image: buildingsSprite, sx: 512, sy: 512, sw: 256, sh: 256 },
   road:     { image: buildingsSprite, sx: 768, sy: 512, sw: 256, sh: 256 },
   mansion:  { image: mansionSprite,   sx: 0,   sy: 0,   sw: 512, sh: 512 },
+  // Extra buildings (buildings-extra.png 1024x1536, 2x3 grid)
+  farm:            { image: extraSprite, sx: 0,   sy: 0,   sw: 512, sh: 512 },
+  hospital:        { image: extraSprite, sx: 512, sy: 0,   sw: 512, sh: 512 },
+  school_building: { image: extraSprite, sx: 0,   sy: 512, sw: 512, sh: 512 },
+  church:          { image: extraSprite, sx: 512, sy: 512, sw: 512, sh: 512 },
+  well:            { image: extraSprite, sx: 0,   sy: 1024, sw: 512, sh: 512 },
+  windmill:        { image: extraSprite, sx: 512, sy: 1024, sw: 512, sh: 512 },
   // Monuments (monuments-sprite.png 1024x1024, 2x2 grid)
   torre_belem:           { image: monumentsSprite, sx: 0,   sy: 0,   sw: 512, sh: 512 },
   templo_romano:         { image: monumentsSprite, sx: 512, sy: 0,   sw: 512, sh: 512 },
