@@ -45,7 +45,7 @@ const PRODUCTION_RATES: Record<string, number> = {
 };
 const PRODUCTION_INTERVAL_MS = 60000;
 
-export const VillageView = ({ student, onQuiz, onRefresh }: VillageViewProps) => {
+export const VillageView = ({ student, onQuiz, onRefresh, onPremium }: VillageViewProps) => {
   const [buildings, setBuildings] = useState<PlacedBuilding[]>([]);
   const [selectedBuilding, setSelectedBuilding] = useState<string | null>(null);
   const [ghostPos, setGhostPos] = useState<{ x: number; y: number } | null>(null);
