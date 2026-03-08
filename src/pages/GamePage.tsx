@@ -12,6 +12,7 @@ import { MissionsPanel } from "@/components/game/MissionsPanel";
 import { BattleModal } from "@/components/game/BattleModal";
 import { RankingsPanel } from "@/components/game/RankingsPanel";
 import { MonthlyTestModal } from "@/components/game/MonthlyTestModal";
+import { PremiumModal } from "@/components/game/PremiumModal";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { toast } from "sonner";
