@@ -525,6 +525,7 @@ export const VillageView = ({ student, onQuiz, onRefresh }: VillageViewProps) =>
       {/* Tutorial */}
       <TutorialOverlay buildings={buildings} onSelectBuilding={setSelectedBuilding} />
 
+      <BuildMenu
         selectedBuilding={selectedBuilding} onSelect={setSelectedBuilding}
         coins={student.coins} diamonds={student.diamonds}
         villageLevel={student.village_level} isPremium={student.is_premium}
