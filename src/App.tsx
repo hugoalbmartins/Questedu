@@ -19,6 +19,7 @@ import FAQPage from "./pages/FAQPage";
 import AssociationRegisterPage from "./pages/AssociationRegisterPage";
 import AdminDashboard from "./pages/AdminDashboard";
 import InstallPage from "./pages/InstallPage";
+import EmailVerifiedPage from "./pages/EmailVerifiedPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
