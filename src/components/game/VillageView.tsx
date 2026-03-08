@@ -13,6 +13,7 @@ import { gridToIso } from '@/lib/gridLogic';
 import { TILE_W, TILE_H } from '@/lib/gameTypes';
 import { calculateSimState, SimState, AnimatedCitizen, createAnimatedCitizen, updateCitizen, SIM_TICK_MS, SIM_RATES, Complaint, getCurrentSeason, SEASON_CONFIG } from '@/lib/simulation';
 import { TradePanel } from './TradePanel';
+import { TutorialOverlay } from './TutorialOverlay';
 import { toast } from 'sonner';
 import { BookOpen, Shield, Users, Sparkles, Music, Volume2, Maximize, Crown, Lock, Heart, Apple, Droplets, GraduationCap, ArrowLeftRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -79,6 +80,54 @@ export const VillageView = ({ student, onQuiz, onRefresh }: VillageViewProps) =>
 
   useEffect(() => { loadBuildings(); }, [student.id]);
   useEffect(() => { return () => { AmbientMusic.stop(); }; }, []);
+
+  // === REALTIME TRADE NOTIFICATIONS ===
+  useEffect(() => {
+    const channel = supabase
+      .channel('trade-notifications')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'trade_offers',
+          filter: `receiver_id=eq.${student.id}`,
+        },
+        (payload) => {
+          const trade = payload.new as any;
+          toast.info(`📦 Nova proposta de troca! ${trade.offer_coins > 0 ? `🪙${trade.offer_coins}` : ''} ${trade.offer_food > 0 ? `🍖${trade.offer_food}` : ''}`, {
+            duration: 6000,
+            action: {
+              label: 'Ver',
+              onClick: () => setShowTrade(true),
+            },
+          });
+          SFX.coins();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'trade_offers',
+          filter: `sender_id=eq.${student.id}`,
+        },
+        (payload) => {
+          const trade = payload.new as any;
+          if (trade.status === 'accepted') {
+            toast.success('🤝 A tua proposta de troca foi aceite!', { duration: 5000 });
+            SFX.coins();
+            onRefresh();
+          } else if (trade.status === 'rejected') {
+            toast.info('❌ A tua proposta de troca foi rejeitada.', { duration: 4000 });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [student.id]);
 
   // Passive production timer
   useEffect(() => {
@@ -472,6 +521,9 @@ export const VillageView = ({ student, onQuiz, onRefresh }: VillageViewProps) =>
         complaints={simState?.complaints || []}
         onTileClick={handleTileClick} onTileHover={handleTileHover} onBuildingClick={handleBuildingClick}
       />
+
+      {/* Tutorial */}
+      <TutorialOverlay buildings={buildings} onSelectBuilding={setSelectedBuilding} />
 
       <BuildMenu
         selectedBuilding={selectedBuilding} onSelect={setSelectedBuilding}
