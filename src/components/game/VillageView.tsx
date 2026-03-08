@@ -238,7 +238,7 @@ export const VillageView = ({ student, onQuiz, onRefresh }: VillageViewProps) =>
           className="h-8 w-8 bg-card/90 backdrop-blur-sm"
           title={musicOn ? 'Desligar música' : 'Ligar música'}
         >
-          {musicOn ? <Music className="w-4 h-4 text-primary" /> : <MusicOff className="w-4 h-4 text-muted-foreground" />}
+          {musicOn ? <Music className="w-4 h-4 text-primary" /> : <Volume2 className="w-4 h-4 text-muted-foreground" />}
         </Button>
         <Button
           size="sm"
