@@ -37,7 +37,7 @@ const RIVER_DISTRICTS = ['santarem', 'coimbra', 'portalegre', 'evora', 'castelo_
 const LAKE_DISTRICTS = ['braganca', 'guarda', 'viseu', 'braga', 'beja'];
 
 // How many tiles of "wilderness" surround the grid
-const WILDERNESS_BORDER = 6;
+const WILDERNESS_BORDER = 15;
 
 export function generateTerrain(config: TerrainConfig): TerrainElement[] {
   const { district, gridSize, seed } = config;
