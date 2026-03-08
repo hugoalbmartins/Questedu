@@ -13,7 +13,6 @@ import { BattleModal } from "@/components/game/BattleModal";
 import { RankingsPanel } from "@/components/game/RankingsPanel";
 import { MonthlyTestModal } from "@/components/game/MonthlyTestModal";
 import { AchievementsPanel } from "@/components/game/AchievementsPanel";
-import { AchievementsPanel } from "@/components/game/AchievementsPanel";
 import { SettingsPanel } from "@/components/game/SettingsPanel";
 import { useAchievements } from "@/hooks/useAchievements";
 import { useNotifications } from "@/hooks/useNotifications";
