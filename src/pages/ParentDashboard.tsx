@@ -46,6 +46,7 @@ const ParentDashboard = () => {
   const [savingDistrict, setSavingDistrict] = useState(false);
   const [pendingFriendships, setPendingFriendships] = useState<any[]>([]);
   const [checkingOutChild, setCheckingOutChild] = useState<string | null>(null);
+  const [premiumChild, setPremiumChild] = useState<any>(null);
 
   useEffect(() => {
     if (profile) {
