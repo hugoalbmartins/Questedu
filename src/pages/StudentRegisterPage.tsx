@@ -12,7 +12,7 @@ import logo from "@/assets/logo.png";
 const StudentRegisterPage = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    name: "", email: "", password: "", gender: "indefinido",
+    name: "", email: "", password: "", gender: "indefinido", schoolYear: "1",
   });
   const [loading, setLoading] = useState(false);
   const [emailStatus, setEmailStatus] = useState<"idle" | "checking" | "authorized" | "not_authorized">("idle");
