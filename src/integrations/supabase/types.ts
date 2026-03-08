@@ -435,6 +435,47 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          created_at: string
+          icon: string | null
+          id: string
+          message: string
+          read: boolean
+          student_id: string
+          title: string
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          icon?: string | null
+          id?: string
+          message: string
+          read?: boolean
+          student_id: string
+          title: string
+          type?: string
+        }
+        Update: {
+          created_at?: string
+          icon?: string | null
+          id?: string
+          message?: string
+          read?: boolean
+          student_id?: string
+          title?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       parent_associations: {
         Row: {
           association_code: string
@@ -1093,6 +1134,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_daily_quiz_reminders: { Args: never; Returns: undefined }
       has_admin_role: {
         Args: {
           _role: Database["public"]["Enums"]["admin_role"]
