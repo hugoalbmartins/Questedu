@@ -64,7 +64,7 @@ export const RankingsPanel = ({ studentId, district, schoolName }: RankingsPanel
       const { data: districtData } = await supabase
         .from("students")
         .select("id, display_name, xp, village_level, district, school_name")
-        .eq("district", district)
+        .eq("district", district as any)
         .order("xp", { ascending: false })
         .limit(10);
 
