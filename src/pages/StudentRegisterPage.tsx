@@ -57,6 +57,11 @@ const StudentRegisterPage = () => {
     }, 400);
   }, []);
 
+  // Load all schools on mount
+  useEffect(() => {
+    loadSchools();
+  }, []);
+
   const loadSchools = async (defaultDistrict?: string) => {
     const { data } = await supabase
       .from("schools")
