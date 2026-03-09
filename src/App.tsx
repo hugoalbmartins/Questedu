@@ -21,6 +21,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import InstallPage from "./pages/InstallPage";
 import EmailVerifiedPage from "./pages/EmailVerifiedPage";
 import AssociationDashboard from "./pages/AssociationDashboard";
+import ImportSchoolsPage from "./pages/ImportSchoolsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -50,6 +51,7 @@ const App = () => (
             <Route path="/administratorquest" element={<AdminDashboard />} />
             <Route path="/install" element={<InstallPage />} />
             <Route path="/association" element={<AssociationDashboard />} />
+            <Route path="/import-schools" element={<ImportSchoolsPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
