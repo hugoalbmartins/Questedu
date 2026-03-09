@@ -822,6 +822,9 @@ export type Database = {
       }
       profiles: {
         Row: {
+          accessibility_colorblind_filter: string | null
+          accessibility_dyslexia: boolean | null
+          accessibility_magnifier: boolean | null
           created_at: string
           display_name: string
           district: Database["public"]["Enums"]["district"] | null
@@ -832,6 +835,9 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          accessibility_colorblind_filter?: string | null
+          accessibility_dyslexia?: boolean | null
+          accessibility_magnifier?: boolean | null
           created_at?: string
           display_name: string
           district?: Database["public"]["Enums"]["district"] | null
@@ -842,6 +848,9 @@ export type Database = {
           user_id: string
         }
         Update: {
+          accessibility_colorblind_filter?: string | null
+          accessibility_dyslexia?: boolean | null
+          accessibility_magnifier?: boolean | null
           created_at?: string
           display_name?: string
           district?: Database["public"]["Enums"]["district"] | null
