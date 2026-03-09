@@ -53,8 +53,23 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Import from storage
+    if (action === 'import_from_storage') {
+      const { data: fileData, error: dlError } = await supabase.storage
+        .from('association-docs')
+        .download('schools-import.csv');
+      if (dlError || !fileData) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Failed to download CSV: ' + (dlError?.message || 'no data') }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      body.csvText = await fileData.text();
+      console.log('Downloaded CSV from storage, length:', body.csvText.length);
+    }
+
     // Full CSV import server-side
-    if (action === 'import_csv' && body.csvText) {
+    if (['import_csv', 'import_from_url', 'import_from_storage'].includes(action) && body.csvText) {
       const lines = body.csvText.split('\n');
       const schools: { name: string; district: string }[] = [];
       
