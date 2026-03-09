@@ -72,12 +72,22 @@ export const SchoolSelector = ({ children, onUpdate }: SchoolSelectorProps) => {
     setChildState(prev => ({ ...prev, [childId]: { ...prev[childId], schoolId } }));
   };
 
+  const getFilteredSchools = (childId: string) => {
+    const query = (searchQuery[childId] || "").toLowerCase().trim();
+    if (!query) return allSchools;
+    const keywords = query.split(/\s+/);
+    return allSchools.filter(s => {
+      const name = s.name.toLowerCase();
+      return keywords.every(kw => name.includes(kw));
+    });
+  };
+
   const handleSave = async (childId: string) => {
     const state = childState[childId];
     if (!state?.schoolId) { toast.error("Selecione uma escola"); return; }
 
     setSaving(childId);
-    const school = filteredSchools.find(s => s.id === state.schoolId);
+    const school = allSchools.find(s => s.id === state.schoolId);
     const { error } = await supabase
       .from("students")
       .update({ school_id: state.schoolId, school_name: school?.name || null })
