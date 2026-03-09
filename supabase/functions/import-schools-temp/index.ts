@@ -64,6 +64,9 @@ Deno.serve(async (req) => {
       }
       body.csvText = await csvResponse.text();
       console.log('Fetched CSV, length:', body.csvText.length);
+      console.log('First 500 chars:', body.csvText.substring(0, 500));
+      console.log('First line:', body.csvText.split('\n')[0]);
+      console.log('Second line:', body.csvText.split('\n')[1]);
     }
 
     // Full CSV import server-side
