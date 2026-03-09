@@ -13,6 +13,8 @@ import { PromoCodesTab } from "@/components/admin/PromoCodesTab";
 import { GrantPremiumTab } from "@/components/admin/GrantPremiumTab";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
+import { AccessibilityWrapper } from "@/components/accessibility/AccessibilityWrapper";
+import { AccessibilitySettings } from "@/components/accessibility/AccessibilitySettings";
 
 interface AdminUser {
   id: string;
@@ -452,7 +454,8 @@ const AdminDashboard = () => {
   );
 
   return (
-    <div className="min-h-screen bg-background">
+    <AccessibilityWrapper userId={currentUser?.id}>
+      <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="bg-card border-b-2 border-border px-4 py-3">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
@@ -492,7 +495,7 @@ const AdminDashboard = () => {
 
         <Tabs defaultValue="users">
           <div className="overflow-x-auto -mx-4 px-4 mb-6">
-            <TabsList className="inline-flex w-auto min-w-full sm:grid sm:grid-cols-6 sm:w-full">
+            <TabsList className="inline-flex w-auto min-w-full sm:grid sm:grid-cols-7 sm:w-full">
               <TabsTrigger value="users" className="font-body text-xs gap-1 whitespace-nowrap">
                 <Users className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Utilizadores</span><span className="sm:hidden">Users</span>
               </TabsTrigger>
@@ -510,6 +513,9 @@ const AdminDashboard = () => {
               </TabsTrigger>
               <TabsTrigger value="admins" className="font-body text-xs gap-1 whitespace-nowrap">
                 <Shield className="w-3.5 h-3.5" /> Admins
+              </TabsTrigger>
+              <TabsTrigger value="settings" className="font-body text-xs gap-1 whitespace-nowrap">
+                <Eye className="w-3.5 h-3.5" /> Config
               </TabsTrigger>
             </TabsList>
           </div>
@@ -760,6 +766,16 @@ const AdminDashboard = () => {
               )}
             </div>
           </TabsContent>
+
+          {/* SETTINGS TAB */}
+          <TabsContent value="settings">
+            <div className="max-w-lg">
+              <h2 className="font-display text-xl font-bold mb-4">Configurações Pessoais</h2>
+              <div className="bg-card rounded-xl border border-border p-6">
+                <AccessibilitySettings userId={currentUser!.id} table="profiles" />
+              </div>
+            </div>
+          </TabsContent>
         </Tabs>
       </div>
 
@@ -820,7 +836,8 @@ const AdminDashboard = () => {
         </AlertDialogContent>
       </AlertDialog>
     </div>
-  );
+  </AccessibilityWrapper>
+);
 };
 
 export default AdminDashboard;

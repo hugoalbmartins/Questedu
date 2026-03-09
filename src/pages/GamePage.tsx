@@ -36,6 +36,7 @@ const GamePage = () => {
   const [showShop, setShowShop] = useState(false);
   const [showBattle, setShowBattle] = useState(false);
   const [showMonthlyTest, setShowMonthlyTest] = useState(false);
+  const [sideMenuOpen, setSideMenuOpen] = useState(false);
   const [battleQuizCallback, setBattleQuizCallback] = useState<(() => Promise<boolean>) | null>(null);
   const { achievements, unlocked, checkAchievements } = useAchievements(studentData?.id);
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications(studentData?.id);
@@ -163,7 +164,7 @@ const GamePage = () => {
       />
 
       {/* Side Menu */}
-      <Sheet>
+      <Sheet open={sideMenuOpen} onOpenChange={setSideMenuOpen}>
         <SheetTrigger asChild>
           <Button 
             variant="outline" 
@@ -289,7 +290,11 @@ const GamePage = () => {
           <Button 
             variant="ghost" 
             size="sm" 
-            onClick={async () => { await signOut(); navigate("/"); }}
+            onClick={async () => { 
+              setSideMenuOpen(false); 
+              await signOut(); 
+              navigate("/"); 
+            }}
             className="flex flex-col gap-1 h-auto py-2"
           >
             <LogOut className="w-5 h-5" />

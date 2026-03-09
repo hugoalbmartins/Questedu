@@ -11,6 +11,10 @@ import { LogOut, Users, BookOpen, MessageCircle, Shield, Settings, Plus, Trash2,
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 import { PremiumModal } from "@/components/game/PremiumModal";
+import { AccessibilityWrapper } from "@/components/accessibility/AccessibilityWrapper";
+import { AccessibilitySettings } from "@/components/accessibility/AccessibilitySettings";
+import { ChatMonitor } from "@/components/parent/ChatMonitor";
+import { SubjectPriorityManager } from "@/components/parent/SubjectPriorityManager";
 
 const schoolYears = [
   { value: "1", label: "1º Ano" },
@@ -262,7 +266,8 @@ const ParentDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen parchment-bg">
+    <AccessibilityWrapper userId={user?.id}>
+      <div className="min-h-screen parchment-bg">
       {/* Header */}
       <div className="bg-card border-b-2 border-border px-4 py-3">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
@@ -417,20 +422,27 @@ const ParentDashboard = () => {
           </TabsContent>
 
           <TabsContent value="progress">
-            <div className="game-border bg-card p-6 text-center">
-              <BookOpen className="w-12 h-12 mx-auto mb-3 text-accent" />
-              <h2 className="font-display text-xl font-bold mb-2">Evolução Escolar</h2>
-              <p className="font-body text-muted-foreground">
-                Acompanhe o desempenho dos seus educandos por disciplina.
-              </p>
-              {children.map(child => (
-                <div key={child.id} className="mt-4 parchment-bg rounded-lg p-4 text-left">
-                  <h3 className="font-body font-bold">{child.display_name}</h3>
-                  <p className="font-body text-sm text-muted-foreground">
-                    XP Total: {child.xp} • {child.school_year}º Ano
-                  </p>
-                </div>
-              ))}
+            <div className="space-y-4">
+              <div className="game-border bg-card p-6 text-center">
+                <BookOpen className="w-12 h-12 mx-auto mb-3 text-accent" />
+                <h2 className="font-display text-xl font-bold mb-2">Evolução Escolar</h2>
+                <p className="font-body text-muted-foreground">
+                  Acompanhe o desempenho dos seus educandos por disciplina.
+                </p>
+                {children.map(child => (
+                  <div key={child.id} className="mt-4 parchment-bg rounded-lg p-4 text-left">
+                    <h3 className="font-body font-bold">{child.display_name}</h3>
+                    <p className="font-body text-sm text-muted-foreground">
+                      XP Total: {child.xp} • {child.school_year}º Ano
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Subject Priority Manager */}
+              <div className="game-border bg-card p-4">
+                <SubjectPriorityManager parentId={user!.id} children={children} />
+              </div>
             </div>
           </TabsContent>
 
@@ -497,22 +509,24 @@ const ParentDashboard = () => {
                   </div>
                 )}
               </div>
+
+              {/* Chat Monitor */}
+              <div className="game-border bg-card p-4">
+                <ChatMonitor parentId={user!.id} children={children} />
+              </div>
             </div>
           </TabsContent>
 
           <TabsContent value="settings">
-            <div className="game-border bg-card p-6">
-              <h2 className="font-display text-xl font-bold mb-4">Configurações</h2>
-              <div className="space-y-4">
-                <div className="parchment-bg rounded-lg p-4">
-                  <h3 className="font-body font-bold mb-2">Prioridade de Disciplinas</h3>
-                  <p className="font-body text-sm text-muted-foreground">
-                    Defina qual disciplina deve ter mais incidência nas perguntas dos seus educandos.
-                  </p>
-                  <p className="font-body text-xs text-muted-foreground mt-2">
-                    (As perguntas não ficam exclusivas — apenas com maior incidência)
-                  </p>
+            <div className="space-y-4">
+              <div className="game-border bg-card p-6">
+                <h2 className="font-display text-xl font-bold mb-4">Configurações</h2>
+
+                {/* Accessibility Settings */}
+                <div className="parchment-bg rounded-lg p-4 mb-4">
+                  <AccessibilitySettings userId={user!.id} table="profiles" />
                 </div>
+
                 <div className="parchment-bg rounded-lg p-4">
                   <h3 className="font-body font-bold mb-2">Informações da Conta</h3>
                   <p className="font-body text-sm text-muted-foreground mb-3">
@@ -564,7 +578,8 @@ const ParentDashboard = () => {
           subscriptionType={premiumChild.subscription_type}
         />
       )}
-    </div>
+      </div>
+    </AccessibilityWrapper>
   );
 };
 

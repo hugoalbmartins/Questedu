@@ -121,9 +121,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [fetchProfile]);
 
   const signOut = useCallback(async () => {
-    await supabase.auth.signOut();
+    // Clear states synchronously BEFORE signOut to prevent race conditions
     setProfile(null);
     setStudentData(null);
+    setUser(null);
+    setSession(null);
+    await supabase.auth.signOut();
   }, []);
 
   return (
