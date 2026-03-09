@@ -139,7 +139,7 @@ serve(async (req) => {
           .update(updateData)
           .eq("id", studentId);
 
-        // Handle association donation (10% of subscription amount)
+        // Handle association donation calculation with improved logic for premium users
         if (student?.association_code) {
           const { data: association } = await supabaseClient
             .from("parent_associations")
@@ -149,9 +149,36 @@ serve(async (req) => {
             .single();
 
           if (association) {
-            const donationAmount = subscriptionType === "annual"
-              ? PLAN_AMOUNTS.annual * 0.10
-              : PLAN_AMOUNTS.monthly * 0.10;
+            let donationAmount = 0;
+            
+            // Check if association code was set after subscription started
+            const associationSetAt = (student as any).association_code_set_at ? new Date((student as any).association_code_set_at) : null;
+            const subscriptionStarted = new Date(subscription.current_period_start * 1000);
+            
+            if (subscriptionType === "annual" && associationSetAt && associationSetAt > subscriptionStarted) {
+              // Calculate proportional amount for remaining months
+              const subscriptionEnd = new Date(subscription.current_period_end * 1000);
+              const totalDays = Math.ceil((subscriptionEnd.getTime() - subscriptionStarted.getTime()) / (1000 * 60 * 60 * 24));
+              const remainingDays = Math.ceil((subscriptionEnd.getTime() - associationSetAt.getTime()) / (1000 * 60 * 60 * 24));
+              
+              // Calculate proportion based on remaining days
+              const proportion = remainingDays / totalDays;
+              donationAmount = PLAN_AMOUNTS.annual * 0.10 * proportion;
+              
+              logStep("Calculated proportional donation for association code set after subscription", {
+                associationSetAt: associationSetAt.toISOString(),
+                subscriptionStarted: subscriptionStarted.toISOString(),
+                totalDays,
+                remainingDays,
+                proportion,
+                donationAmount
+              });
+            } else {
+              // Standard calculation for new subscriptions or monthly
+              donationAmount = subscriptionType === "annual"
+                ? PLAN_AMOUNTS.annual * 0.10
+                : PLAN_AMOUNTS.monthly * 0.10;
+            }
 
             // Check if donation for this period already exists
             const periodStart = new Date(subscription.current_period_start * 1000).toISOString();
