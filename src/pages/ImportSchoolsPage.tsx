@@ -181,7 +181,7 @@ export default function ImportSchoolsPage() {
               <div className="p-4 bg-muted rounded-lg space-y-1">
                 <p className="font-medium">{status}</p>
                 <p className="text-sm">Total processadas: {stats.total}</p>
-                <p className="text-sm text-green-600">Inseridas: {stats.inserted}</p>
+                <p className="text-sm text-primary">Inseridas: {stats.inserted}</p>
                 {stats.errors > 0 && (
                   <p className="text-sm text-destructive">Erros: {stats.errors}</p>
                 )}
