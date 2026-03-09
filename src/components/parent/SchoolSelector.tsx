@@ -10,8 +10,6 @@ interface School {
   id: string;
   name: string;
   district: string;
-  municipality: string | null;
-  locality: string | null;
 }
 
 interface Student {
@@ -27,136 +25,64 @@ interface SchoolSelectorProps {
 }
 
 const districts = [
-  { value: "aveiro", label: "Aveiro" }, { value: "beja", label: "Beja" },
-  { value: "braga", label: "Braga" }, { value: "braganca", label: "Bragança" },
-  { value: "castelo_branco", label: "Castelo Branco" }, { value: "coimbra", label: "Coimbra" },
-  { value: "evora", label: "Évora" }, { value: "faro", label: "Faro" },
-  { value: "guarda", label: "Guarda" }, { value: "leiria", label: "Leiria" },
-  { value: "lisboa", label: "Lisboa" }, { value: "portalegre", label: "Portalegre" },
-  { value: "porto", label: "Porto" }, { value: "santarem", label: "Santarém" },
-  { value: "setubal", label: "Setúbal" }, { value: "viana_castelo", label: "Viana do Castelo" },
-  { value: "vila_real", label: "Vila Real" }, { value: "viseu", label: "Viseu" },
-  { value: "acores", label: "Açores" }, { value: "madeira", label: "Madeira" },
+  { value: "Aveiro", label: "Aveiro" }, { value: "Beja", label: "Beja" },
+  { value: "Braga", label: "Braga" }, { value: "Bragança", label: "Bragança" },
+  { value: "Castelo Branco", label: "Castelo Branco" }, { value: "Coimbra", label: "Coimbra" },
+  { value: "Évora", label: "Évora" }, { value: "Faro", label: "Faro" },
+  { value: "Guarda", label: "Guarda" }, { value: "Leiria", label: "Leiria" },
+  { value: "Lisboa", label: "Lisboa" }, { value: "Portalegre", label: "Portalegre" },
+  { value: "Porto", label: "Porto" }, { value: "Santarém", label: "Santarém" },
+  { value: "Setúbal", label: "Setúbal" }, { value: "Viana do Castelo", label: "Viana do Castelo" },
+  { value: "Vila Real", label: "Vila Real" }, { value: "Viseu", label: "Viseu" },
+  { value: "Açores", label: "Açores" }, { value: "Madeira", label: "Madeira" },
 ];
 
 export const SchoolSelector = ({ children, onUpdate }: SchoolSelectorProps) => {
-  const [schools, setSchools] = useState<School[]>([]);
-  const [filteredMunicipalities, setFilteredMunicipalities] = useState<string[]>([]);
-  const [filteredLocalities, setFilteredLocalities] = useState<string[]>([]);
-  const [filteredSchools, setFilteredSchools] = useState<School[]>([]);
   const [saving, setSaving] = useState<string | null>(null);
-  const [childSchools, setChildSchools] = useState<Record<string, { 
-    selectedDistrict: string; 
-    selectedMunicipality: string;
-    selectedLocality: string;
-    selectedSchool: string;
-  }>>({});
+  const [childState, setChildState] = useState<Record<string, { district: string; schoolId: string }>>({});
+  const [filteredSchools, setFilteredSchools] = useState<School[]>([]);
+  const [loadingSchools, setLoadingSchools] = useState(false);
 
   useEffect(() => {
-    loadSchools();
-    initializeChildSchools();
+    const init: Record<string, { district: string; schoolId: string }> = {};
+    children.forEach(c => {
+      init[c.id] = { district: "", schoolId: c.school_id || "" };
+    });
+    setChildState(init);
   }, [children]);
 
-  const loadSchools = async () => {
+  const handleDistrictChange = async (childId: string, district: string) => {
+    setChildState(prev => ({ ...prev, [childId]: { district, schoolId: "" } }));
+    setLoadingSchools(true);
+    
     const { data } = await supabase
       .from("schools")
-      .select("*")
+      .select("id, name, district")
+      .eq("district", district)
       .order("name");
-    setSchools(data || []);
-  };
-
-  const initializeChildSchools = () => {
-    const initialStates: Record<string, { selectedDistrict: string; selectedMunicipality: string; selectedLocality: string; selectedSchool: string }> = {};
-    children.forEach(child => {
-      // Find current school info if exists
-      const currentSchool = schools.find(s => s.id === child.school_id);
-      initialStates[child.id] = {
-        selectedDistrict: currentSchool?.district || "",
-        selectedMunicipality: currentSchool?.municipality || "",
-        selectedLocality: currentSchool?.locality || "",
-        selectedSchool: child.school_id || "",
-      };
-    });
-    setChildSchools(initialStates);
-  };
-
-  const handleDistrictChange = (childId: string, district: string) => {
-    const newState = { ...childSchools[childId], selectedDistrict: district, selectedMunicipality: "", selectedLocality: "", selectedSchool: "" };
-    setChildSchools(prev => ({ ...prev, [childId]: newState }));
     
-    // Update municipalities list
-    const districtSchools = schools.filter(s => s.district === district);
-    const municipalities = [...new Set(districtSchools.map(s => s.municipality).filter(Boolean))].sort();
-    setFilteredMunicipalities(municipalities);
-    setFilteredLocalities([]);
-    setFilteredSchools([]);
-  };
-
-  const handleMunicipalityChange = (childId: string, municipality: string) => {
-    const newState = { ...childSchools[childId], selectedMunicipality: municipality, selectedLocality: "", selectedSchool: "" };
-    setChildSchools(prev => ({ ...prev, [childId]: newState }));
-    
-    // Update localities list
-    const currentDistrict = childSchools[childId]?.selectedDistrict || "";
-    const municipalitySchools = schools.filter(s => 
-      s.district === currentDistrict && s.municipality === municipality
-    );
-    const localities = [...new Set(municipalitySchools.map(s => s.locality).filter(Boolean))].sort();
-    setFilteredLocalities(localities);
-    setFilteredSchools([]);
-  };
-
-  const handleLocalityChange = (childId: string, locality: string) => {
-    const newState = { ...childSchools[childId], selectedLocality: locality, selectedSchool: "" };
-    setChildSchools(prev => ({ ...prev, [childId]: newState }));
-    
-    // Update schools list
-    const currentDistrict = childSchools[childId]?.selectedDistrict || "";
-    const currentMunicipality = childSchools[childId]?.selectedMunicipality || "";
-    const localitySchools = schools.filter(s => 
-      s.district === currentDistrict && 
-      s.municipality === currentMunicipality && 
-      s.locality === locality
-    ).sort((a, b) => a.name.localeCompare(b.name));
-    setFilteredSchools(localitySchools);
+    setFilteredSchools(data || []);
+    setLoadingSchools(false);
   };
 
   const handleSchoolChange = (childId: string, schoolId: string) => {
-    setChildSchools(prev => ({ 
-      ...prev, 
-      [childId]: { ...prev[childId], selectedSchool: schoolId }
-    }));
+    setChildState(prev => ({ ...prev, [childId]: { ...prev[childId], schoolId } }));
   };
 
-  const handleSaveSchool = async (childId: string) => {
-    const schoolId = childSchools[childId]?.selectedSchool;
-    if (!schoolId) {
-      toast.error("Selecione uma escola");
-      return;
-    }
+  const handleSave = async (childId: string) => {
+    const state = childState[childId];
+    if (!state?.schoolId) { toast.error("Selecione uma escola"); return; }
 
     setSaving(childId);
-    
-    const school = schools.find(s => s.id === schoolId);
+    const school = filteredSchools.find(s => s.id === state.schoolId);
     const { error } = await supabase
       .from("students")
-      .update({
-        school_id: schoolId,
-        school_name: school?.name || null,
-      })
+      .update({ school_id: state.schoolId, school_name: school?.name || null })
       .eq("id", childId);
 
-    if (error) {
-      toast.error("Erro ao guardar escola");
-    } else {
-      toast.success("Escola atualizada com sucesso!");
-      onUpdate();
-    }
+    if (error) toast.error("Erro ao guardar escola");
+    else { toast.success("Escola atualizada!"); onUpdate(); }
     setSaving(null);
-  };
-
-  const getDistrictLabel = (value: string) => {
-    return districts.find(d => d.value === value)?.label || value;
   };
 
   return (
@@ -175,12 +101,12 @@ export const SchoolSelector = ({ children, onUpdate }: SchoolSelectorProps) => {
             </p>
           )}
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
             <div>
               <Label className="text-xs font-medium">Distrito</Label>
               <Select 
-                value={childSchools[child.id]?.selectedDistrict || ""} 
-                onValueChange={(value) => handleDistrictChange(child.id, value)}
+                value={childState[child.id]?.district || ""} 
+                onValueChange={(v) => handleDistrictChange(child.id, v)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Escolha o distrito" />
@@ -194,50 +120,14 @@ export const SchoolSelector = ({ children, onUpdate }: SchoolSelectorProps) => {
             </div>
             
             <div>
-              <Label className="text-xs font-medium">Concelho</Label>
-              <Select 
-                value={childSchools[child.id]?.selectedMunicipality || ""} 
-                onValueChange={(value) => handleMunicipalityChange(child.id, value)}
-                disabled={!childSchools[child.id]?.selectedDistrict}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Escolha o concelho" />
-                </SelectTrigger>
-                <SelectContent>
-                  {filteredMunicipalities.map(m => (
-                    <SelectItem key={m} value={m}>{m}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div>
-              <Label className="text-xs font-medium">Localidade</Label>
-              <Select 
-                value={childSchools[child.id]?.selectedLocality || ""} 
-                onValueChange={(value) => handleLocalityChange(child.id, value)}
-                disabled={!childSchools[child.id]?.selectedMunicipality}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Escolha a localidade" />
-                </SelectTrigger>
-                <SelectContent>
-                  {filteredLocalities.map(l => (
-                    <SelectItem key={l} value={l}>{l}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div>
               <Label className="text-xs font-medium">Escola</Label>
               <Select 
-                value={childSchools[child.id]?.selectedSchool || ""} 
-                onValueChange={(value) => handleSchoolChange(child.id, value)}
-                disabled={!childSchools[child.id]?.selectedLocality}
+                value={childState[child.id]?.schoolId || ""} 
+                onValueChange={(v) => handleSchoolChange(child.id, v)}
+                disabled={!childState[child.id]?.district || loadingSchools}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Escolha a escola" />
+                  <SelectValue placeholder={loadingSchools ? "A carregar..." : "Escolha a escola"} />
                 </SelectTrigger>
                 <SelectContent>
                   {filteredSchools.map(s => (
@@ -249,21 +139,15 @@ export const SchoolSelector = ({ children, onUpdate }: SchoolSelectorProps) => {
           </div>
           
           <Button 
-            onClick={() => handleSaveSchool(child.id)}
-            disabled={saving === child.id || !childSchools[child.id]?.selectedSchool}
+            onClick={() => handleSave(child.id)}
+            disabled={saving === child.id || !childState[child.id]?.schoolId}
             size="sm"
             className="w-full"
           >
             {saving === child.id ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                A guardar...
-              </>
+              <><Loader2 className="w-4 h-4 mr-2 animate-spin" />A guardar...</>
             ) : (
-              <>
-                <Save className="w-4 h-4 mr-2" />
-                Guardar Escola
-              </>
+              <><Save className="w-4 h-4 mr-2" />Guardar Escola</>
             )}
           </Button>
         </div>

@@ -10,60 +10,84 @@ export default function ImportSchoolsPage() {
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState("");
   const [file, setFile] = useState<File | null>(null);
-  const [stats, setStats] = useState<{ parsed: number; inserted: number; errors: number } | null>(null);
+  const [stats, setStats] = useState<{ inserted: number; errors: number } | null>(null);
 
   const handleImport = async () => {
-    if (!file) {
-      toast.error("Selecione o ficheiro CSV");
-      return;
-    }
+    if (!file) { toast.error("Selecione o ficheiro CSV"); return; }
 
     setImporting(true);
     setProgress(0);
     setStats(null);
 
     try {
-      setStatus("A ler ficheiro CSV...");
-      setProgress(10);
+      // Step 1: Read CSV
+      setStatus("A ler ficheiro...");
+      setProgress(5);
       const csvText = await file.text();
 
-      setStatus("A enviar para o servidor (parsing + inserção)...");
-      setProgress(30);
-
-      // Single call: send full CSV to edge function
-      const { data, error } = await supabase.functions.invoke('import-schools-temp', {
-        body: { action: 'import_csv', csvText },
+      // Step 2: Delete existing schools
+      setStatus("A limpar escolas existentes...");
+      setProgress(10);
+      const { error: delErr } = await supabase.functions.invoke('import-schools-temp', {
+        body: { action: 'delete_all' },
       });
-
-      if (error) {
-        console.error('Import error:', error);
-        toast.error(`Erro na importação: ${error.message}`);
-        setStatus(`Erro: ${error.message}`);
+      if (delErr) {
+        toast.error("Erro ao limpar escolas: " + delErr.message);
+        setImporting(false);
         return;
+      }
+
+      // Step 3: Import in batches via loop
+      let offset = 0;
+      let totalInserted = 0;
+      let totalErrors = 0;
+      let hasMore = true;
+
+      while (hasMore) {
+        setStatus(`A importar lote a partir de ${offset}...`);
+        
+        const { data, error } = await supabase.functions.invoke('import-schools-temp', {
+          body: { action: 'import_batch', csvText, offset },
+        });
+
+        if (error) {
+          console.error('Batch error:', error);
+          totalErrors++;
+          break;
+        }
+
+        const result = data as { success: boolean; inserted: number; hasMore: boolean; nextOffset: number; total: number; error?: string };
+        
+        if (!result.success) {
+          totalErrors += result.inserted === 0 ? 1 : 0;
+          break;
+        }
+
+        totalInserted += result.inserted;
+        hasMore = result.hasMore;
+        offset = result.nextOffset;
+
+        // Progress: 15% to 95%
+        const pct = result.total > 0 
+          ? Math.min(95, 15 + (offset / result.total) * 80) 
+          : 50;
+        setProgress(Math.round(pct));
+        setStatus(`Importadas ${totalInserted} escolas...`);
       }
 
       setProgress(100);
-      const result = data as { success: boolean; parsed: number; inserted: number; errors: number; error?: string };
+      setStats({ inserted: totalInserted, errors: totalErrors });
 
-      if (!result.success) {
-        toast.error(`Erro: ${result.error}`);
-        setStatus(`Erro: ${result.error}`);
-        return;
-      }
-
-      setStats({ parsed: result.parsed, inserted: result.inserted, errors: result.errors });
-
-      if (result.errors === 0) {
-        toast.success(`✅ Importadas ${result.inserted} escolas com sucesso!`);
-        setStatus("Importação concluída com sucesso!");
+      if (totalErrors === 0) {
+        toast.success(`✅ Importadas ${totalInserted} escolas!`);
+        setStatus("Importação concluída!");
       } else {
-        toast.warning(`Importadas ${result.inserted} escolas, ${result.errors} erros`);
-        setStatus(`Importação concluída: ${result.inserted} ok, ${result.errors} erros`);
+        toast.warning(`Importadas ${totalInserted} escolas, ${totalErrors} erros`);
+        setStatus(`Concluída com ${totalErrors} erros`);
       }
-
     } catch (error: any) {
-      toast.error("Erro na importação");
-      setStatus(`Erro: ${error.message}`);
+      toast.error("Erro: " + error.message);
+      setStatus("Erro: " + error.message);
     } finally {
       setImporting(false);
     }
@@ -74,19 +98,19 @@ export default function ImportSchoolsPage() {
       <div className="max-w-2xl mx-auto space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle>Importar Escolas do 1º Ciclo</CardTitle>
+            <CardTitle>Importar Escolas (Distrito + Nome)</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">Ficheiro CSV (RedeEscolas)</label>
-              <input
-                type="file"
-                accept=".csv"
-                onChange={(e) => setFile(e.target.files?.[0] || null)}
-                className="block w-full text-sm border rounded p-2"
-                disabled={importing}
-              />
-            </div>
+            <p className="text-sm text-muted-foreground">
+              Importa apenas distrito e nome da escola (1º Ciclo). Formato: CSV do GesEdu.
+            </p>
+            <input
+              type="file"
+              accept=".csv"
+              onChange={(e) => setFile(e.target.files?.[0] || null)}
+              className="block w-full text-sm border rounded p-2"
+              disabled={importing}
+            />
 
             <Button onClick={handleImport} disabled={importing || !file} className="w-full">
               {importing ? 'A importar...' : 'Importar Escolas'}
@@ -102,11 +126,8 @@ export default function ImportSchoolsPage() {
             {stats && !importing && (
               <div className="p-4 bg-muted rounded-lg space-y-1">
                 <p className="font-medium">{status}</p>
-                <p className="text-sm">Escolas encontradas no CSV: {stats.parsed}</p>
                 <p className="text-sm text-primary">Inseridas: {stats.inserted}</p>
-                {stats.errors > 0 && (
-                  <p className="text-sm text-destructive">Erros: {stats.errors}</p>
-                )}
+                {stats.errors > 0 && <p className="text-sm text-destructive">Erros: {stats.errors}</p>}
               </div>
             )}
           </CardContent>

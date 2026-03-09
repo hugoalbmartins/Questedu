@@ -9,16 +9,11 @@ function parseCSVLine(line: string): string[] {
   const fields: string[] = [];
   let current = '';
   let inQuotes = false;
-
   for (let i = 0; i < line.length; i++) {
     const char = line[i];
     if (char === '"') {
-      if (inQuotes && line[i + 1] === '"') {
-        current += '"';
-        i++;
-      } else {
-        inQuotes = !inQuotes;
-      }
+      if (inQuotes && line[i + 1] === '"') { current += '"'; i++; }
+      else { inQuotes = !inQuotes; }
     } else if (char === ',' && !inQuotes) {
       fields.push(current.trim());
       current = '';
@@ -40,83 +35,64 @@ Deno.serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const { action, csvText, schools } = await req.json();
+    const { action, csvText, offset } = await req.json();
 
-    // Legacy: batch insert
-    if (action === 'insert' && schools) {
-      const { error } = await supabase.from('schools').insert(schools);
+    // Delete all schools
+    if (action === 'delete_all') {
+      const { error } = await supabase.from('schools').delete().neq('id', '00000000-0000-0000-0000-000000000000');
       if (error) throw error;
-      return new Response(
-        JSON.stringify({ success: true, inserted: schools.length }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    // New: full CSV import in one call
-    if (action === 'import_csv' && csvText) {
-      // Step 1: Delete all existing schools
-      console.log('Deleting existing schools...');
-      const { error: deleteError } = await supabase
-        .from('schools')
-        .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000');
-      
-      if (deleteError) {
-        console.error('Delete error:', deleteError);
-      }
+    // Insert a pre-parsed batch
+    if (action === 'insert_batch') {
+      const { schools } = await req.json().catch(() => ({ schools: [] }));
+      // schools is passed in body
+    }
 
-      // Step 2: Parse CSV
+    // Parse CSV and insert one batch at a time (called repeatedly from frontend)
+    if (action === 'import_batch' && csvText) {
+      const batchSize = 300;
+      const startOffset = offset || 0;
       const lines = csvText.split('\n');
-      const schools: { name: string; district: string; municipality: string | null; locality: string | null }[] = [];
-
+      const schools: { name: string; district: string }[] = [];
+      
+      let lineIndex = 0;
+      let dataIndex = 0;
+      
       for (let i = 1; i < lines.length; i++) {
         const line = lines[i];
         if (!line.trim()) continue;
-
+        
         const fields = parseCSVLine(line);
         const ciclo = fields[13] || '';
-
-        if (ciclo.includes('1º Ciclo')) {
-          const name = fields[1]?.trim();
-          const locality = fields[6]?.trim() || null;
-          const municipality = fields[7]?.trim() || null;
-          const district = fields[8]?.trim() || null;
-
-          if (name && district) {
-            schools.push({ name, district, municipality, locality });
+        
+        if (ciclo.includes('1') && ciclo.toLowerCase().includes('ciclo')) {
+          if (dataIndex >= startOffset && dataIndex < startOffset + batchSize) {
+            const name = fields[1]?.trim();
+            const district = fields[8]?.trim();
+            if (name && district) {
+              schools.push({ name, district });
+            }
           }
+          dataIndex++;
+          if (dataIndex >= startOffset + batchSize) break;
         }
       }
 
-      console.log(`Parsed ${schools.length} schools from CSV`);
-
       if (schools.length === 0) {
         return new Response(
-          JSON.stringify({ success: false, error: 'No 1º Ciclo schools found', parsed: 0 }),
+          JSON.stringify({ success: true, inserted: 0, hasMore: false, nextOffset: startOffset, total: dataIndex }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
 
-      // Step 3: Insert in batches of 500
-      let inserted = 0;
-      let errors = 0;
-      const batchSize = 500;
-
-      for (let i = 0; i < schools.length; i += batchSize) {
-        const batch = schools.slice(i, i + batchSize);
-        const { error } = await supabase.from('schools').insert(batch);
-
-        if (error) {
-          console.error(`Batch error at ${i}:`, error);
-          errors += batch.length;
-        } else {
-          inserted += batch.length;
-        }
-        console.log(`Inserted batch ${Math.floor(i / batchSize) + 1}: ${inserted} total`);
-      }
+      const { error } = await supabase.from('schools').insert(schools);
+      const inserted = error ? 0 : schools.length;
+      const hasMore = dataIndex > startOffset + batchSize;
 
       return new Response(
-        JSON.stringify({ success: true, parsed: schools.length, inserted, errors }),
+        JSON.stringify({ success: !error, inserted, hasMore, nextOffset: startOffset + batchSize, total: dataIndex, error: error?.message }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -127,7 +103,6 @@ Deno.serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Import error:', error);
     return new Response(
       JSON.stringify({ success: false, error: error.message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
