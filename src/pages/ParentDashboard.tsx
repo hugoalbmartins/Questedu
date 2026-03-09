@@ -530,9 +530,9 @@ const ParentDashboard = () => {
               <div className="game-border bg-card p-6">
                 <h2 className="font-display text-xl font-bold mb-4">Configurações</h2>
 
-                {/* Accessibility Settings */}
+                {/* Accessibility Manager */}
                 <div className="parchment-bg rounded-lg p-4 mb-4">
-                  <AccessibilitySettings userId={user!.id} table="profiles" />
+                  <AccessibilityManager profile={profile!} children={children} />
                 </div>
 
                 <div className="parchment-bg rounded-lg p-4">
