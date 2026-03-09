@@ -104,8 +104,8 @@ export default function ImportSchoolsPage() {
       setProgress(10);
       setStatus(`A importar ${schools.length} escolas em lotes...`);
 
-      // Step 3: Insert in batches of 100 directly
-      const batchSize = 100;
+      // Step 3: Insert in batches of 500
+      const batchSize = 500;
       let inserted = 0;
       let errors = 0;
 
