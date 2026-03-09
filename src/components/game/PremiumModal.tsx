@@ -33,7 +33,8 @@ export const PremiumModal = ({ open, onOpenChange, studentId, isPremium, associa
 
   const registrationDate = new Date(createdAt);
   const daysSinceRegistration = Math.floor((Date.now() - registrationDate.getTime()) / (1000 * 60 * 60 * 24));
-  const canSetCode = daysSinceRegistration <= 30 && !associationCode;
+  // For premium users, allow association code without time limit
+  const canSetCode = isPremium || (daysSinceRegistration <= 30 && !associationCode);
 
   const monthlyPrice = 1.99;
   const annualPrice = 21.49;
@@ -251,7 +252,10 @@ export const PremiumModal = ({ open, onOpenChange, studentId, isPremium, associa
                 </div>
               ) : (
                 <p className="font-body text-xs text-muted-foreground">
-                  O prazo de 30 dias para inserir o código expirou.
+                  {isPremium 
+                    ? "Já tem um código de associação ativo."
+                    : "O prazo de 30 dias para inserir o código expirou. Ative o Premium para poder inserir o código."
+                  }
                 </p>
               )}
               <p className="font-body text-xs text-muted-foreground mt-1">

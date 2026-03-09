@@ -15,6 +15,7 @@ import { AccessibilityWrapper } from "@/components/accessibility/AccessibilityWr
 import { AccessibilitySettings } from "@/components/accessibility/AccessibilitySettings";
 import { ChatMonitor } from "@/components/parent/ChatMonitor";
 import { SubjectPriorityManager } from "@/components/parent/SubjectPriorityManager";
+import { SchoolSelector } from "@/components/parent/SchoolSelector";
 
 const schoolYears = [
   { value: "1", label: "1º Ano" },
@@ -439,10 +440,15 @@ const ParentDashboard = () => {
                 ))}
               </div>
 
-              {/* Subject Priority Manager */}
-              <div className="game-border bg-card p-4">
-                <SubjectPriorityManager parentId={user!.id} children={children} />
-              </div>
+                {/* Subject Priority Manager */}
+                <div className="game-border bg-card p-4">
+                  <SubjectPriorityManager parentId={user!.id} children={children} />
+                </div>
+
+                {/* School Selection */}
+                <div className="game-border bg-card p-4">
+                  <SchoolSelector children={children} onUpdate={loadChildren} />
+                </div>
             </div>
           </TabsContent>
 
