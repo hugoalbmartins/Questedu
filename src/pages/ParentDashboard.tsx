@@ -501,6 +501,11 @@ const ParentDashboard = () => {
                   </div>
                 )}
               </div>
+
+              {/* Chat Monitor */}
+              <div className="game-border bg-card p-4">
+                <ChatMonitor parentId={user!.id} children={children} />
+              </div>
             </div>
           </TabsContent>
 
