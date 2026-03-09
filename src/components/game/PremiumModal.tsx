@@ -33,7 +33,8 @@ export const PremiumModal = ({ open, onOpenChange, studentId, isPremium, associa
 
   const registrationDate = new Date(createdAt);
   const daysSinceRegistration = Math.floor((Date.now() - registrationDate.getTime()) / (1000 * 60 * 60 * 24));
-  const canSetCode = daysSinceRegistration <= 30 && !associationCode;
+  // For premium users, allow association code without time limit
+  const canSetCode = isPremium || (daysSinceRegistration <= 30 && !associationCode);
 
   const monthlyPrice = 1.99;
   const annualPrice = 21.49;
