@@ -133,6 +133,23 @@ export const SchoolSelector = ({ children, onUpdate }: SchoolSelectorProps) => {
             </div>
             
             <div>
+              <Label className="text-xs font-medium">Pesquisar escola</Label>
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Palavras-chave..."
+                  value={searchQuery[child.id] || ""}
+                  onChange={(e) => {
+                    setSearchQuery(prev => ({ ...prev, [child.id]: e.target.value }));
+                    setChildState(prev => ({ ...prev, [child.id]: { ...prev[child.id], schoolId: "" } }));
+                  }}
+                  disabled={!childState[child.id]?.district || loadingSchools}
+                  className="pl-8"
+                />
+              </div>
+            </div>
+
+            <div className="md:col-span-2">
               <Label className="text-xs font-medium">Escola</Label>
               <Select 
                 value={childState[child.id]?.schoolId || ""} 
@@ -143,7 +160,7 @@ export const SchoolSelector = ({ children, onUpdate }: SchoolSelectorProps) => {
                   <SelectValue placeholder={loadingSchools ? "A carregar..." : "Escolha a escola"} />
                 </SelectTrigger>
                 <SelectContent>
-                  {filteredSchools.map(s => (
+                  {getFilteredSchools(child.id).map(s => (
                     <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                   ))}
                 </SelectContent>
