@@ -421,20 +421,27 @@ const ParentDashboard = () => {
           </TabsContent>
 
           <TabsContent value="progress">
-            <div className="game-border bg-card p-6 text-center">
-              <BookOpen className="w-12 h-12 mx-auto mb-3 text-accent" />
-              <h2 className="font-display text-xl font-bold mb-2">Evolução Escolar</h2>
-              <p className="font-body text-muted-foreground">
-                Acompanhe o desempenho dos seus educandos por disciplina.
-              </p>
-              {children.map(child => (
-                <div key={child.id} className="mt-4 parchment-bg rounded-lg p-4 text-left">
-                  <h3 className="font-body font-bold">{child.display_name}</h3>
-                  <p className="font-body text-sm text-muted-foreground">
-                    XP Total: {child.xp} • {child.school_year}º Ano
-                  </p>
-                </div>
-              ))}
+            <div className="space-y-4">
+              <div className="game-border bg-card p-6 text-center">
+                <BookOpen className="w-12 h-12 mx-auto mb-3 text-accent" />
+                <h2 className="font-display text-xl font-bold mb-2">Evolução Escolar</h2>
+                <p className="font-body text-muted-foreground">
+                  Acompanhe o desempenho dos seus educandos por disciplina.
+                </p>
+                {children.map(child => (
+                  <div key={child.id} className="mt-4 parchment-bg rounded-lg p-4 text-left">
+                    <h3 className="font-body font-bold">{child.display_name}</h3>
+                    <p className="font-body text-sm text-muted-foreground">
+                      XP Total: {child.xp} • {child.school_year}º Ano
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Subject Priority Manager */}
+              <div className="game-border bg-card p-4">
+                <SubjectPriorityManager parentId={user!.id} children={children} />
+              </div>
             </div>
           </TabsContent>
 
