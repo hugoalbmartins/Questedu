@@ -36,6 +36,7 @@ const GamePage = () => {
   const [showShop, setShowShop] = useState(false);
   const [showBattle, setShowBattle] = useState(false);
   const [showMonthlyTest, setShowMonthlyTest] = useState(false);
+  const [sideMenuOpen, setSideMenuOpen] = useState(false);
   const [battleQuizCallback, setBattleQuizCallback] = useState<(() => Promise<boolean>) | null>(null);
   const { achievements, unlocked, checkAchievements } = useAchievements(studentData?.id);
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications(studentData?.id);
