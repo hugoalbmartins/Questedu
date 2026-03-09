@@ -53,24 +53,23 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Import from URL
-    if (action === 'import_from_url' && body.url) {
-      const csvResponse = await fetch(body.url);
-      if (!csvResponse.ok) {
+    // Import from storage
+    if (action === 'import_from_storage') {
+      const { data: fileData, error: dlError } = await supabase.storage
+        .from('association-docs')
+        .download('schools-import.csv');
+      if (dlError || !fileData) {
         return new Response(
-          JSON.stringify({ success: false, error: 'Failed to fetch CSV from URL: ' + csvResponse.status }),
+          JSON.stringify({ success: false, error: 'Failed to download CSV: ' + (dlError?.message || 'no data') }),
           { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
-      body.csvText = await csvResponse.text();
-      console.log('Fetched CSV, length:', body.csvText.length);
-      console.log('First 500 chars:', body.csvText.substring(0, 500));
-      console.log('First line:', body.csvText.split('\n')[0]);
-      console.log('Second line:', body.csvText.split('\n')[1]);
+      body.csvText = await fileData.text();
+      console.log('Downloaded CSV from storage, length:', body.csvText.length);
     }
 
     // Full CSV import server-side
-    if ((action === 'import_csv' || action === 'import_from_url') && body.csvText) {
+    if (['import_csv', 'import_from_url', 'import_from_storage'].includes(action) && body.csvText) {
       const lines = body.csvText.split('\n');
       const schools: { name: string; district: string }[] = [];
       
