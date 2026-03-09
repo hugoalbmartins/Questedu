@@ -80,13 +80,14 @@ export const SchoolSelector = ({ children, onUpdate }: SchoolSelectorProps) => {
   };
 
   const handleDistrictChange = (childId: string, district: string) => {
-    const newState = { ...childSchools[childId], selectedDistrict: district, selectedMunicipality: "", selectedSchool: "" };
+    const newState = { ...childSchools[childId], selectedDistrict: district, selectedMunicipality: "", selectedLocality: "", selectedSchool: "" };
     setChildSchools(prev => ({ ...prev, [childId]: newState }));
     
     // Update municipalities list
     const districtSchools = schools.filter(s => s.district === district);
     const municipalities = [...new Set(districtSchools.map(s => s.municipality).filter(Boolean))].sort();
     setFilteredMunicipalities(municipalities);
+    setFilteredLocalities([]);
     setFilteredSchools([]);
   };
 
