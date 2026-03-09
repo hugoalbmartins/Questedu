@@ -290,7 +290,11 @@ const GamePage = () => {
           <Button 
             variant="ghost" 
             size="sm" 
-            onClick={async () => { await signOut(); navigate("/"); }}
+            onClick={async () => { 
+              setSideMenuOpen(false); 
+              await signOut(); 
+              navigate("/"); 
+            }}
             className="flex flex-col gap-1 h-auto py-2"
           >
             <LogOut className="w-5 h-5" />
