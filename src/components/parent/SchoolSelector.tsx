@@ -174,7 +174,7 @@ export const SchoolSelector = ({ children, onUpdate }: SchoolSelectorProps) => {
             </p>
           )}
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
             <div>
               <Label className="text-xs font-medium">Distrito</Label>
               <Select 
@@ -193,14 +193,14 @@ export const SchoolSelector = ({ children, onUpdate }: SchoolSelectorProps) => {
             </div>
             
             <div>
-              <Label className="text-xs font-medium">Município</Label>
+              <Label className="text-xs font-medium">Concelho</Label>
               <Select 
                 value={childSchools[child.id]?.selectedMunicipality || ""} 
                 onValueChange={(value) => handleMunicipalityChange(child.id, value)}
                 disabled={!childSchools[child.id]?.selectedDistrict}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Escolha o município" />
+                  <SelectValue placeholder="Escolha o concelho" />
                 </SelectTrigger>
                 <SelectContent>
                   {filteredMunicipalities.map(m => (
@@ -211,11 +211,29 @@ export const SchoolSelector = ({ children, onUpdate }: SchoolSelectorProps) => {
             </div>
             
             <div>
+              <Label className="text-xs font-medium">Localidade</Label>
+              <Select 
+                value={childSchools[child.id]?.selectedLocality || ""} 
+                onValueChange={(value) => handleLocalityChange(child.id, value)}
+                disabled={!childSchools[child.id]?.selectedMunicipality}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Escolha a localidade" />
+                </SelectTrigger>
+                <SelectContent>
+                  {filteredLocalities.map(l => (
+                    <SelectItem key={l} value={l}>{l}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
               <Label className="text-xs font-medium">Escola</Label>
               <Select 
                 value={childSchools[child.id]?.selectedSchool || ""} 
                 onValueChange={(value) => handleSchoolChange(child.id, value)}
-                disabled={!childSchools[child.id]?.selectedMunicipality}
+                disabled={!childSchools[child.id]?.selectedLocality}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Escolha a escola" />
