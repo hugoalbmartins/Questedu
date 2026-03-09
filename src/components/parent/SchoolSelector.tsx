@@ -55,6 +55,7 @@ export const SchoolSelector = ({ children, onUpdate }: SchoolSelectorProps) => {
 
   const handleDistrictChange = async (childId: string, district: string) => {
     setChildState(prev => ({ ...prev, [childId]: { district, schoolId: "" } }));
+    setSearchQuery(prev => ({ ...prev, [childId]: "" }));
     setLoadingSchools(true);
     
     const { data } = await supabase
@@ -63,7 +64,7 @@ export const SchoolSelector = ({ children, onUpdate }: SchoolSelectorProps) => {
       .eq("district", district)
       .order("name");
     
-    setFilteredSchools(data || []);
+    setAllSchools(data || []);
     setLoadingSchools(false);
   };
 
