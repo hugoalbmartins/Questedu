@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { resolvePostLoginRoute } from "@/lib/authNavigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -56,35 +57,27 @@ const EmailVerifiedPage = () => {
     e.preventDefault();
     setLoading(true);
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      toast.error("Erro ao entrar: " + error.message);
-      setLoading(false);
-      return;
-    }
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password,
+      });
 
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("user_id", (await supabase.auth.getUser()).data.user?.id)
-      .single();
-
-    if (profile?.role === "parent") {
-      navigate("/parent");
-    } else {
-      const { data: student } = await supabase
-        .from("students")
-        .select("xp")
-        .eq("user_id", (await supabase.auth.getUser()).data.user?.id)
-        .single();
-
-      if (student && student.xp === 0) {
-        navigate("/placement-test");
-      } else {
-        navigate("/game");
+      if (error) {
+        toast.error("Erro ao entrar: " + error.message);
+        return;
       }
+
+      if (!data.user) {
+        toast.error("Sessão inválida. Tenta novamente.");
+        return;
+      }
+
+      const targetRoute = await resolvePostLoginRoute(data.user);
+      navigate(targetRoute);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
