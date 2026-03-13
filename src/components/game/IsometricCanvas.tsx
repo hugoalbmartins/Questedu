@@ -121,7 +121,7 @@ export const IsometricCanvas = ({
     return () => { running = false; cancelAnimationFrame(animFrameRef.current); };
   }, [fullGrid, buildings, camera, zoom, ghostPos, selectedBuilding, canPlaceGhost, gridSize, spritesLoaded, productionReady, animatedCitizens, complaints]);
 
-  // Smoke effects
+  // Smoke, leaf and firefly effects
   useEffect(() => {
     const interval = setInterval(() => {
       for (const b of buildings) {
@@ -140,9 +140,23 @@ export const IsometricCanvas = ({
           addSparkle(sx, sy - 15);
         }
       }
+      // Occasional leaf particles from trees in terrain
+      if (Math.random() < 0.3) {
+        const gx = Math.random() * gridSize;
+        const gy = Math.random() * gridSize;
+        const { sx, sy } = gridToIso(gx, gy, TILE_W, TILE_H);
+        addLeafParticle(sx, sy - 20);
+      }
+      // Fireflies at dusk
+      if (Math.random() < 0.15) {
+        const gx = Math.random() * gridSize;
+        const gy = Math.random() * gridSize;
+        const { sx, sy } = gridToIso(gx, gy, TILE_W, TILE_H);
+        addFirefly(sx, sy - 10);
+      }
     }, 800);
     return () => clearInterval(interval);
-  }, [buildings, productionReady]);
+  }, [buildings, productionReady, gridSize]);
 
   function render() {
     const canvas = canvasRef.current;
