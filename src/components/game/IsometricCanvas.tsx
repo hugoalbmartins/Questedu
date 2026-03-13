@@ -414,29 +414,70 @@ export const IsometricCanvas = ({
   }
 
   function drawIsoDiamond(ctx: CanvasRenderingContext2D, sx: number, sy: number, type: string, x: number, y: number, buildingId: string | undefined, allBuildings: PlacedBuilding[]) {
-    let color: string;
-    if (type === 'road') color = ROAD_COLOR;
-    else if (type === 'wall') color = WALL_COLOR;
-    else {
-      // Check if this tile is a farm
+    drawDiamondPath(ctx, sx, sy);
+
+    if (type === 'road') {
+      // Road with worn texture gradient
+      const roadGrad = ctx.createLinearGradient(sx - TILE_W / 4, sy - TILE_H / 4, sx + TILE_W / 4, sy + TILE_H / 4);
+      roadGrad.addColorStop(0, '#b0a080');
+      roadGrad.addColorStop(0.5, ROAD_COLOR);
+      roadGrad.addColorStop(1, '#8a7a60');
+      ctx.fillStyle = roadGrad;
+      ctx.fill();
+      // Wear marks
+      ctx.strokeStyle = ROAD_BORDER;
+      ctx.lineWidth = 0.4;
+      ctx.stroke();
+      // Center line
+      ctx.strokeStyle = 'rgba(140, 120, 90, 0.3)';
+      ctx.lineWidth = 0.5;
+      ctx.beginPath();
+      ctx.moveTo(sx - 5, sy);
+      ctx.lineTo(sx + 5, sy);
+      ctx.stroke();
+    } else if (type === 'wall') {
+      ctx.fillStyle = WALL_COLOR;
+      ctx.fill();
+      ctx.strokeStyle = '#555';
+      ctx.lineWidth = 0.5;
+      ctx.stroke();
+    } else {
+      // Grass tile with gradient for 3D depth
+      let isFarm = false;
       if (buildingId) {
         const b = allBuildings.find(b => b.id === buildingId);
-        if (b && b.defId === 'farm') {
-          color = FARM_COLORS[(x + y) % FARM_COLORS.length];
-        } else {
-          color = GRASS_COLORS[(x + y * 3) % GRASS_COLORS.length];
-        }
+        if (b && b.defId === 'farm') isFarm = true;
+      }
+
+      if (isFarm) {
+        const farmGrad = ctx.createLinearGradient(sx - TILE_W / 4, sy - TILE_H / 2, sx + TILE_W / 4, sy + TILE_H / 2);
+        farmGrad.addColorStop(0, FARM_COLORS[(x + y) % FARM_COLORS.length]);
+        farmGrad.addColorStop(1, FARM_COLORS[(x + y + 1) % FARM_COLORS.length]);
+        ctx.fillStyle = farmGrad;
       } else {
-        color = GRASS_COLORS[(x + y * 3) % GRASS_COLORS.length];
+        const idx = (x + y * 3) % GRASS_COLORS_LIGHT.length;
+        const grad = ctx.createLinearGradient(sx - TILE_W / 4, sy - TILE_H / 2, sx + TILE_W / 4, sy + TILE_H / 2);
+        grad.addColorStop(0, GRASS_COLORS_LIGHT[idx]);
+        grad.addColorStop(1, GRASS_COLORS_DARK[idx]);
+        ctx.fillStyle = grad;
+      }
+      ctx.fill();
+      ctx.strokeStyle = '#3a6030';
+      ctx.lineWidth = 0.3;
+      ctx.stroke();
+
+      // Grass detail on some tiles
+      if (!isFarm && !buildingId && (x * 7 + y * 11) % 5 === 0) {
+        ctx.strokeStyle = 'rgba(100, 160, 80, 0.2)';
+        ctx.lineWidth = 0.4;
+        ctx.beginPath();
+        ctx.moveTo(sx - 3, sy + 1);
+        ctx.lineTo(sx - 1, sy - 2);
+        ctx.moveTo(sx + 1, sy + 2);
+        ctx.lineTo(sx + 3, sy - 1);
+        ctx.stroke();
       }
     }
-
-    drawDiamondPath(ctx, sx, sy);
-    ctx.fillStyle = color;
-    ctx.fill();
-    ctx.strokeStyle = type === 'road' ? ROAD_BORDER : '#3a6030';
-    ctx.lineWidth = 0.5;
-    ctx.stroke();
   }
 
   function drawDiamondPath(ctx: CanvasRenderingContext2D, sx: number, sy: number) {
