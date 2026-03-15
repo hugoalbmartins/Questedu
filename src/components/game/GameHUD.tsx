@@ -1,6 +1,7 @@
-import { Coins, Diamond, Users } from "lucide-react";
+import { Coins, Diamond, Users, Crown, Clock } from "lucide-react";
 import { NotificationBell } from "./NotificationBell";
 import { getSettlementType } from "@/lib/gameTypes";
+import { Badge } from "@/components/ui/badge";
 
 interface Notification {
   id: string;
@@ -22,6 +23,8 @@ interface GameHUDProps {
     citizens: number;
     village_level: number;
     xp: number;
+    is_premium?: boolean;
+    trial_ends_at?: string | null;
   };
   notifications?: Notification[];
   unreadCount?: number;
@@ -33,6 +36,11 @@ export const GameHUD = ({ student, notifications = [], unreadCount = 0, onMarkAs
   const settlement = getSettlementType(student.village_level);
   const villageName = student.nickname || student.display_name;
 
+  const isTrialActive = student.trial_ends_at && new Date(student.trial_ends_at) > new Date();
+  const trialDaysRemaining = isTrialActive
+    ? Math.ceil((new Date(student.trial_ends_at!).getTime() - Date.now()) / (24 * 60 * 60 * 1000))
+    : 0;
+
   return (
     <div className="fixed top-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-sm border-b-2 border-border safe-top">
       <div className="flex items-center justify-between px-2 sm:px-4 py-1.5 sm:py-2 max-w-4xl mx-auto">
@@ -43,9 +51,23 @@ export const GameHUD = ({ student, notifications = [], unreadCount = 0, onMarkAs
             </span>
           </div>
           <div className="min-w-0">
-            <p className="font-body text-xs sm:text-sm font-bold leading-tight truncate max-w-[100px] sm:max-w-none">
-              {settlement.emoji} {villageName}
-            </p>
+            <div className="flex items-center gap-1">
+              <p className="font-body text-xs sm:text-sm font-bold leading-tight truncate max-w-[100px] sm:max-w-none">
+                {settlement.emoji} {villageName}
+              </p>
+              {isTrialActive && (
+                <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[8px] px-1 py-0 h-4 animate-pulse">
+                  <Clock className="w-2.5 h-2.5 mr-0.5" />
+                  Trial {trialDaysRemaining}d
+                </Badge>
+              )}
+              {student.is_premium && !isTrialActive && (
+                <Badge className="bg-gradient-to-r from-yellow-500 to-amber-600 text-white text-[8px] px-1 py-0 h-4">
+                  <Crown className="w-2.5 h-2.5 mr-0.5" />
+                  Premium
+                </Badge>
+              )}
+            </div>
             <p className="font-body text-[10px] sm:text-xs text-muted-foreground">
               {settlement.name} • {student.school_year}º Ano • Nv {student.village_level}
             </p>

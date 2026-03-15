@@ -8,9 +8,11 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { LogOut, Users, ShieldCheck, Building2, UserPlus, Trash2, Shield, Ban, CheckCircle, Pencil, Eye, EyeOff, Search, ChevronLeft, ChevronRight, Tag, MailCheck, Crown } from "lucide-react";
+import { LogOut, Users, ShieldCheck, Building2, UserPlus, Trash2, Shield, Ban, CircleCheck as CheckCircle, Pencil, Eye, EyeOff, Search, ChevronLeft, ChevronRight, Tag, MailCheck, Crown, TriangleAlert as AlertTriangle, Gavel } from "lucide-react";
 import { PromoCodesTab } from "@/components/admin/PromoCodesTab";
 import { GrantPremiumTab } from "@/components/admin/GrantPremiumTab";
+import { AdminReportsPanel } from "@/components/admin/AdminReportsPanel";
+import { AdminPenaltiesPanel } from "@/components/admin/AdminPenaltiesPanel";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 import { AccessibilityWrapper } from "@/components/accessibility/AccessibilityWrapper";
@@ -501,12 +503,18 @@ const AdminDashboard = () => {
 
         <Tabs defaultValue="users">
           <div className="overflow-x-auto -mx-4 px-4 mb-6">
-            <TabsList className="inline-flex w-auto min-w-full sm:grid sm:grid-cols-7 sm:w-full">
+            <TabsList className="inline-flex w-auto min-w-full sm:grid sm:grid-cols-9 sm:w-full">
               <TabsTrigger value="users" className="font-body text-xs gap-1 whitespace-nowrap">
                 <Users className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Utilizadores</span><span className="sm:hidden">Users</span>
               </TabsTrigger>
               <TabsTrigger value="associations" className="font-body text-xs gap-1 whitespace-nowrap">
                 <Building2 className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Associações</span><span className="sm:hidden">Assoc.</span>
+              </TabsTrigger>
+              <TabsTrigger value="reports" className="font-body text-xs gap-1 whitespace-nowrap">
+                <AlertTriangle className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Denúncias</span><span className="sm:hidden">Reports</span>
+              </TabsTrigger>
+              <TabsTrigger value="penalties" className="font-body text-xs gap-1 whitespace-nowrap">
+                <Gavel className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Penalidades</span><span className="sm:hidden">Penalties</span>
               </TabsTrigger>
               <TabsTrigger value="promos" className="font-body text-xs gap-1 whitespace-nowrap">
                 <Tag className="w-3.5 h-3.5" /> Promos
@@ -696,6 +704,14 @@ const AdminDashboard = () => {
           </TabsContent>
 
           {/* GRANT PREMIUM TAB */}
+          <TabsContent value="reports">
+            <AdminReportsPanel />
+          </TabsContent>
+
+          <TabsContent value="penalties">
+            <AdminPenaltiesPanel />
+          </TabsContent>
+
           <TabsContent value="premium">
             <GrantPremiumTab />
           </TabsContent>

@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { validatePassword } from "@/lib/passwordValidation";
+import { validateUsername, sanitizeUsername } from "@/lib/usernameValidation";
 import { PasswordInput } from "@/components/PasswordInput";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { CircleCheck as CheckCircle, Circle as XCircle, Loader as Loader2, CircleAlert as AlertCircle } from "lucide-react";
 import logo from "@/assets/logo.png";
 
 const districtLabels: Record<string, string> = {
@@ -36,16 +37,28 @@ const StudentRegisterPage = () => {
   const [schoolMunicipalityFilter, setSchoolMunicipalityFilter] = useState<string>("");
   const [allSchoolsLoaded, setAllSchoolsLoaded] = useState(false);
   const [nicknameStatus, setNicknameStatus] = useState<"idle" | "checking" | "available" | "taken">("idle");
+  const [nicknameValidation, setNicknameValidation] = useState<{ isValid: boolean; reason?: string; suggestion?: string } | null>(null);
   const nicknameTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Debounced nickname availability check
   const checkNicknameAvailability = useCallback((nickname: string) => {
     if (nicknameTimer.current) clearTimeout(nicknameTimer.current);
+
     const trimmed = nickname.trim();
+
+    const validation = validateUsername(trimmed);
+    setNicknameValidation(validation);
+
+    if (!validation.isValid) {
+      setNicknameStatus("idle");
+      return;
+    }
+
     if (!trimmed || trimmed.length < 3) {
       setNicknameStatus("idle");
       return;
     }
+
     setNicknameStatus("checking");
     nicknameTimer.current = setTimeout(async () => {
       const { data } = await supabase
@@ -117,6 +130,12 @@ const StudentRegisterPage = () => {
       return;
     }
 
+    const nicknameValidationResult = validateUsername(formData.nickname.trim());
+    if (!nicknameValidationResult.isValid) {
+      toast.error(nicknameValidationResult.reason || "Nome de utilizador inválido");
+      return;
+    }
+
     if (!formData.nickname.trim() || formData.nickname.trim().length < 3) {
       toast.error("O nickname deve ter pelo menos 3 caracteres");
       return;
@@ -171,6 +190,23 @@ const StudentRegisterPage = () => {
 
     if (data.user) {
       try {
+        const { data: studentData } = await supabase
+          .from("students")
+          .select("id")
+          .eq("user_id", data.user.id)
+          .maybeSingle();
+
+        if (studentData?.id) {
+          await supabase.rpc("activate_trial", {
+            student_id_param: studentData.id,
+            trial_days: 7,
+          });
+        }
+      } catch (trialError) {
+        console.error("Failed to activate trial:", trialError);
+      }
+
+      try {
         const welcomeTemplate = emailTemplates.welcome(formData.name);
         await sendEmail({
           to: formData.email.toLowerCase().trim(),
@@ -181,7 +217,7 @@ const StudentRegisterPage = () => {
         console.error("Failed to send welcome email:", emailError);
       }
 
-      toast.success("Registo efetuado! Verifica o teu email para confirmar a conta.");
+      toast.success("Registo efetuado! Aproveita os 7 dias de trial premium grátis! Verifica o teu email.");
       navigate("/login");
     }
     setLoading(false);
@@ -213,36 +249,47 @@ const StudentRegisterPage = () => {
           <div className="p-3 border-2 border-primary/30 rounded-lg bg-primary/5">
             <Label className="font-body font-semibold text-primary">🎮 Nickname (nome no jogo) *</Label>
             <div className="relative mt-1">
-              <Input 
-                value={formData.nickname} 
+              <Input
+                value={formData.nickname}
                 onChange={e => {
                   const val = e.target.value.replace(/\s+/g, '_');
-                  setFormData({...formData, nickname: val});
-                  checkNicknameAvailability(val);
-                }} 
+                  const sanitized = sanitizeUsername(val);
+                  setFormData({...formData, nickname: sanitized});
+                  checkNicknameAvailability(sanitized);
+                }}
                 placeholder="Ex: SuperCavaleiro, PresidenteMax..."
-                required 
+                required
                 className={`pr-10 border-primary/40 font-bold text-base ${
+                  nicknameValidation && !nicknameValidation.isValid ? "border-yellow-500 focus-visible:ring-yellow-500" :
                   nicknameStatus === "available" ? "border-green-500 focus-visible:ring-green-500" :
                   nicknameStatus === "taken" ? "border-destructive focus-visible:ring-destructive" : ""
                 }`}
-                maxLength={20}
-                minLength={3}
+                maxLength={30}
+                minLength={2}
               />
               <div className="absolute right-3 top-1/2 -translate-y-1/2">
                 {nicknameStatus === "checking" && <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />}
-                {nicknameStatus === "available" && <CheckCircle className="w-5 h-5 text-green-500" />}
+                {nicknameValidation && !nicknameValidation.isValid && <AlertCircle className="w-5 h-5 text-yellow-500" />}
+                {nicknameStatus === "available" && nicknameValidation?.isValid && <CheckCircle className="w-5 h-5 text-green-500" />}
                 {nicknameStatus === "taken" && <XCircle className="w-5 h-5 text-destructive" />}
               </div>
             </div>
-            {nicknameStatus === "available" && (
-              <p className="text-xs text-green-600 font-body mt-1">✓ Nickname disponível!</p>
+            {nicknameValidation && !nicknameValidation.isValid && (
+              <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs">
+                <p className="text-yellow-800 font-semibold">⚠️ {nicknameValidation.reason}</p>
+                {nicknameValidation.suggestion && (
+                  <p className="text-yellow-700 mt-1">💡 Sugestão: {nicknameValidation.suggestion}</p>
+                )}
+              </div>
+            )}
+            {nicknameStatus === "available" && nicknameValidation?.isValid && (
+              <p className="text-xs text-green-600 font-body mt-1">✓ Nickname disponível e seguro!</p>
             )}
             {nicknameStatus === "taken" && (
               <p className="text-xs text-destructive font-body mt-1">✗ Este nickname já está em uso. Escolhe outro.</p>
             )}
             <p className="text-xs text-muted-foreground font-body mt-1">
-              ⚠️ Este será o teu nome de presidente e como os outros jogadores te vão encontrar. Mín. 3 caracteres.
+              ⚠️ Este será o teu nome de presidente e como os outros jogadores te vão encontrar. Mín. 2 caracteres.
             </p>
           </div>
           
