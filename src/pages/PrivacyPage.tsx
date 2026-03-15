@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Shield } from "lucide-react";
 import logo from "@/assets/logo.png";
 
+const BLANK = "_blank";
+
 const PrivacyPage = () => {
   return (
     <div className="min-h-screen parchment-bg">
@@ -242,7 +244,17 @@ const PrivacyPage = () => {
                   <li><strong>Email Privacidade:</strong> privacidade@questeduca.pt</li>
                   <li><strong>DPO:</strong> dpo@questeduca.pt</li>
                   <li><strong>Email Geral:</strong> suporte@questeduca.pt</li>
-                  <li><strong>CNPD:</strong> <a href="https://www.cnpd.pt" target={\"_blank"} rel="noopener noreferrer\" className="text-primary underline">www.cnpd.pt</a></li>
+                  <li>
+                    <strong>CNPD:</strong>{" "}
+                    <a
+                      href="https://www.cnpd.pt"
+                      target={BLANK}
+                      rel="noopener noreferrer"
+                      className="text-primary underline"
+                    >
+                      www.cnpd.pt
+                    </a>
+                  </li>
                 </ul>
               </div>
             </section>
