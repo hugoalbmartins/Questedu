@@ -14,7 +14,6 @@ import { PremiumModal } from "@/components/game/PremiumModal";
 import { AccessibilityWrapper } from "@/components/accessibility/AccessibilityWrapper";
 import { AccessibilitySettings } from "@/components/accessibility/AccessibilitySettings";
 import { ChatMonitor } from "@/components/parent/ChatMonitor";
-import { SubjectPriorityManager } from "@/components/parent/SubjectPriorityManager";
 import { SubjectPriorityEditor } from "@/components/parent/SubjectPriorityEditor";
 import { SchoolSelector } from "@/components/parent/SchoolSelector";
 import { AccessibilityManager } from "@/components/parent/AccessibilityManager";
@@ -426,31 +425,49 @@ const ParentDashboard = () => {
 
           <TabsContent value="progress">
             <div className="space-y-4">
-              <div className="game-border bg-card p-6 text-center">
-                <BookOpen className="w-12 h-12 mx-auto mb-3 text-accent" />
-                <h2 className="font-display text-xl font-bold mb-2">Evolução Escolar</h2>
-                <p className="font-body text-muted-foreground">
-                  Acompanhe o desempenho dos seus educandos por disciplina.
+              <div className="game-border bg-card p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <BookOpen className="w-6 h-6 text-accent" />
+                  <h2 className="font-display text-xl font-bold">Evolução Escolar</h2>
+                </div>
+                <p className="font-body text-muted-foreground mb-4">
+                  Acompanhe o progresso dos seus educandos por disciplina e XP conquistado.
                 </p>
-                {children.map(child => (
-                  <div key={child.id} className="mt-4 parchment-bg rounded-lg p-4 text-left">
-                    <h3 className="font-body font-bold">{child.display_name}</h3>
-                    <p className="font-body text-sm text-muted-foreground">
-                      XP Total: {child.xp} • {child.school_year}º Ano
-                    </p>
-                  </div>
-                ))}
+                {children.length === 0 ? (
+                  <p className="font-body text-sm text-muted-foreground text-center py-4">
+                    Nenhum educando registado.
+                  </p>
+                ) : (
+                  children.map(child => (
+                    <div key={child.id} className="mt-4 parchment-bg rounded-lg p-4">
+                      <h3 className="font-body font-bold text-lg">{child.display_name}</h3>
+                      <div className="grid grid-cols-2 gap-2 mt-3">
+                        <div className="text-sm">
+                          <span className="text-muted-foreground">XP Total:</span>
+                          <span className="font-bold ml-2">{child.xp}</span>
+                        </div>
+                        <div className="text-sm">
+                          <span className="text-muted-foreground">Ano:</span>
+                          <span className="font-bold ml-2">{child.school_year}º</span>
+                        </div>
+                        <div className="text-sm">
+                          <span className="text-muted-foreground">Nível:</span>
+                          <span className="font-bold ml-2">{child.village_level}</span>
+                        </div>
+                        <div className="text-sm">
+                          <span className="text-muted-foreground">Cidadãos:</span>
+                          <span className="font-bold ml-2">{child.citizens}</span>
+                        </div>
+                      </div>
+                      {child.school_name && (
+                        <p className="font-body text-xs text-muted-foreground mt-2">
+                          🏫 {child.school_name}
+                        </p>
+                      )}
+                    </div>
+                  ))
+                )}
               </div>
-
-                {/* Subject Priority Manager */}
-                <div className="game-border bg-card p-4">
-                  <SubjectPriorityManager parentId={user!.id} children={children} />
-                </div>
-
-                {/* School Selection */}
-                <div className="game-border bg-card p-4">
-                  <SchoolSelector children={children} onUpdate={loadChildren} />
-                </div>
             </div>
           </TabsContent>
 

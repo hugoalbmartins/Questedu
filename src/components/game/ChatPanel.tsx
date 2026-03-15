@@ -2,8 +2,9 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, Lock, Search, UserPlus, Check, X, MessageCircle, Users } from "lucide-react";
+import { Send, Lock, MessageCircle, Users } from "lucide-react";
 import { toast } from "sonner";
+import { FriendSearchPanel } from "./FriendSearchPanel";
 
 interface ChatPanelProps {
   studentId: string;
@@ -31,15 +32,13 @@ interface Friendship {
 
 export const ChatPanel = ({ studentId }: ChatPanelProps) => {
   const [message, setMessage] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<FriendResult[]>([]);
-  const [searching, setSearching] = useState(false);
   const [friendships, setFriendships] = useState<Friendship[]>([]);
   const [approvedFriends, setApprovedFriends] = useState<Friendship[]>([]);
   const [pendingFriendships, setPendingFriendships] = useState<Friendship[]>([]);
   const [selectedFriend, setSelectedFriend] = useState<string | null>(null);
   const [chatMessages, setChatMessages] = useState<any[]>([]);
   const [loadingChat, setLoadingChat] = useState(false);
+  const [isBlocked, setIsBlocked] = useState(false);
 
   // Load friendships
   useEffect(() => {
@@ -72,26 +71,19 @@ export const ChatPanel = ({ studentId }: ChatPanelProps) => {
     setPendingFriendships(enriched.filter(f => f.status === "pending_parent_approval"));
   };
 
-  // Search by nickname
-  const handleSearch = async () => {
-    if (!searchQuery.trim() || searchQuery.trim().length < 2) {
-      toast.error("Escreve pelo menos 2 caracteres para pesquisar");
-      return;
-    }
-    setSearching(true);
-    const { data } = await supabase
-      .from("students")
-      .select("id, nickname, display_name, village_level, district")
-      .neq("id", studentId)
-      .ilike("nickname", `%${searchQuery.trim()}%`)
-      .limit(10);
+  // Check if chat is blocked
+  const checkChatBlocked = async (friendId: string) => {
+    const { data, error } = await supabase.rpc("check_chat_blocked", {
+      p_student_id: studentId,
+      p_friend_id: friendId,
+    });
 
-    // Filter out existing friendships
-    const existingIds = new Set(friendships.map(f =>
-      f.requester_id === studentId ? f.receiver_id : f.requester_id
-    ));
-    setSearchResults((data || []).filter(p => !existingIds.has(p.id)));
-    setSearching(false);
+    if (error) {
+      console.error("Error checking block:", error);
+      return false;
+    }
+
+    return data || false;
   };
 
   // Send friend request
@@ -117,6 +109,11 @@ export const ChatPanel = ({ studentId }: ChatPanelProps) => {
   const loadMessages = async (friendId: string) => {
     setLoadingChat(true);
     setSelectedFriend(friendId);
+
+    // Check if blocked
+    const blocked = await checkChatBlocked(friendId);
+    setIsBlocked(blocked);
+
     const { data } = await supabase
       .from("chat_messages")
       .select("*")
@@ -132,6 +129,20 @@ export const ChatPanel = ({ studentId }: ChatPanelProps) => {
   // Send message
   const handleSendMessage = async () => {
     if (!message.trim() || !selectedFriend) return;
+
+    // Check if blocked before sending
+    if (isBlocked) {
+      toast.error("Esta conversa está bloqueada");
+      return;
+    }
+
+    const blocked = await checkChatBlocked(selectedFriend);
+    if (blocked) {
+      setIsBlocked(true);
+      toast.error("Esta conversa foi bloqueada pelo encarregado de educação");
+      return;
+    }
+
     const { error } = await supabase.from("chat_messages").insert({
       sender_id: studentId,
       receiver_id: selectedFriend,
@@ -149,45 +160,22 @@ export const ChatPanel = ({ studentId }: ChatPanelProps) => {
     (f.requester_id === studentId ? f.receiver_id : f.requester_id) === selectedFriend
   )?.other_player;
 
+  const existingFriendIds = new Set(
+    friendships.map(f => f.requester_id === studentId ? f.receiver_id : f.requester_id)
+  );
+
   return (
     <div className="px-4 space-y-4">
       <h2 className="font-display text-xl font-bold text-center">💬 Amigos & Chat</h2>
 
-      {/* Search for friends by nickname */}
+      {/* Friend Search Panel */}
       <div className="game-border bg-card p-4">
-        <h3 className="font-display text-sm font-bold mb-2 flex items-center gap-2">
-          <Search className="w-4 h-4 text-primary" />
-          Procurar amigos por nickname
-        </h3>
-        <div className="flex gap-2">
-          <Input
-            placeholder="Nickname do jogador..."
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            onKeyDown={e => e.key === "Enter" && handleSearch()}
-            className="flex-1"
-            maxLength={20}
-          />
-          <Button size="sm" onClick={handleSearch} disabled={searching}>
-            {searching ? "..." : <Search className="w-4 h-4" />}
-          </Button>
-        </div>
-
-        {searchResults.length > 0 && (
-          <div className="mt-3 space-y-2">
-            {searchResults.map(player => (
-              <div key={player.id} className="flex items-center justify-between bg-muted/30 rounded-lg p-2">
-                <div>
-                  <span className="font-body font-bold text-sm">{player.nickname || player.display_name}</span>
-                  <span className="font-body text-xs text-muted-foreground ml-2">Nv.{player.village_level}</span>
-                </div>
-                <Button size="sm" variant="outline" onClick={() => handleSendRequest(player.id)}>
-                  <UserPlus className="w-4 h-4 mr-1" /> Pedir
-                </Button>
-              </div>
-            ))}
-          </div>
-        )}
+        <h3 className="font-display text-sm font-bold mb-3">🔍 Procurar Amigos</h3>
+        <FriendSearchPanel
+          studentId={studentId}
+          existingFriendIds={existingFriendIds}
+          onSendRequest={handleSendRequest}
+        />
       </div>
 
       {/* Pending friendships */}
@@ -254,12 +242,20 @@ export const ChatPanel = ({ studentId }: ChatPanelProps) => {
           {/* Chat area */}
           {selectedFriend && (
             <div>
+              {isBlocked && (
+                <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 mb-2 flex items-center gap-2">
+                  <Lock className="w-4 h-4 text-destructive" />
+                  <p className="text-xs font-body text-destructive">
+                    Esta conversa foi bloqueada pelo encarregado de educação
+                  </p>
+                </div>
+              )}
               <div className="bg-muted/20 rounded-lg p-3 h-48 overflow-y-auto space-y-2 mb-2">
                 {loadingChat ? (
                   <p className="text-xs text-muted-foreground text-center">A carregar...</p>
                 ) : chatMessages.length === 0 ? (
                   <p className="text-xs text-muted-foreground text-center py-8">
-                    Inicia a conversa com {selectedFriendData?.nickname || "o teu amigo"}! 👋
+                    {isBlocked ? "🔒 Conversa bloqueada" : `Inicia a conversa com ${selectedFriendData?.nickname || "o teu amigo"}! 👋`}
                   </p>
                 ) : (
                   chatMessages.map(msg => (
@@ -280,14 +276,15 @@ export const ChatPanel = ({ studentId }: ChatPanelProps) => {
               </div>
               <div className="flex gap-2">
                 <Input
-                  placeholder="Escreve uma mensagem..."
+                  placeholder={isBlocked ? "Conversa bloqueada" : "Escreve uma mensagem..."}
                   value={message}
                   onChange={e => setMessage(e.target.value)}
-                  onKeyDown={e => e.key === "Enter" && handleSendMessage()}
+                  onKeyDown={e => e.key === "Enter" && !isBlocked && handleSendMessage()}
                   className="flex-1"
                   maxLength={200}
+                  disabled={isBlocked}
                 />
-                <Button size="icon" onClick={handleSendMessage} disabled={!message.trim()}>
+                <Button size="icon" onClick={handleSendMessage} disabled={!message.trim() || isBlocked}>
                   <Send className="w-4 h-4" />
                 </Button>
               </div>

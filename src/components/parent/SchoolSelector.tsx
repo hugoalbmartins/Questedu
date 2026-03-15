@@ -93,9 +93,15 @@ export const SchoolSelector = ({ children, onUpdate }: SchoolSelectorProps) => {
       .update({ school_id: state.schoolId, school_name: school?.name || null })
       .eq("id", childId);
 
-    if (error) toast.error("Erro ao guardar escola");
-    else { toast.success("Escola atualizada!"); onUpdate(); }
     setSaving(null);
+
+    if (error) {
+      console.error("Error saving school:", error);
+      toast.error("Erro ao guardar escola");
+    } else {
+      toast.success("Escola atualizada!");
+      await onUpdate();
+    }
   };
 
   return (
