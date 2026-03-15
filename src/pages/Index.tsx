@@ -31,7 +31,7 @@ const FAQS = [
   },
   {
     q: "É grátis?",
-    a: "Sim! Podes jogar gratuitamente com 5 quizzes por dia. O plano Premium (€1,99/mês) dá acesso ilimitado. O Plano Familiar (€4,99/mês) cobre até 5 filhos.",
+    a: "Sim! Podes jogar gratuitamente com 5 quizzes por dia. O plano Premium (€1,99/mês) dá acesso ilimitado. O Plano Familiar (€4,99/mês) cobre até 3 filhos. Ambos os planos têm opção anual com 10% de desconto.",
   },
   {
     q: "É seguro para o meu filho?",
@@ -122,6 +122,7 @@ const Index = () => {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [billingAnnual, setBillingAnnual] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -499,9 +500,28 @@ const Index = () => {
             <h2 className="font-display text-3xl sm:text-4xl font-bold text-slate-900 mb-3">
               Simples e transparente
             </h2>
-            <p className="text-slate-500 text-lg max-w-md mx-auto">
+            <p className="text-slate-500 text-lg max-w-md mx-auto mb-8">
               Comeca gratis, faz upgrade quando quiseres. Cancela a qualquer momento.
             </p>
+            <div className="inline-flex items-center gap-3 bg-slate-100 rounded-full p-1.5">
+              <button
+                onClick={() => setBillingAnnual(false)}
+                className={`px-5 py-2 rounded-full text-sm font-bold transition-all ${
+                  !billingAnnual ? "bg-white shadow text-slate-900" : "text-slate-500 hover:text-slate-700"
+                }`}
+              >
+                Mensal
+              </button>
+              <button
+                onClick={() => setBillingAnnual(true)}
+                className={`px-5 py-2 rounded-full text-sm font-bold transition-all flex items-center gap-2 ${
+                  billingAnnual ? "bg-white shadow text-slate-900" : "text-slate-500 hover:text-slate-700"
+                }`}
+              >
+                Anual
+                <span className="bg-green-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">-10%</span>
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
@@ -550,10 +570,14 @@ const Index = () => {
               <div>
                 <p className="text-sm font-bold text-amber-600 uppercase tracking-wider mb-1">Premium</p>
                 <div className="flex items-baseline gap-1">
-                  <span className="font-display text-4xl font-bold text-slate-900">€1,99</span>
+                  <span className="font-display text-4xl font-bold text-slate-900">
+                    {billingAnnual ? "€1,79" : "€1,99"}
+                  </span>
                   <span className="text-slate-500 text-sm">/mes</span>
                 </div>
-                <p className="text-sm text-slate-500 mt-1">ou €21,49/ano (poupa 10%)</p>
+                <p className="text-sm text-slate-500 mt-1">
+                  {billingAnnual ? "€21,49/ano — poupa €2,39" : "ou €21,49/ano (poupa 10%)"}
+                </p>
               </div>
               <Link to="/register">
                 <Button className="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl py-5 shadow">
@@ -587,10 +611,15 @@ const Index = () => {
               <div>
                 <p className="text-sm font-bold text-teal-600 uppercase tracking-wider mb-1">Familiar</p>
                 <div className="flex items-baseline gap-1">
-                  <span className="font-display text-4xl font-bold text-slate-900">€4,99</span>
+                  <span className="font-display text-4xl font-bold text-slate-900">
+                    {billingAnnual ? "€4,49" : "€4,99"}
+                  </span>
                   <span className="text-slate-500 text-sm">/mes</span>
                 </div>
-                <p className="text-sm text-slate-500 mt-1">Ate 5 filhos incluidos</p>
+                <p className="text-sm text-slate-500 mt-1">
+                  {billingAnnual ? "€53,88/ano — poupa €5,99" : "ou €53,88/ano (poupa 10%)"}
+                </p>
+                <p className="text-xs font-semibold text-teal-700 mt-1">Ate 3 filhos incluidos</p>
               </div>
               <Link to="/register/parent">
                 <Button className="w-full bg-teal-500 hover:bg-teal-600 text-white font-bold rounded-xl py-5">
@@ -600,7 +629,7 @@ const Index = () => {
               <ul className="space-y-2.5 text-sm">
                 {[
                   "Tudo do Premium",
-                  "Ate 5 perfis de alunos",
+                  "Ate 3 perfis de alunos",
                   "Dashboard unificado para pais",
                   "Comparativo de progresso",
                   "Controlo individual por filho",
