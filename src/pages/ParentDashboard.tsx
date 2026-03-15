@@ -15,6 +15,7 @@ import { AccessibilityWrapper } from "@/components/accessibility/AccessibilityWr
 import { AccessibilitySettings } from "@/components/accessibility/AccessibilitySettings";
 import { ChatMonitor } from "@/components/parent/ChatMonitor";
 import { SubjectPriorityManager } from "@/components/parent/SubjectPriorityManager";
+import { SubjectPriorityEditor } from "@/components/parent/SubjectPriorityEditor";
 import { SchoolSelector } from "@/components/parent/SchoolSelector";
 import { AccessibilityManager } from "@/components/parent/AccessibilityManager";
 
@@ -528,6 +529,21 @@ const ParentDashboard = () => {
             <div className="space-y-4">
               <div className="game-border bg-card p-6">
                 <h2 className="font-display text-xl font-bold mb-4">Configurações</h2>
+
+                {/* Subject Priorities for each child */}
+                {children.length > 0 && (
+                  <div className="space-y-4 mb-6">
+                    <h3 className="font-display text-lg font-bold">Prioridades de Disciplinas</h3>
+                    {children.map(child => (
+                      <SubjectPriorityEditor
+                        key={child.id}
+                        studentId={child.id}
+                        parentId={user!.id}
+                        schoolYear={child.school_year}
+                      />
+                    ))}
+                  </div>
+                )}
 
                 {/* Accessibility Manager */}
                 <div className="parchment-bg rounded-lg p-4 mb-4">
