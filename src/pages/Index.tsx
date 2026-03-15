@@ -182,9 +182,9 @@ const Index = () => {
       >
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
           <Link to="/" className="flex items-center gap-2.5 flex-shrink-0">
-            <img src={logo} alt="QuestEduca" className="w-9 h-9 object-contain" />
+            <img src={logo} alt="QuestEduca" className="w-12 h-12 object-contain" />
             <span
-              className={`font-display font-bold text-lg tracking-wide transition-colors ${
+              className={`font-display font-bold text-xl tracking-wide transition-colors ${
                 scrolled ? "text-amber-900" : "text-amber-900"
               }`}
             >
@@ -282,14 +282,14 @@ const Index = () => {
       </header>
 
       {/* ── HERO ── */}
-      <section className="relative min-h-screen flex items-center bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50 pt-16">
+      <section className="relative bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50 pt-16 pb-20">
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
           <div className="absolute -top-20 -right-20 w-96 h-96 rounded-full bg-amber-200/30 blur-3xl" />
           <div className="absolute bottom-0 -left-20 w-80 h-80 rounded-full bg-orange-200/25 blur-3xl" />
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full bg-yellow-100/40 blur-2xl" />
         </div>
 
-        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 py-16 lg:py-24 w-full">
+        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 pt-10 pb-16 w-full">
           <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
 
             {/* Left */}
@@ -377,7 +377,7 @@ const Index = () => {
         </div>
 
         {/* Stats bar */}
-        <div className="absolute bottom-0 left-0 right-0 bg-white/80 backdrop-blur-md border-t border-slate-100">
+        <div className="bg-white/80 backdrop-blur-md border-t border-slate-100">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 grid grid-cols-2 sm:grid-cols-4 gap-4">
             {[
               { value: "1000+", label: "Perguntas", icon: BookOpen },
