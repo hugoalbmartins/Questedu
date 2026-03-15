@@ -4,7 +4,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { BUILDING_DEFS, BUILDING_CATEGORIES, BuildingDef, NaturalResourceType } from '@/lib/gameTypes';
 import { RESOURCE_INFO } from '@/hooks/useResources';
 import { SFX } from '@/lib/sounds';
-import { Coins, Diamond, Lock, Crown, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
+import { Coins, Diamond, Lock, Crown, CircleCheck as CheckCircle2, Circle as XCircle, CircleAlert as AlertCircle } from 'lucide-react';
 
 interface ResourceAmounts {
   wood: number; stone: number; iron: number; coal: number; food: number; leather: number; fish: number;
