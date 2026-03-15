@@ -9,7 +9,11 @@ import { PortugalMap } from "@/components/game/PortugalMap";
 import { ChatPanel } from "@/components/game/ChatPanel";
 import { ShopModal } from "@/components/game/ShopModal";
 import { MissionsPanel } from "@/components/game/MissionsPanel";
+import { QuestsPanel } from "@/components/game/QuestsPanel";
+import { StreakBonusesPanel } from "@/components/game/StreakBonusesPanel";
 import { BattleModal } from "@/components/game/BattleModal";
+import { BattleQuizOverlay } from "@/components/game/BattleQuizOverlay";
+import { MinigamesHub } from "@/components/game/MinigamesHub";
 import { RankingsPanel } from "@/components/game/RankingsPanel";
 import { MonthlyTestModal } from "@/components/game/MonthlyTestModal";
 import { AchievementsPanel } from "@/components/game/AchievementsPanel";
@@ -21,10 +25,8 @@ import { AccessibilityWrapper } from "@/components/accessibility/AccessibilityWr
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { toast } from "sonner";
-import { 
-  Map, MessageCircle, BookOpen, LogOut, Home, 
-  ShoppingBag, Target, Swords, Trophy, Menu, GraduationCap, Crown 
-} from "lucide-react";
+import { Map, MessageCircle, BookOpen, LogOut, Chrome as Home, ShoppingBag, Target, Swords, Trophy, Menu, GraduationCap, Crown, Gamepad2, Flame, ListChecks } from "lucide-react";
+import { getStreakInfo } from "@/lib/questionSelection";
 
 type GameView = "village" | "map" | "chat";
 
@@ -36,8 +38,14 @@ const GamePage = () => {
   const [showShop, setShowShop] = useState(false);
   const [showBattle, setShowBattle] = useState(false);
   const [showMonthlyTest, setShowMonthlyTest] = useState(false);
+  const [showMinigames, setShowMinigames] = useState(false);
   const [sideMenuOpen, setSideMenuOpen] = useState(false);
-  const [battleQuizCallback, setBattleQuizCallback] = useState<(() => Promise<boolean>) | null>(null);
+  const [showStreakPanel, setShowStreakPanel] = useState(false);
+  const [showQuestsPanel, setShowQuestsPanel] = useState(false);
+  const [streakInfo, setStreakInfo] = useState({ current_streak: 0, longest_streak: 0 });
+  const [battleQuizCallback, setBattleQuizCallback] = useState<((correct: boolean) => void) | null>(null);
+  const [showBattleQuiz, setShowBattleQuiz] = useState(false);
+  const [battleEnemy, setBattleEnemy] = useState<{ name: string; emoji: string } | null>(null);
   const { achievements, unlocked, checkAchievements } = useAchievements(studentData?.id);
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications(studentData?.id);
 
@@ -45,6 +53,13 @@ const GamePage = () => {
     if (!loading && !user) navigate("/login");
     if (!loading && user && !isStudent) navigate("/parent");
   }, [user, isStudent, loading]);
+
+  useEffect(() => {
+    if (!studentData?.id) return;
+    getStreakInfo(studentData.id).then((data) => {
+      setStreakInfo({ current_streak: data.current_streak, longest_streak: data.longest_streak });
+    }).catch(() => {});
+  }, [studentData?.id]);
 
   // Random battle trigger
   useEffect(() => {
@@ -103,13 +118,16 @@ const GamePage = () => {
     refreshProfile();
   };
 
-  const handleBattleAnswerQuestion = useCallback((): Promise<boolean> => {
+  const handleBattleAnswerQuestion = useCallback((enemyName: string, enemyEmoji: string): Promise<boolean> => {
     return new Promise((resolve) => {
-      // This will be called when attack button is pressed in battle
-      // For simplicity, we'll simulate with a random correct/incorrect
-      // In a full implementation, this would show the quiz modal
-      const correct = Math.random() > 0.3; // 70% success rate for demo
-      setTimeout(() => resolve(correct), 500);
+      setBattleEnemy({ name: enemyName, emoji: enemyEmoji });
+      setShowBattleQuiz(true);
+      setBattleQuizCallback(() => (correct: boolean) => {
+        setShowBattleQuiz(false);
+        setBattleQuizCallback(null);
+        setBattleEnemy(null);
+        resolve(correct);
+      });
     });
   }, []);
 
@@ -157,6 +175,8 @@ const GamePage = () => {
       <div className="min-h-screen bg-background relative overflow-hidden">
       <GameHUD
         student={studentData}
+        studentId={studentData.id}
+        onClickQuiz={() => setShowQuiz(true)}
         notifications={notifications}
         unreadCount={unreadCount}
         onMarkAsRead={markAsRead}
@@ -178,29 +198,58 @@ const GamePage = () => {
           <div className="space-y-6 py-4">
             {/* Quick Actions */}
             <div className="grid grid-cols-2 gap-2">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="flex flex-col gap-2 h-auto py-4"
                 onClick={() => setShowShop(true)}
               >
                 <ShoppingBag className="w-6 h-6 text-gold" />
                 <span className="text-xs">Loja</span>
               </Button>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="flex flex-col gap-2 h-auto py-4"
                 onClick={() => setShowBattle(true)}
               >
                 <Swords className="w-6 h-6 text-destructive" />
                 <span className="text-xs">Batalhar</span>
               </Button>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="flex flex-col gap-2 h-auto py-4"
                 onClick={() => setShowMonthlyTest(true)}
               >
                 <GraduationCap className="w-6 h-6 text-primary" />
                 <span className="text-xs">Testes</span>
+              </Button>
+              <Button
+                variant="outline"
+                className="flex flex-col gap-2 h-auto py-4"
+                onClick={() => { setShowMinigames(true); setSideMenuOpen(false); }}
+              >
+                <Gamepad2 className="w-6 h-6 text-green-500" />
+                <span className="text-xs">Minijogos</span>
+              </Button>
+              <Button
+                variant={showStreakPanel ? "default" : "outline"}
+                className="flex flex-col gap-2 h-auto py-4 relative"
+                onClick={() => { setShowStreakPanel(v => !v); setShowQuestsPanel(false); }}
+              >
+                <Flame className={`w-6 h-6 ${streakInfo.current_streak > 0 ? 'text-orange-500' : 'text-muted-foreground'}`} />
+                <span className="text-xs">Sequências</span>
+                {streakInfo.current_streak > 0 && (
+                  <span className="absolute top-1 right-1 bg-orange-500 text-white text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                    {streakInfo.current_streak}
+                  </span>
+                )}
+              </Button>
+              <Button
+                variant={showQuestsPanel ? "default" : "outline"}
+                className="flex flex-col gap-2 h-auto py-4"
+                onClick={() => { setShowQuestsPanel(v => !v); setShowStreakPanel(false); }}
+              >
+                <ListChecks className="w-6 h-6 text-blue-500" />
+                <span className="text-xs">Missoes</span>
               </Button>
               {studentData.is_premium ? (
                 <div className="flex flex-col gap-2 h-auto py-4 items-center text-xs text-gold border border-gold/30 rounded-md px-2">
@@ -215,9 +264,30 @@ const GamePage = () => {
               )}
             </div>
 
+            {showStreakPanel && (
+              <StreakBonusesPanel
+                studentId={studentData.id}
+                currentStreak={streakInfo.current_streak}
+                longestStreak={streakInfo.longest_streak}
+                onUpdate={() => {
+                  getStreakInfo(studentData.id).then((data) => {
+                    setStreakInfo({ current_streak: data.current_streak, longest_streak: data.longest_streak });
+                  }).catch(() => {});
+                  refreshProfile();
+                }}
+              />
+            )}
+
+            {showQuestsPanel && (
+              <QuestsPanel
+                studentId={studentData.id}
+                onClose={() => setShowQuestsPanel(false)}
+              />
+            )}
+
             {/* Missions */}
-            <MissionsPanel 
-              studentId={studentData.id} 
+            <MissionsPanel
+              studentId={studentData.id}
               onClaimReward={handleClaimMissionReward}
             />
 
@@ -329,6 +399,29 @@ const GamePage = () => {
         isPremium={studentData.is_premium}
         onBattleEnd={handleBattleEnd}
         onAnswerQuestion={handleBattleAnswerQuestion}
+      />
+
+      {showBattleQuiz && battleEnemy && studentData && (
+        <BattleQuizOverlay
+          student={studentData}
+          enemyName={battleEnemy.name}
+          enemyEmoji={battleEnemy.emoji}
+          onResult={(correct) => battleQuizCallback?.(correct)}
+          onFlee={() => {
+            setShowBattleQuiz(false);
+            setShowBattle(false);
+            setBattleQuizCallback(null);
+            setBattleEnemy(null);
+          }}
+        />
+      )}
+
+      <MinigamesHub
+        isOpen={showMinigames}
+        onClose={() => setShowMinigames(false)}
+        studentId={studentData.id}
+        schoolYear={studentData.school_year}
+        isPremium={studentData.is_premium}
       />
 
       <MonthlyTestModal

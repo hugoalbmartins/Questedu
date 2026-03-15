@@ -1,5 +1,6 @@
 import { Coins, Diamond, Users, Crown, Clock } from "lucide-react";
 import { NotificationBell } from "./NotificationBell";
+import { StreakIndicator } from "./StreakIndicator";
 import { getSettlementType } from "@/lib/gameTypes";
 import { Badge } from "@/components/ui/badge";
 
@@ -26,13 +27,15 @@ interface GameHUDProps {
     is_premium?: boolean;
     trial_ends_at?: string | null;
   };
+  studentId?: string;
+  onClickQuiz?: () => void;
   notifications?: Notification[];
   unreadCount?: number;
   onMarkAsRead?: (id: string) => void;
   onMarkAllAsRead?: () => void;
 }
 
-export const GameHUD = ({ student, notifications = [], unreadCount = 0, onMarkAsRead, onMarkAllAsRead }: GameHUDProps) => {
+export const GameHUD = ({ student, studentId, onClickQuiz, notifications = [], unreadCount = 0, onMarkAsRead, onMarkAllAsRead }: GameHUDProps) => {
   const settlement = getSettlementType(student.village_level);
   const villageName = student.nickname || student.display_name;
 
@@ -87,6 +90,11 @@ export const GameHUD = ({ student, notifications = [], unreadCount = 0, onMarkAs
             <Users className="w-3 h-3 sm:w-4 sm:h-4 text-citizen" />
             <span className="font-body text-[10px] sm:text-xs font-bold">{student.citizens}</span>
           </div>
+          {studentId && (
+            <div className="hidden sm:block">
+              <StreakIndicator studentId={studentId} onClickQuiz={onClickQuiz} />
+            </div>
+          )}
           <NotificationBell
             notifications={notifications}
             unreadCount={unreadCount}
