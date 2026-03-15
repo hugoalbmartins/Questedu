@@ -17,6 +17,7 @@ import { ChatMonitor } from "@/components/parent/ChatMonitor";
 import { SubjectPriorityEditor } from "@/components/parent/SubjectPriorityEditor";
 import { SchoolSelector } from "@/components/parent/SchoolSelector";
 import { AccessibilityManager } from "@/components/parent/AccessibilityManager";
+import { StudentProgressDashboard } from "@/components/parent/StudentProgressDashboard";
 
 const schoolYears = [
   { value: "1", label: "1º Ano" },
@@ -425,10 +426,39 @@ const ParentDashboard = () => {
 
           <TabsContent value="progress">
             <div className="space-y-4">
+              <div className="flex items-center gap-2 mb-4">
+                <BookOpen className="w-6 h-6 text-accent" />
+                <h2 className="font-display text-xl font-bold">Evolução Escolar</h2>
+              </div>
+              {children.length === 0 ? (
+                <div className="game-border bg-card p-6 text-center">
+                  <p className="font-body text-muted-foreground">
+                    Nenhum educando registado.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {children.map(child => (
+                    <StudentProgressDashboard
+                      key={child.id}
+                      student={{
+                        id: child.id,
+                        display_name: child.display_name,
+                        school_year: child.school_year,
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="progress_old_backup">
+            <div className="space-y-4">
               <div className="game-border bg-card p-6">
                 <div className="flex items-center gap-2 mb-4">
                   <BookOpen className="w-6 h-6 text-accent" />
-                  <h2 className="font-display text-xl font-bold">Evolução Escolar</h2>
+                  <h2 className="font-display text-xl font-bold">Evolução Escolar (Antigo)</h2>
                 </div>
                 <p className="font-body text-muted-foreground mb-4">
                   Acompanhe o progresso dos seus educandos por disciplina e XP conquistado.

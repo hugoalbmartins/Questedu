@@ -2,9 +2,10 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, Lock, MessageCircle, Users } from "lucide-react";
+import { Send, Lock, MessageCircle, Users, Flag } from "lucide-react";
 import { toast } from "sonner";
 import { FriendSearchPanel } from "./FriendSearchPanel";
+import { ReportMessageModal } from "./ReportMessageModal";
 
 interface ChatPanelProps {
   studentId: string;
@@ -39,6 +40,9 @@ export const ChatPanel = ({ studentId }: ChatPanelProps) => {
   const [chatMessages, setChatMessages] = useState<any[]>([]);
   const [loadingChat, setLoadingChat] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [reportingMessageId, setReportingMessageId] = useState<string>("");
+  const [reportingUserId, setReportingUserId] = useState<string>("");
 
   // Load friendships
   useEffect(() => {
@@ -126,7 +130,7 @@ export const ChatPanel = ({ studentId }: ChatPanelProps) => {
     setLoadingChat(false);
   };
 
-  // Send message
+  // Send message with rate limiting and profanity check
   const handleSendMessage = async () => {
     if (!message.trim() || !selectedFriend) return;
 
@@ -143,17 +147,57 @@ export const ChatPanel = ({ studentId }: ChatPanelProps) => {
       return;
     }
 
+    // Check rate limit
+    const { data: rateLimitOk, error: rateLimitError } = await supabase.rpc(
+      "check_chat_rate_limit",
+      { p_student_id: studentId }
+    );
+
+    if (rateLimitError || !rateLimitOk) {
+      toast.error("Estás a enviar mensagens muito rápido! Espera um momento.");
+      return;
+    }
+
+    // Check profanity
+    const { data: profanityCheck } = await supabase.rpc("check_message_profanity", {
+      message_text: message.trim(),
+    });
+
+    if (profanityCheck && profanityCheck.length > 0 && profanityCheck[0].has_profanity) {
+      const severity = profanityCheck[0].max_severity;
+
+      // Log violation
+      await supabase.from("chat_violations").insert({
+        student_id: studentId,
+        message_id: null,
+        violation_type: "profanity",
+        severity: severity,
+        detected_words: profanityCheck[0].detected_words,
+        action_taken: "message_blocked",
+      });
+
+      toast.error("A tua mensagem contém palavras inapropriadas e não foi enviada.");
+      return;
+    }
+
     const { error } = await supabase.from("chat_messages").insert({
       sender_id: studentId,
       receiver_id: selectedFriend,
       message: message.trim(),
     });
+
     if (error) {
       toast.error("Erro ao enviar mensagem");
     } else {
       setMessage("");
       loadMessages(selectedFriend);
     }
+  };
+
+  const handleReportMessage = (messageId: string, senderId: string) => {
+    setReportingMessageId(messageId);
+    setReportingUserId(senderId);
+    setReportModalOpen(true);
   };
 
   const selectedFriendData = approvedFriends.find(f =>
@@ -261,7 +305,7 @@ export const ChatPanel = ({ studentId }: ChatPanelProps) => {
                   chatMessages.map(msg => (
                     <div
                       key={msg.id}
-                      className={`flex ${msg.sender_id === studentId ? "justify-end" : "justify-start"}`}
+                      className={`flex gap-1 ${msg.sender_id === studentId ? "justify-end" : "justify-start"}`}
                     >
                       <div className={`rounded-lg px-3 py-1.5 max-w-[75%] text-xs font-body ${
                         msg.sender_id === studentId
@@ -270,6 +314,17 @@ export const ChatPanel = ({ studentId }: ChatPanelProps) => {
                       }`}>
                         {msg.message}
                       </div>
+                      {msg.sender_id !== studentId && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 shrink-0 opacity-50 hover:opacity-100"
+                          onClick={() => handleReportMessage(msg.id, msg.sender_id)}
+                          title="Denunciar mensagem"
+                        >
+                          <Flag className="h-3 w-3 text-red-500" />
+                        </Button>
+                      )}
                     </div>
                   ))
                 )}
@@ -302,6 +357,18 @@ export const ChatPanel = ({ studentId }: ChatPanelProps) => {
           </p>
         </div>
       )}
+
+      <ReportMessageModal
+        isOpen={reportModalOpen}
+        onClose={() => setReportModalOpen(false)}
+        messageId={reportingMessageId}
+        reportedUserId={reportingUserId}
+        reportedUserName={
+          approvedFriends.find(f =>
+            (f.requester_id === studentId ? f.receiver_id : f.requester_id) === reportingUserId
+          )?.other_player?.nickname || "Jogador"
+        }
+      />
     </div>
   );
 };

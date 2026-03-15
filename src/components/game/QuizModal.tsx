@@ -4,8 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { BUILDING_DEFS } from "@/lib/gameTypes";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { X, Coins, Diamond, Users, Crown, HelpCircle } from "lucide-react";
+import { X, Coins, Diamond, Users, Crown, CircleHelp as HelpCircle, Volume2, VolumeX } from "lucide-react";
 import { getCurrentSchoolPeriod, isAtFreeCap } from "@/lib/schoolYear";
+import * as tts from "@/lib/textToSpeech";
 
 interface QuizModalProps {
   student: {
@@ -33,12 +34,17 @@ export const QuizModal = ({ student, onClose }: QuizModalProps) => {
   const [quizComplete, setQuizComplete] = useState(false);
   const [reward, setReward] = useState(rewardTypes[0]);
   const [atCap, setAtCap] = useState(false);
+  const [ttsEnabled, setTtsEnabled] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
 
   const schoolPeriod = getCurrentSchoolPeriod();
   const isPremium = (student as any).is_premium || false;
   const studentXp = (student as any).xp || 0;
 
   useEffect(() => {
+    // Initialize TTS
+    tts.initSpeechSynthesis();
+
     // Check if at free cap
     if (isAtFreeCap(studentXp, student.school_year, isPremium)) {
       setAtCap(true);
@@ -114,14 +120,68 @@ export const QuizModal = ({ student, onClose }: QuizModalProps) => {
 
     loadQuestions();
     setReward(rewardTypes[Math.floor(Math.random() * rewardTypes.length)]);
+
+    // Cleanup TTS on unmount
+    return () => {
+      tts.stop();
+    };
   }, [student.school_year]);
 
-  const handleAnswer = (answerIndex: number) => {
+  // Auto-speak question when TTS enabled and question changes
+  useEffect(() => {
+    if (ttsEnabled && !showResult && questions.length > 0) {
+      const currentQ = questions[currentIndex];
+      setTimeout(() => {
+        tts.speakQuizQuestion(currentQ.question_text, currentQ.options, true);
+      }, 300);
+    }
+  }, [currentIndex, ttsEnabled, questions]);
+
+  const toggleTTS = () => {
+    const newState = !ttsEnabled;
+    setTtsEnabled(newState);
+
+    if (!newState) {
+      tts.stop();
+    } else if (questions.length > 0 && !showResult) {
+      const currentQ = questions[currentIndex];
+      tts.speakQuizQuestion(currentQ.question_text, currentQ.options, true);
+    }
+  };
+
+  const handleCloseTTS = () => {
+    tts.stop();
+    onClose();
+  };
+
+  const handleAnswer = async (answerIndex: number) => {
     if (showResult) return;
+
+    // Stop TTS when answer is selected
+    tts.stop();
+
     setSelectedAnswer(answerIndex);
     setShowResult(true);
-    if (answerIndex === questions[currentIndex].correct_answer) {
+
+    const currentQ = questions[currentIndex];
+    const isCorrect = answerIndex === currentQ.correct_answer;
+
+    if (isCorrect) {
       setCorrectCount(prev => prev + 1);
+    } else {
+      // Add to error notebook
+      try {
+        await supabase.from("error_notebook").insert({
+          student_id: student.id,
+          question_id: currentQ.id,
+          student_answer: currentQ.options[answerIndex],
+          correct_answer: currentQ.options[currentQ.correct_answer],
+          subject: currentQ.subject,
+          school_year: parseInt(student.school_year),
+        });
+      } catch (err) {
+        console.error("Error saving to error notebook:", err);
+      }
     }
   };
 
@@ -208,9 +268,20 @@ export const QuizModal = ({ student, onClose }: QuizModalProps) => {
   return (
     <div className="fixed inset-0 bg-foreground/60 z-[60] flex items-end sm:items-center justify-center px-0 sm:px-4">
       <div className="w-full sm:max-w-lg game-border p-4 sm:p-6 bg-card relative animate-slide-up max-h-[95vh] sm:max-h-[90vh] overflow-y-auto rounded-t-2xl sm:rounded-xl">
-        <Button variant="ghost" size="sm" className="absolute top-2 right-2" onClick={onClose}>
-          <X className="w-5 h-5" />
-        </Button>
+        <div className="absolute top-2 right-2 flex gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={toggleTTS}
+            title={ttsEnabled ? "Desativar leitura" : "Ativar leitura"}
+          >
+            {ttsEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+          </Button>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleCloseTTS}>
+            <X className="w-5 h-5" />
+          </Button>
+        </div>
 
         {quizComplete ? (
           <div className="text-center py-8">

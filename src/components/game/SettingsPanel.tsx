@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Switch } from "@/components/ui/switch";
-import { Settings, Bell } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Settings, Bell, BookX } from "lucide-react";
 import { toast } from "sonner";
+import { ErrorNotebookModal } from "./ErrorNotebookModal";
 
 interface SettingsPanelProps {
   studentId: string;
@@ -13,6 +15,7 @@ interface SettingsPanelProps {
 export const SettingsPanel = ({ studentId, quizRemindersEnabled, onUpdate }: SettingsPanelProps) => {
   const [reminders, setReminders] = useState(quizRemindersEnabled);
   const [saving, setSaving] = useState(false);
+  const [errorNotebookOpen, setErrorNotebookOpen] = useState(false);
 
   const toggleReminders = async (enabled: boolean) => {
     setSaving(true);
@@ -54,7 +57,28 @@ export const SettingsPanel = ({ studentId, quizRemindersEnabled, onUpdate }: Set
             className="flex-shrink-0"
           />
         </div>
+
+        <div className="border-t pt-3">
+          <Button
+            onClick={() => setErrorNotebookOpen(true)}
+            variant="outline"
+            className="w-full"
+            size="sm"
+          >
+            <BookX className="w-4 h-4 mr-2" />
+            Caderno de Erros
+          </Button>
+          <p className="font-body text-[10px] text-muted-foreground text-center mt-1.5">
+            Revê as questões que erraste e aprende
+          </p>
+        </div>
       </div>
+
+      <ErrorNotebookModal
+        isOpen={errorNotebookOpen}
+        onClose={() => setErrorNotebookOpen(false)}
+        studentId={studentId}
+      />
     </div>
   );
 };
