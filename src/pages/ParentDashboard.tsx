@@ -18,6 +18,8 @@ import { SubjectPriorityEditor } from "@/components/parent/SubjectPriorityEditor
 import { SchoolSelector } from "@/components/parent/SchoolSelector";
 import { AccessibilityManager } from "@/components/parent/AccessibilityManager";
 import { StudentProgressDashboard } from "@/components/parent/StudentProgressDashboard";
+import { GlobalInsightsDashboard } from "@/components/dashboard/GlobalInsightsDashboard";
+import { LearningAnalyticsDashboard } from "@/components/dashboard/LearningAnalyticsDashboard";
 
 const schoolYears = [
   { value: "1", label: "1º Ano" },
