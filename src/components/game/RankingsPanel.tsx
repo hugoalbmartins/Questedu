@@ -3,16 +3,26 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Medal, MapPin, School, Globe } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Trophy, Medal, MapPin, School, Globe, Clock, Calendar } from "lucide-react";
 
 interface RankingEntry {
-  id: string;
-  display_name: string;
-  xp: number;
-  village_level: number;
-  district: string | null;
+  student_id: string;
+  student_name: string;
+  rank_position: number;
+  score: number;
+  rank_tier: string;
+  questions_answered: number;
+  accuracy_percentage: number;
+  streak_days: number;
   school_name: string | null;
-  rank?: number;
+}
+
+interface StudentRank {
+  rank_position: number;
+  score: number;
+  rank_tier: string;
+  total_participants: number;
 }
 
 interface RankingsPanelProps {
@@ -31,67 +41,54 @@ const districtLabels: Record<string, string> = {
 };
 
 export const RankingsPanel = ({ studentId, district, schoolName }: RankingsPanelProps) => {
-  const [nationalRanking, setNationalRanking] = useState<RankingEntry[]>([]);
-  const [districtRanking, setDistrictRanking] = useState<RankingEntry[]>([]);
+  const [globalRanking, setGlobalRanking] = useState<RankingEntry[]>([]);
   const [schoolRanking, setSchoolRanking] = useState<RankingEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [myRank, setMyRank] = useState<{ national: number; district: number; school: number }>({
-    national: 0, district: 0, school: 0
-  });
+  const [period, setPeriod] = useState<'weekly' | 'monthly' | 'all_time'>('weekly');
+  const [myRank, setMyRank] = useState<StudentRank | null>(null);
 
   useEffect(() => {
     fetchRankings();
-  }, [studentId, district, schoolName]);
+  }, [studentId, period]);
 
   const fetchRankings = async () => {
     setLoading(true);
 
-    // National ranking - top 10
-    const { data: national } = await supabase
-      .from("students")
-      .select("id, display_name, xp, village_level, district, school_name")
-      .order("xp", { ascending: false })
-      .limit(10);
+    try {
+      const { data: globalData, error: globalError } = await supabase
+        .rpc('get_leaderboard_rankings', {
+          leaderboard_type_param: 'global',
+          period_param: period,
+          limit_param: 50
+        });
 
-    if (national) {
-      setNationalRanking(national.map((s, i) => ({ ...s, rank: i + 1 })) as RankingEntry[]);
-      const myNatRank = national.findIndex(s => s.id === studentId);
-      if (myNatRank >= 0) setMyRank(prev => ({ ...prev, national: myNatRank + 1 }));
+      if (globalError) throw globalError;
+      if (globalData) setGlobalRanking(globalData);
+
+      const { data: schoolData, error: schoolError } = await supabase
+        .rpc('get_leaderboard_rankings', {
+          leaderboard_type_param: 'school',
+          period_param: period,
+          limit_param: 50
+        });
+
+      if (schoolError) throw schoolError;
+      if (schoolData) setSchoolRanking(schoolData);
+
+      const { data: rankData, error: rankError } = await supabase
+        .rpc('get_student_rank', {
+          student_id_param: studentId,
+          leaderboard_type_param: 'global',
+          period_param: period
+        });
+
+      if (rankError) throw rankError;
+      if (rankData && rankData.length > 0) setMyRank(rankData[0]);
+    } catch (error) {
+      console.error('Error fetching rankings:', error);
+    } finally {
+      setLoading(false);
     }
-
-    // District ranking
-    if (district) {
-      const { data: districtData } = await supabase
-        .from("students")
-        .select("id, display_name, xp, village_level, district, school_name")
-        .eq("district", district as any)
-        .order("xp", { ascending: false })
-        .limit(10);
-
-      if (districtData) {
-        setDistrictRanking(districtData.map((s, i) => ({ ...s, rank: i + 1 })) as RankingEntry[]);
-        const myDistRank = districtData.findIndex(s => s.id === studentId);
-        if (myDistRank >= 0) setMyRank(prev => ({ ...prev, district: myDistRank + 1 }));
-      }
-    }
-
-    // School ranking
-    if (schoolName) {
-      const { data: schoolData } = await supabase
-        .from("students")
-        .select("id, display_name, xp, village_level, district, school_name")
-        .eq("school_name", schoolName)
-        .order("xp", { ascending: false })
-        .limit(10);
-
-      if (schoolData) {
-        setSchoolRanking(schoolData.map((s, i) => ({ ...s, rank: i + 1 })) as RankingEntry[]);
-        const mySchRank = schoolData.findIndex(s => s.id === studentId);
-        if (mySchRank >= 0) setMyRank(prev => ({ ...prev, school: mySchRank + 1 }));
-      }
-    }
-
-    setLoading(false);
   };
 
   const getRankIcon = (rank: number) => {
@@ -101,30 +98,64 @@ export const RankingsPanel = ({ studentId, district, schoolName }: RankingsPanel
     return <span className="text-sm font-mono text-muted-foreground">#{rank}</span>;
   };
 
+  const getTierBadge = (tier: string) => {
+    const tierColors: Record<string, string> = {
+      bronze: 'bg-orange-900/20 text-orange-600 border-orange-600/30',
+      silver: 'bg-gray-400/20 text-gray-600 border-gray-600/30',
+      gold: 'bg-yellow-500/20 text-yellow-600 border-yellow-600/30',
+      platinum: 'bg-cyan-500/20 text-cyan-600 border-cyan-600/30',
+      diamond: 'bg-blue-500/20 text-blue-600 border-blue-600/30',
+      master: 'bg-purple-500/20 text-purple-600 border-purple-600/30',
+      grandmaster: 'bg-red-500/20 text-red-600 border-red-600/30'
+    };
+    const tierIcons: Record<string, string> = {
+      bronze: '🥉',
+      silver: '🥈',
+      gold: '🥇',
+      platinum: '💎',
+      diamond: '💠',
+      master: '👑',
+      grandmaster: '⭐'
+    };
+    return (
+      <Badge className={`text-xs ${tierColors[tier] || tierColors.bronze}`}>
+        {tierIcons[tier] || ''} {tier.toUpperCase()}
+      </Badge>
+    );
+  };
+
   const RankingList = ({ entries, currentStudentId }: { entries: RankingEntry[]; currentStudentId: string }) => (
     <div className="space-y-2">
       {entries.map(entry => (
-        <div 
-          key={entry.id}
+        <div
+          key={entry.student_id}
           className={`flex items-center gap-3 p-3 rounded-lg ${
-            entry.id === currentStudentId ? "bg-primary/10 border border-primary" : "bg-muted/50"
+            entry.student_id === currentStudentId ? "bg-primary/10 border border-primary" : "bg-muted/50"
           }`}
         >
           <div className="w-8 text-center">
-            {getRankIcon(entry.rank || 0)}
+            {getRankIcon(entry.rank_position)}
           </div>
           <div className="flex-1">
             <p className="font-body font-semibold text-sm">
-              {entry.display_name}
-              {entry.id === currentStudentId && <span className="text-primary ml-1">(Tu)</span>}
+              {entry.student_name}
+              {entry.student_id === currentStudentId && <span className="text-primary ml-1">(Tu)</span>}
             </p>
-            <p className="text-xs text-muted-foreground">
-              Nível {entry.village_level}
+            <div className="flex items-center gap-2 mt-1">
+              {getTierBadge(entry.rank_tier)}
+              <p className="text-xs text-muted-foreground">
+                {entry.accuracy_percentage.toFixed(0)}% precisão
+              </p>
+            </div>
+          </div>
+          <div className="text-right">
+            <Badge variant="secondary" className="font-mono">
+              {entry.score.toLocaleString()} pts
+            </Badge>
+            <p className="text-xs text-muted-foreground mt-1">
+              {entry.questions_answered} perguntas
             </p>
           </div>
-          <Badge variant="secondary" className="font-mono">
-            {entry.xp.toLocaleString()} XP
-          </Badge>
         </div>
       ))}
       {entries.length === 0 && (
@@ -139,44 +170,87 @@ export const RankingsPanel = ({ studentId, district, schoolName }: RankingsPanel
 
   return (
     <Card className="p-4">
-      <h3 className="font-display font-bold flex items-center gap-2 mb-4">
-        <Trophy className="w-5 h-5 text-gold" />
-        Rankings
-      </h3>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="font-display font-bold flex items-center gap-2">
+          <Trophy className="w-5 h-5 text-yellow-500" />
+          Rankings
+        </h3>
+        <div className="flex gap-1">
+          <Button
+            size="sm"
+            variant={period === 'weekly' ? 'default' : 'ghost'}
+            onClick={() => setPeriod('weekly')}
+            className="text-xs"
+          >
+            <Clock className="w-3 h-3 mr-1" />
+            Semanal
+          </Button>
+          <Button
+            size="sm"
+            variant={period === 'monthly' ? 'default' : 'ghost'}
+            onClick={() => setPeriod('monthly')}
+            className="text-xs"
+          >
+            <Calendar className="w-3 h-3 mr-1" />
+            Mensal
+          </Button>
+          <Button
+            size="sm"
+            variant={period === 'all_time' ? 'default' : 'ghost'}
+            onClick={() => setPeriod('all_time')}
+            className="text-xs"
+          >
+            <Trophy className="w-3 h-3 mr-1" />
+            Total
+          </Button>
+        </div>
+      </div>
 
-      <Tabs defaultValue="national">
-        <TabsList className="grid grid-cols-3 mb-4">
-          <TabsTrigger value="national" className="gap-1 text-xs">
-            <Globe className="w-3 h-3" /> Nacional
-          </TabsTrigger>
-          <TabsTrigger value="district" className="gap-1 text-xs" disabled={!district}>
-            <MapPin className="w-3 h-3" /> Distrito
+      {myRank && (
+        <div className="mb-4 p-3 bg-gradient-to-r from-primary/10 to-secondary/10 border border-primary/20 rounded-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold">A Tua Posição</p>
+              <p className="text-2xl font-bold text-primary">
+                #{myRank.rank_position}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                de {myRank.total_participants} participantes
+              </p>
+            </div>
+            <div className="text-right">
+              {getTierBadge(myRank.rank_tier)}
+              <p className="text-sm font-mono mt-1">
+                {myRank.score.toLocaleString()} pts
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <Tabs defaultValue="global">
+        <TabsList className="grid grid-cols-2 mb-4">
+          <TabsTrigger value="global" className="gap-1 text-xs">
+            <Globe className="w-3 h-3" /> Global
           </TabsTrigger>
           <TabsTrigger value="school" className="gap-1 text-xs" disabled={!schoolName}>
             <School className="w-3 h-3" /> Escola
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="national">
+        <TabsContent value="global">
           <div className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
-            <Globe className="w-3 h-3" /> Top 10 de Portugal
-            {myRank.national > 0 && myRank.national <= 10 && (
-              <Badge className="ml-auto">Estás no Top 10! 🎉</Badge>
+            <Globe className="w-3 h-3" /> Top 50 Global
+            {myRank && myRank.rank_position <= 10 && (
+              <Badge className="ml-auto">Top 10! 🎉</Badge>
             )}
           </div>
-          <RankingList entries={nationalRanking} currentStudentId={studentId} />
-        </TabsContent>
-
-        <TabsContent value="district">
-          <div className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
-            <MapPin className="w-3 h-3" /> Top 10 de {district ? districtLabels[district] || district : ""}
-          </div>
-          <RankingList entries={districtRanking} currentStudentId={studentId} />
+          <RankingList entries={globalRanking} currentStudentId={studentId} />
         </TabsContent>
 
         <TabsContent value="school">
           <div className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
-            <School className="w-3 h-3" /> Top 10 da {schoolName || "Escola"}
+            <School className="w-3 h-3" /> Top 50 da {schoolName || "Escola"}
           </div>
           <RankingList entries={schoolRanking} currentStudentId={studentId} />
         </TabsContent>
