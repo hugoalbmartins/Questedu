@@ -3,7 +3,7 @@
 
 **Data**: 15 de Março de 2026
 **Versão**: 1.0
-**Objetivo**: Transformar a Vila dos Sabichões na melhor plataforma educativa de Portugal
+**Objetivo**: Transformar a QuestEduca na melhor plataforma educativa de Portugal
 
 ---
 
@@ -880,13 +880,13 @@ function generateReportHTML(report: WeeklyReport): string {
       <div class="footer">
         <p><strong>Continue assim! 🎉</strong></p>
         <p>A consistência é a chave para o sucesso na aprendizagem.</p>
-        <a href="https://viladossabichoes.pt/parent" style="display: inline-block; background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 10px;">
+        <a href="https://questeduca.pt/parent" style="display: inline-block; background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 10px;">
           Ver Dashboard Completo →
         </a>
       </div>
 
       <div style="text-align: center; margin-top: 20px; font-size: 12px; color: #999;">
-        <p>Vila dos Sabichões - Plataforma Educativa</p>
+        <p>QuestEduca - Plataforma Educativa</p>
         <p>Para deixar de receber estes emails, aceda às definições parentais.</p>
       </div>
     </body>

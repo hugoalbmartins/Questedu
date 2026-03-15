@@ -18,7 +18,7 @@ const PrivacyPage = () => {
         </div>
 
         <div className="text-center mb-8">
-          <img src={logo} alt="Vila dos Sabichões" className="w-24 mx-auto mb-4" />
+          <img src={logo} alt="QuestEduca" className="w-24 mx-auto mb-4" />
           <h1 className="font-display text-3xl font-bold flex items-center justify-center gap-2">
             <Shield className="w-8 h-8" />
             Política de Privacidade
@@ -32,7 +32,7 @@ const PrivacyPage = () => {
           <CardContent className="pt-6">
             <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
               <p className="text-sm">
-                <strong>Compromisso de Privacidade:</strong> A Vila dos Sabichões está comprometida em proteger a privacidade das crianças e das suas famílias. Esta política explica como recolhemos, utilizamos e protegemos os dados pessoais em conformidade com o RGPD (Regulamento Geral de Proteção de Dados) e legislação portuguesa aplicável.
+                <strong>Compromisso de Privacidade:</strong> A QuestEduca está comprometida em proteger a privacidade das crianças e das suas famílias. Esta política explica como recolhemos, utilizamos e protegemos os dados pessoais em conformidade com o RGPD (Regulamento Geral de Proteção de Dados) e legislação portuguesa aplicável.
               </p>
             </div>
           </CardContent>
@@ -44,9 +44,9 @@ const PrivacyPage = () => {
               <h2 className="font-display text-xl font-bold mb-3">1. Entidade Responsável</h2>
               <div className="text-muted-foreground">
                 <p><strong>Responsável pelo Tratamento de Dados:</strong></p>
-                <p className="mt-2">Vila dos Sabichões, Lda.</p>
-                <p>Email: privacidade@viladossabichoes.pt</p>
-                <p>DPO (Data Protection Officer): dpo@viladossabichoes.pt</p>
+                <p className="mt-2">QuestEduca, Lda.</p>
+                <p>Email: privacidade@questeduca.pt</p>
+                <p>DPO (Data Protection Officer): dpo@questeduca.pt</p>
               </div>
             </section>
 
@@ -188,7 +188,7 @@ const PrivacyPage = () => {
                   <li><strong>Retirar Consentimento:</strong> A qualquer momento</li>
                   <li><strong>Reclamar:</strong> Junto da CNPD (Comissão Nacional de Proteção de Dados)</li>
                 </ul>
-                <p className="mt-2">Para exercer estes direitos, contacte: privacidade@viladossabichoes.pt</p>
+                <p className="mt-2">Para exercer estes direitos, contacte: privacidade@questeduca.pt</p>
               </div>
             </section>
 
@@ -239,9 +239,9 @@ const PrivacyPage = () => {
               <div className="text-muted-foreground">
                 <p>Para questões sobre privacidade e proteção de dados:</p>
                 <ul className="list-none mt-2 space-y-1">
-                  <li><strong>Email Privacidade:</strong> privacidade@viladossabichoes.pt</li>
-                  <li><strong>DPO:</strong> dpo@viladossabichoes.pt</li>
-                  <li><strong>Email Geral:</strong> suporte@viladossabichoes.pt</li>
+                  <li><strong>Email Privacidade:</strong> privacidade@questeduca.pt</li>
+                  <li><strong>DPO:</strong> dpo@questeduca.pt</li>
+                  <li><strong>Email Geral:</strong> suporte@questeduca.pt</li>
                   <li><strong>CNPD:</strong> <a href="https://www.cnpd.pt" target=\"_blank" rel="noopener noreferrer\" className="text-primary underline">www.cnpd.pt</a></li>
                 </ul>
               </div>
@@ -249,7 +249,7 @@ const PrivacyPage = () => {
 
             <section className="border-t pt-6">
               <p className="text-sm text-muted-foreground italic">
-                A Vila dos Sabichões está comprometida com a proteção da privacidade das crianças e o cumprimento do RGPD. A confiança das famílias é a nossa prioridade.
+                A QuestEduca está comprometida com a proteção da privacidade das crianças e o cumprimento do RGPD. A confiança das famílias é a nossa prioridade.
               </p>
             </section>
           </CardContent>
@@ -275,7 +275,7 @@ const PrivacyPage = () => {
         </Card>
 
         <div className="text-center mt-8 text-sm text-muted-foreground">
-          <p>© 2026 Vila dos Sabichões. Todos os direitos reservados.</p>
+          <p>© 2026 QuestEduca. Todos os direitos reservados.</p>
           <p className="mt-1">RGPD Compliant • CNPD Registered</p>
         </div>
       </div>

@@ -373,7 +373,7 @@ Atualização completa da página de login com cards informativos, perguntas fre
 
 ### Copyright
 ```
-© 2026 Vila dos Sabichões. Todos os direitos reservados.
+© 2026 QuestEduca. Todos os direitos reservados.
 Plataforma educativa portuguesa certificada e segura para crianças.
 ```
 
@@ -560,10 +560,10 @@ Plataforma educativa portuguesa certificada e segura para crianças.
 
 ## 📞 Contactos Apresentados
 
-- **Email Legal**: legal@viladossabichoes.pt
-- **Email Privacidade**: privacidade@viladossabichoes.pt
-- **Email DPO**: dpo@viladossabichoes.pt
-- **Email Suporte**: suporte@viladossabichoes.pt
+- **Email Legal**: legal@questeduca.pt
+- **Email Privacidade**: privacidade@questeduca.pt
+- **Email DPO**: dpo@questeduca.pt
+- **Email Suporte**: suporte@questeduca.pt
 
 ---
 

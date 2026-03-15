@@ -1,5 +1,5 @@
 # 🎯 SUMÁRIO EXECUTIVO FINAL
-## Vila dos Sabichões - Planeamento Completo Q2 2026
+## QuestEduca - Planeamento Completo Q2 2026
 
 **Data**: 15 de Março de 2026
 **Versão**: 1.0 FINAL
@@ -9,7 +9,7 @@
 
 ## 📊 VISÃO GERAL DO PROJETO
 
-### O Que É a Vila dos Sabichões?
+### O Que É a QuestEduca?
 Plataforma educativa gamificada para alunos do 1º ao 4º ano do Ensino Básico em Portugal. Transforma a aprendizagem numa aventura interactiva onde as crianças constroem a sua vila virtual enquanto respondem a quizzes educativos adaptados ao currículo português.
 
 ### Objectivo Q2 2026
@@ -460,7 +460,7 @@ Plataforma educativa gamificada para alunos do 1º ao 4º ano do Ensino Básico 
 
 ### Estado Atual: EXCELENTE ✅
 
-A Vila dos Sabichões tem:
+A QuestEduca tem:
 - ✅ **Base sólida** de jogo funcional
 - ✅ **Tecnologia robusta** e escalável
 - ✅ **Segurança** e moderação implementada
@@ -508,7 +508,7 @@ Com execução consistente deste plano:
 
 ## 🎉 MENSAGEM FINAL
 
-**A Vila dos Sabichões está pronta para crescer exponencialmente!**
+**A QuestEduca está pronta para crescer exponencialmente!**
 
 Temos:
 - ✅ Produto sólido e diferenciado
@@ -523,6 +523,6 @@ Temos:
 ---
 
 **Criado**: 15 de Março de 2026
-**Por**: Equipa Vila dos Sabichões
+**Por**: Equipa QuestEduca
 **Status**: ✅ **PLANEAMENTO 100% COMPLETO - READY TO IMPLEMENT**
 **Next**: 🚀 **START SPRINT 1 - TRIAL PREMIUM**

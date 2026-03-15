@@ -1,4 +1,4 @@
-# 🎮 Vila dos Sabichões - Funcionalidades Completas
+# 🎮 QuestEduca - Funcionalidades Completas
 
 ## 📚 Plataforma Educativa Gamificada para o Ensino Básico Português
 
@@ -6,7 +6,7 @@
 
 ## 🎯 Visão Geral
 
-**Vila dos Sabichões** é uma plataforma educativa inovadora que combina gamificação avançada com aprendizagem adaptativa para alunos do 1º ao 4º ano do ensino básico em Portugal. O sistema transforma a educação numa experiência envolvente através de mecânicas de jogo, competição saudável e acompanhamento parental detalhado.
+**QuestEduca** é uma plataforma educativa inovadora que combina gamificação avançada com aprendizagem adaptativa para alunos do 1º ao 4º ano do ensino básico em Portugal. O sistema transforma a educação numa experiência envolvente através de mecânicas de jogo, competição saudável e acompanhamento parental detalhado.
 
 ### 🌟 Principais Diferenciais
 
@@ -708,15 +708,15 @@
 
 ## 👥 Suporte e Contacto
 
-**Email**: suporte@viladossabichoes.pt
-**Discord**: [Comunidade Vila dos Sabichões](#)
-**Documentação**: [docs.viladossabichoes.pt](#)
+**Email**: suporte@questeduca.pt
+**Discord**: [Comunidade QuestEduca](#)
+**Documentação**: [docs.questeduca.pt](#)
 
 ---
 
 ## 📄 Licença
 
-Copyright © 2026 Vila dos Sabichões. Todos os direitos reservados.
+Copyright © 2026 QuestEduca. Todos os direitos reservados.
 
 ---
 

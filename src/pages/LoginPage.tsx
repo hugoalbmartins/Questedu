@@ -65,7 +65,7 @@ const LoginPage = () => {
           <div className="lg:sticky lg:top-8">
             <div className="game-border p-8 bg-card">
               <div className="text-center mb-6">
-                <img src={logo} alt="Vila dos Sabichões" className="w-32 mx-auto mb-4" />
+                <img src={logo} alt="QuestEduca" className="w-32 mx-auto mb-4" />
                 <h1 className="font-display text-2xl font-bold">Continuar Aventura</h1>
                 <p className="font-body text-sm text-muted-foreground mt-1">
                   Entra na tua conta para continuar a jogar
@@ -255,7 +255,7 @@ const LoginPage = () => {
                         Para que idades é o jogo?
                       </AccordionTrigger>
                       <AccordionContent>
-                        A Vila dos Sabichões é perfeita para alunos do 1º ao 4º ano do Ensino Básico (6 a 10 anos). O conteúdo está alinhado com o programa do Ministério da Educação português.
+                        A QuestEduca é perfeita para alunos do 1º ao 4º ano do Ensino Básico (6 a 10 anos). O conteúdo está alinhado com o programa do Ministério da Educação português.
                       </AccordionContent>
                     </AccordionItem>
 
@@ -423,7 +423,7 @@ const LoginPage = () => {
                   </Link>
                 </div>
                 <p className="text-center text-xs text-muted-foreground mt-4">
-                  © 2026 Vila dos Sabichões. Todos os direitos reservados.
+                  © 2026 QuestEduca. Todos os direitos reservados.
                 </p>
                 <p className="text-center text-xs text-muted-foreground mt-2">
                   Plataforma educativa portuguesa certificada e segura para crianças.

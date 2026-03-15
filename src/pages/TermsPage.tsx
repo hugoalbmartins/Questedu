@@ -18,7 +18,7 @@ const TermsPage = () => {
         </div>
 
         <div className="text-center mb-8">
-          <img src={logo} alt="Vila dos Sabichões" className="w-24 mx-auto mb-4" />
+          <img src={logo} alt="QuestEduca" className="w-24 mx-auto mb-4" />
           <h1 className="font-display text-3xl font-bold flex items-center justify-center gap-2">
             <FileText className="w-8 h-8" />
             Termos de Serviço
@@ -33,14 +33,14 @@ const TermsPage = () => {
             <section>
               <h2 className="font-display text-xl font-bold mb-3">1. Aceitação dos Termos</h2>
               <p className="text-muted-foreground">
-                Ao aceder e utilizar a plataforma Vila dos Sabichões ("Plataforma"), você aceita estar vinculado por estes Termos de Serviço. Se não concordar com qualquer parte destes termos, não deve utilizar a Plataforma.
+                Ao aceder e utilizar a plataforma QuestEduca ("Plataforma"), você aceita estar vinculado por estes Termos de Serviço. Se não concordar com qualquer parte destes termos, não deve utilizar a Plataforma.
               </p>
             </section>
 
             <section>
               <h2 className="font-display text-xl font-bold mb-3">2. Descrição do Serviço</h2>
               <p className="text-muted-foreground mb-2">
-                A Vila dos Sabichões é uma plataforma educativa gamificada destinada a alunos do 1º ao 4º ano do Ensino Básico em Portugal. A Plataforma oferece:
+                A QuestEduca é uma plataforma educativa gamificada destinada a alunos do 1º ao 4º ano do Ensino Básico em Portugal. A Plataforma oferece:
               </p>
               <ul className="list-disc list-inside space-y-1 text-muted-foreground ml-4">
                 <li>Quizzes educativos adaptados ao currículo português</li>
@@ -112,9 +112,9 @@ const TermsPage = () => {
             <section>
               <h2 className="font-display text-xl font-bold mb-3">7. Propriedade Intelectual</h2>
               <div className="space-y-2 text-muted-foreground">
-                <p><strong>7.1 Conteúdo da Plataforma:</strong> Todo o conteúdo (textos, gráficos, logos, imagens, código) é propriedade da Vila dos Sabichões e está protegido por direitos de autor.</p>
+                <p><strong>7.1 Conteúdo da Plataforma:</strong> Todo o conteúdo (textos, gráficos, logos, imagens, código) é propriedade da QuestEduca e está protegido por direitos de autor.</p>
                 <p><strong>7.2 Conteúdo do Utilizador:</strong> Ao criar conteúdo na Plataforma (mensagens, respostas), você concede-nos uma licença mundial, não exclusiva e livre de royalties para usar esse conteúdo.</p>
-                <p><strong>7.3 Marcas Registadas:</strong> "Vila dos Sabichões" e logos relacionados são marcas registadas. Não podem ser utilizados sem autorização.</p>
+                <p><strong>7.3 Marcas Registadas:</strong> "QuestEduca" e logos relacionados são marcas registadas. Não podem ser utilizados sem autorização.</p>
               </div>
             </section>
 
@@ -163,16 +163,16 @@ const TermsPage = () => {
               <div className="text-muted-foreground">
                 <p>Para questões sobre estes Termos, contacte-nos:</p>
                 <ul className="list-none mt-2 space-y-1">
-                  <li><strong>Email:</strong> legal@viladossabichoes.pt</li>
-                  <li><strong>Email Suporte:</strong> suporte@viladossabichoes.pt</li>
-                  <li><strong>Morada:</strong> Vila dos Sabichões, Lda.</li>
+                  <li><strong>Email:</strong> legal@questeduca.pt</li>
+                  <li><strong>Email Suporte:</strong> suporte@questeduca.pt</li>
+                  <li><strong>Morada:</strong> QuestEduca, Lda.</li>
                 </ul>
               </div>
             </section>
 
             <section className="border-t pt-6">
               <p className="text-sm text-muted-foreground italic">
-                Ao criar uma conta e utilizar a Vila dos Sabichões, você confirma que leu, compreendeu e aceita estes Termos de Serviço na sua totalidade.
+                Ao criar uma conta e utilizar a QuestEduca, você confirma que leu, compreendeu e aceita estes Termos de Serviço na sua totalidade.
               </p>
             </section>
           </CardContent>
@@ -198,7 +198,7 @@ const TermsPage = () => {
         </Card>
 
         <div className="text-center mt-8 text-sm text-muted-foreground">
-          <p>© 2026 Vila dos Sabichões. Todos os direitos reservados.</p>
+          <p>© 2026 QuestEduca. Todos os direitos reservados.</p>
         </div>
       </div>
     </div>

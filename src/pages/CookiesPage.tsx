@@ -18,7 +18,7 @@ const CookiesPage = () => {
         </div>
 
         <div className="text-center mb-8">
-          <img src={logo} alt="Vila dos Sabichões" className="w-24 mx-auto mb-4" />
+          <img src={logo} alt="QuestEduca" className="w-24 mx-auto mb-4" />
           <h1 className="font-display text-3xl font-bold flex items-center justify-center gap-2">
             <Cookie className="w-8 h-8" />
             Política de Cookies
@@ -33,7 +33,7 @@ const CookiesPage = () => {
             <section>
               <h2 className="font-display text-xl font-bold mb-3">1. O Que São Cookies?</h2>
               <p className="text-muted-foreground">
-                Cookies são pequenos ficheiros de texto armazenados no seu dispositivo (computador, tablet ou telemóvel) quando visita a Vila dos Sabichões. Estes ficheiros permitem que a plataforma reconheça o seu dispositivo e melhore a sua experiência.
+                Cookies são pequenos ficheiros de texto armazenados no seu dispositivo (computador, tablet ou telemóvel) quando visita a QuestEduca. Estes ficheiros permitem que a plataforma reconheça o seu dispositivo e melhore a sua experiência.
               </p>
             </section>
 
@@ -111,7 +111,7 @@ const CookiesPage = () => {
                   </CardHeader>
                   <CardContent className="text-sm text-muted-foreground">
                     <p className="mb-2"><strong>Status:</strong> NÃO UTILIZAMOS cookies de marketing ou publicidade.</p>
-                    <p>A Vila dos Sabichões não rastreia utilizadores para fins publicitários nem partilha dados com redes de publicidade.</p>
+                    <p>A QuestEduca não rastreia utilizadores para fins publicitários nem partilha dados com redes de publicidade.</p>
                   </CardContent>
                 </Card>
               </div>
@@ -189,7 +189,7 @@ const CookiesPage = () => {
             <section>
               <h2 className="font-display text-xl font-bold mb-3">6. PWA (Progressive Web App)</h2>
               <div className="space-y-2 text-muted-foreground">
-                <p>A Vila dos Sabichões é uma PWA, o que significa que pode:</p>
+                <p>A QuestEduca é uma PWA, o que significa que pode:</p>
                 <ul className="list-disc list-inside ml-4 space-y-1">
                   <li>Instalar a aplicação no seu dispositivo</li>
                   <li>Utilizar algumas funcionalidades offline</li>
@@ -220,7 +220,7 @@ const CookiesPage = () => {
             <section>
               <h2 className="font-display text-xl font-bold mb-3">8. Consentimento</h2>
               <div className="space-y-2 text-muted-foreground">
-                <p>Ao utilizar a Vila dos Sabichões, você consente com:</p>
+                <p>Ao utilizar a QuestEduca, você consente com:</p>
                 <ul className="list-disc list-inside ml-4 space-y-1">
                   <li>Utilização de cookies estritamente necessários</li>
                   <li>Utilização de cookies funcionais (pode desativar)</li>
@@ -246,13 +246,13 @@ const CookiesPage = () => {
                   <li><a href="https://www.youronlinechoices.eu" target="_blank" rel="noopener noreferrer" className="text-primary underline">YourOnlineChoices.eu</a></li>
                 </ul>
                 <p className="mt-3">Para questões sobre a nossa utilização de cookies:</p>
-                <p className="mt-1"><strong>Email:</strong> privacidade@viladossabichoes.pt</p>
+                <p className="mt-1"><strong>Email:</strong> privacidade@questeduca.pt</p>
               </div>
             </section>
 
             <section className="border-t pt-6">
               <p className="text-sm text-muted-foreground italic">
-                A Vila dos Sabichões utiliza cookies de forma responsável e transparente, priorizando sempre a privacidade e segurança das crianças.
+                A QuestEduca utiliza cookies de forma responsável e transparente, priorizando sempre a privacidade e segurança das crianças.
               </p>
             </section>
           </CardContent>
@@ -278,7 +278,7 @@ const CookiesPage = () => {
         </Card>
 
         <div className="text-center mt-8 text-sm text-muted-foreground">
-          <p>© 2026 Vila dos Sabichões. Todos os direitos reservados.</p>
+          <p>© 2026 QuestEduca. Todos os direitos reservados.</p>
         </div>
       </div>
     </div>

@@ -1,4 +1,4 @@
-# 🎯 Vila dos Sabichões - Resumo Executivo
+# 🎯 QuestEduca - Resumo Executivo
 
 ## Status do Projeto: ✅ **COMPLETO E PRONTO PARA PRODUÇÃO**
 
@@ -350,9 +350,9 @@ Acompanhamento individual com:
 
 ## 📞 Informações de Contacto
 
-**Projeto**: Vila dos Sabichões
-**Website**: viladossabichoes.pt (preparado para deploy)
-**Email**: suporte@viladossabichoes.pt
+**Projeto**: QuestEduca
+**Website**: questeduca.pt (preparado para deploy)
+**Email**: suporte@questeduca.pt
 **Status**: ✅ Pronto para Produção
 
 ---
@@ -413,7 +413,7 @@ Acompanhamento individual com:
 
 ## 🎉 Conclusão
 
-A **Vila dos Sabichões** está **100% completa e pronta para produção**. O sistema implementa 28 funcionalidades principais, oferecendo uma experiência educativa gamificada de alta qualidade para o ensino básico português.
+A **QuestEduca** está **100% completa e pronta para produção**. O sistema implementa 28 funcionalidades principais, oferecendo uma experiência educativa gamificada de alta qualidade para o ensino básico português.
 
 A plataforma está otimizada, segura, acessível e totalmente funcional, pronta para servir milhares de alunos e suas famílias.
 
@@ -424,4 +424,4 @@ A plataforma está otimizada, segura, acessível e totalmente funcional, pronta 
 **Versão**: 3.0.0
 **Build**: ✅ Sucesso
 **Última Atualização**: 15 de Março de 2026
-**Autor**: Equipa Vila dos Sabichões
+**Autor**: Equipa QuestEduca

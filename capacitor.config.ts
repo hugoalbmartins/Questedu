@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'pt.questeduca.app',
-  appName: 'Questeduca',
+  appName: 'QuestEduca',
   webDir: 'dist',
   server: {
     url: 'https://381d72f5-897a-457e-979e-5888fd33045b.lovableproject.com?forceHideBadge=true',
@@ -11,7 +11,7 @@ const config: CapacitorConfig = {
   ios: {
     contentInset: 'automatic',
     preferredContentMode: 'mobile',
-    scheme: 'Questeduca',
+    scheme: 'QuestEduca',
   },
   android: {
     allowMixedContent: true,

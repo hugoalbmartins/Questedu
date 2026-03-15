@@ -1,5 +1,5 @@
 # 🎯 PLANO DE IMPLEMENTAÇÃO COMPLETO
-## Vila dos Sabichões - Roadmap Técnico Detalhado
+## QuestEduca - Roadmap Técnico Detalhado
 
 **Data de Criação**: 15 de Março de 2026
 **Última Atualização**: 15 de Março de 2026
@@ -133,7 +133,7 @@ Deno.serve(async (req: Request) => {
               <li>✅ Relatórios avançados</li>
               <li>✅ Conteúdo exclusivo</li>
             </ul>
-            <a href="https://viladossabichoes.pt/game">Continuar Premium →</a>
+            <a href="https://questeduca.pt/game">Continuar Premium →</a>
           `
         }
       })
