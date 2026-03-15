@@ -242,7 +242,7 @@ const PrivacyPage = () => {
                   <li><strong>Email Privacidade:</strong> privacidade@questeduca.pt</li>
                   <li><strong>DPO:</strong> dpo@questeduca.pt</li>
                   <li><strong>Email Geral:</strong> suporte@questeduca.pt</li>
-                  <li><strong>CNPD:</strong> <a href="https://www.cnpd.pt" target=\"_blank" rel="noopener noreferrer\" className="text-primary underline">www.cnpd.pt</a></li>
+                  <li><strong>CNPD:</strong> <a href="https://www.cnpd.pt" target={\"_blank"} rel="noopener noreferrer\" className="text-primary underline">www.cnpd.pt</a></li>
                 </ul>
               </div>
             </section>
