@@ -50,7 +50,7 @@ const Index = () => {
       };
 
       await sendEmail({
-        to: "suporte@viladossabichoes.pt",
+        to: "suporte@questeduca.pt",
         subject: `[Questeduca] ${typeLabels[contactForm.type]} - ${contactForm.name}`,
         html: `
           <h2>${typeLabels[contactForm.type]}</h2>
@@ -339,7 +339,7 @@ const Index = () => {
                       <p><strong>Última atualização:</strong> Março 2026</p>
                       
                       <h4 className="font-semibold text-foreground">Entidade Responsável</h4>
-                      <p>Hugo Alberto da Silva Martins<br />NIF: 218246587<br />Contacto: legal@viladossabichoes.pt</p>
+                      <p>Hugo Alberto da Silva Martins<br />NIF: 218246587<br />Contacto: legal@questeduca.pt</p>
                       
                       <h4 className="font-semibold text-foreground">1. Aceitação dos Termos</h4>
                       <p>Ao aceder e utilizar o Questeduca, aceita estar vinculado a estes Termos de Utilização. Se não concordar com alguma parte destes termos, não deve utilizar o serviço.</p>
@@ -380,7 +380,7 @@ const Index = () => {
                       <p>Em conformidade com o Regulamento Geral sobre a Proteção de Dados (RGPD) - Regulamento (UE) 2016/679.</p>
                       
                       <h4 className="font-semibold text-foreground">1. Responsável pelo Tratamento</h4>
-                      <p>O responsável pelo tratamento dos dados é identificado nos Termos de Utilização. Para contacto: privacidade@viladossabichoes.pt</p>
+                      <p>O responsável pelo tratamento dos dados é identificado nos Termos de Utilização. Para contacto: privacidade@questeduca.pt</p>
                       
                       <h4 className="font-semibold text-foreground">2. Dados Recolhidos</h4>
                       <p>Recolhemos: nome, email, distrito, ano de escolaridade, dados de progresso no jogo e interações sociais dentro da plataforma.</p>
@@ -392,7 +392,7 @@ const Index = () => {
                       <p>O tratamento baseia-se no consentimento do titular (ou do encarregado de educação no caso de menores) e na execução do contrato de utilização.</p>
                       
                       <h4 className="font-semibold text-foreground">5. Direitos do Titular</h4>
-                      <p>Tem direito a: aceder, retificar, apagar, limitar o tratamento, portabilidade e oposição ao tratamento dos seus dados. Para exercer estes direitos, contacte dpo@viladossabichoes.pt.</p>
+                      <p>Tem direito a: aceder, retificar, apagar, limitar o tratamento, portabilidade e oposição ao tratamento dos seus dados. Para exercer estes direitos, contacte dpo@questeduca.pt.</p>
                       
                       <h4 className="font-semibold text-foreground">6. Proteção de Menores</h4>
                       <p>Os dados de menores são tratados com especial cuidado. O registo requer autorização parental e os pais têm acesso total às atividades dos educandos.</p>
@@ -434,7 +434,7 @@ const Index = () => {
                       <p>Não utilizamos cookies de publicidade ou rastreamento de terceiros.</p>
                       
                       <h4 className="font-semibold text-foreground">Contacto</h4>
-                      <p>Para questões sobre cookies, contacte: suporte@viladossabichoes.pt</p>
+                      <p>Para questões sobre cookies, contacte: suporte@questeduca.pt</p>
                     </div>
                   </DialogContent>
                 </Dialog>
@@ -446,7 +446,7 @@ const Index = () => {
               <h3 className="font-display font-bold mb-3">Contacto</h3>
               <p className="font-body text-sm text-muted-foreground">
                 <Mail className="w-4 h-4 inline mr-1" />
-                suporte@viladossabichoes.pt
+                suporte@questeduca.pt
               </p>
             </div>
           </div>
