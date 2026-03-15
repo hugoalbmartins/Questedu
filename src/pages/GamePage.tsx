@@ -28,8 +28,10 @@ import { AccessibilityWrapper } from "@/components/accessibility/AccessibilityWr
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { toast } from "sonner";
-import { Map, MessageCircle, BookOpen, LogOut, Chrome as Home, ShoppingBag, Target, Swords, Trophy, Menu, GraduationCap, Crown, Gamepad2, Flame, ListChecks, Award, Brain, ChartBar as BarChart2 } from "lucide-react";
+import { Map, MessageCircle, BookOpen, LogOut, Chrome as Home, ShoppingBag, Target, Swords, Trophy, Menu, GraduationCap, Crown, Gamepad2, Flame, ListChecks, Award, Brain, ChartBar as BarChart2, Calendar, Sword } from "lucide-react";
 import { getStreakInfo } from "@/lib/questionSelection";
+import { EventsHubPanel } from "@/components/game/EventsHubPanel";
+import { TournamentHubPanel } from "@/components/game/TournamentHubPanel";
 
 type GameView = "village" | "map" | "chat";
 
@@ -48,6 +50,8 @@ const GamePage = () => {
   const [showBadgesPanel, setShowBadgesPanel] = useState(false);
   const [showKnowledgeGaps, setShowKnowledgeGaps] = useState(false);
   const [showProficiency, setShowProficiency] = useState(false);
+  const [showEventsHub, setShowEventsHub] = useState(false);
+  const [showTournamentHub, setShowTournamentHub] = useState(false);
   const [streakInfo, setStreakInfo] = useState({ current_streak: 0, longest_streak: 0 });
   const [battleQuizCallback, setBattleQuizCallback] = useState<((correct: boolean) => void) | null>(null);
   const [showBattleQuiz, setShowBattleQuiz] = useState(false);
@@ -276,10 +280,26 @@ const GamePage = () => {
               <Button
                 variant={showProficiency ? "default" : "outline"}
                 className="flex flex-col gap-2 h-auto py-4"
-                onClick={() => { setShowProficiency(v => !v); setShowStreakPanel(false); setShowQuestsPanel(false); setShowBadgesPanel(false); setShowKnowledgeGaps(false); }}
+                onClick={() => { setShowProficiency(v => !v); setShowStreakPanel(false); setShowQuestsPanel(false); setShowBadgesPanel(false); setShowKnowledgeGaps(false); setShowEventsHub(false); setShowTournamentHub(false); }}
               >
                 <BarChart2 className="w-6 h-6 text-green-600" />
                 <span className="text-xs">Proficiência</span>
+              </Button>
+              <Button
+                variant={showEventsHub ? "default" : "outline"}
+                className="flex flex-col gap-2 h-auto py-4"
+                onClick={() => { setShowEventsHub(v => !v); setShowStreakPanel(false); setShowQuestsPanel(false); setShowBadgesPanel(false); setShowKnowledgeGaps(false); setShowProficiency(false); setShowTournamentHub(false); }}
+              >
+                <Calendar className="w-6 h-6 text-rose-500" />
+                <span className="text-xs">Eventos</span>
+              </Button>
+              <Button
+                variant={showTournamentHub ? "default" : "outline"}
+                className="flex flex-col gap-2 h-auto py-4"
+                onClick={() => { setShowTournamentHub(v => !v); setShowStreakPanel(false); setShowQuestsPanel(false); setShowBadgesPanel(false); setShowKnowledgeGaps(false); setShowProficiency(false); setShowEventsHub(false); }}
+              >
+                <Trophy className="w-6 h-6 text-yellow-500" />
+                <span className="text-xs">Torneios</span>
               </Button>
               {studentData.is_premium ? (
                 <div className="flex flex-col gap-2 h-auto py-4 items-center text-xs text-gold border border-gold/30 rounded-md px-2">
@@ -328,6 +348,25 @@ const GamePage = () => {
 
             {showProficiency && (
               <SubjectProficiencyPanel studentId={studentData.id} />
+            )}
+
+            {showEventsHub && (
+              <EventsHubPanel
+                studentId={studentData.id}
+                isPremium={studentData.is_premium ?? false}
+                onClose={() => setShowEventsHub(false)}
+              />
+            )}
+
+            {showTournamentHub && (
+              <TournamentHubPanel
+                studentId={studentData.id}
+                isPremium={studentData.is_premium ?? false}
+                coins={studentData.coins}
+                diamonds={studentData.diamonds}
+                schoolYear={studentData.school_year}
+                onClose={() => setShowTournamentHub(false)}
+              />
             )}
 
             {/* Missions */}

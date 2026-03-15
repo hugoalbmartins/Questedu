@@ -20,6 +20,7 @@ import { AccessibilityManager } from "@/components/parent/AccessibilityManager";
 import { StudentProgressDashboard } from "@/components/parent/StudentProgressDashboard";
 import { GlobalInsightsDashboard } from "@/components/dashboard/GlobalInsightsDashboard";
 import { LearningAnalyticsDashboard } from "@/components/dashboard/LearningAnalyticsDashboard";
+import { PremiumUpgradeSection, ChildProgressHighlight } from "@/components/parent/PremiumUpgradeSection";
 
 const schoolYears = [
   { value: "1", label: "1º Ano" },
@@ -310,7 +311,15 @@ const ParentDashboard = () => {
           <TabsContent value="children">
             <div className="space-y-4">
               <h2 className="font-display text-xl font-bold">Os Seus Educandos</h2>
-              
+
+              {children.length > 0 && (
+                <PremiumUpgradeSection
+                  children={children}
+                  onUpgradeChild={handleUpgradeChild}
+                  onManageSubscription={handleManageSubscription}
+                />
+              )}
+
               {children.length === 0 ? (
                 <div className="game-border bg-card p-6 text-center">
                   <Users className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
@@ -322,47 +331,16 @@ const ParentDashboard = () => {
                   </p>
                 </div>
               ) : (
-                children.map(child => (
-                  <div key={child.id} className="game-border bg-card p-3 sm:p-4">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                      <div className="min-w-0">
-                        <h3 className="font-body font-bold truncate">{child.display_name}</h3>
-                        {child.nickname && (
-                          <p className="font-body text-xs text-primary">🎮 {child.nickname}</p>
-                        )}
-                        <p className="font-body text-sm text-muted-foreground">
-                          {child.school_year}º Ano • Nível {child.village_level}
-                        </p>
-                      </div>
-                      <div className="flex flex-col items-start sm:items-end gap-2">
-                        <div className="flex gap-1.5 sm:gap-2 text-xs font-body flex-wrap">
-                          <span className="bg-gold/20 px-2 py-1 rounded">🪙 {child.coins}</span>
-                          <span className="bg-diamond/20 px-2 py-1 rounded">💎 {child.diamonds}</span>
-                          <span className="bg-citizen/20 px-2 py-1 rounded">👥 {child.citizens}</span>
-                        </div>
-                        {child.is_premium ? (
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-body text-gold flex items-center gap-1">
-                              <Crown className="w-3 h-3" /> Premium ativo
-                            </span>
-                            <Button variant="ghost" size="sm" className="text-xs h-6" onClick={handleManageSubscription}>
-                              Gerir
-                            </Button>
-                          </div>
-                        ) : (
-                          <Button
-                            size="sm"
-                            className="text-xs bg-gold text-foreground h-7 w-full sm:w-auto"
-                            onClick={() => handleUpgradeChild(child)}
-                          >
-                            <Crown className="w-3 h-3 mr-1" />
-                            Ativar Premium
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))
+                <div className="space-y-3">
+                  <h3 className="font-display text-base font-bold text-muted-foreground">Resumo dos Educandos</h3>
+                  {children.map(child => (
+                    <ChildProgressHighlight
+                      key={child.id}
+                      child={child}
+                      isPremium={child.is_premium}
+                    />
+                  ))}
+                </div>
               )}
 
               {/* Authorized Emails */}
