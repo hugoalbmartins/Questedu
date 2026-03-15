@@ -20,9 +20,10 @@ interface PremiumModalProps {
   associationCode?: string | null;
   createdAt: string;
   subscriptionType?: string | null;
+  familyExtraChild?: boolean;
 }
 
-export const PremiumModal = ({ open, onOpenChange, studentId, isPremium, associationCode, createdAt, subscriptionType }: PremiumModalProps) => {
+export const PremiumModal = ({ open, onOpenChange, studentId, isPremium, associationCode, createdAt, subscriptionType, familyExtraChild = false }: PremiumModalProps) => {
   const [code, setCode] = useState(associationCode || "");
   const [savingCode, setSavingCode] = useState(false);
   const [checkingOut, setCheckingOut] = useState(false);
@@ -33,14 +34,24 @@ export const PremiumModal = ({ open, onOpenChange, studentId, isPremium, associa
 
   const registrationDate = new Date(createdAt);
   const daysSinceRegistration = Math.floor((Date.now() - registrationDate.getTime()) / (1000 * 60 * 60 * 24));
-  // For premium users, allow association code without time limit
   const canSetCode = isPremium || (daysSinceRegistration <= 30 && !associationCode);
 
   const monthlyPrice = 1.99;
   const annualPrice = 21.49;
-  const monthlyEquivalent = (annualPrice / 12).toFixed(2);
 
-  const basePrice = selectedPlan === "annual" ? annualPrice : monthlyPrice;
+  const familyMonthlyDiscount = 0.40;
+  const familyAnnualDiscount = 0.50;
+
+  const effectiveMonthlyPrice = familyExtraChild
+    ? parseFloat((monthlyPrice * (1 - familyMonthlyDiscount)).toFixed(2))
+    : monthlyPrice;
+  const effectiveAnnualPrice = familyExtraChild
+    ? parseFloat((annualPrice * (1 - familyAnnualDiscount)).toFixed(2))
+    : annualPrice;
+
+  const monthlyEquivalent = (effectiveAnnualPrice / 12).toFixed(2);
+
+  const basePrice = selectedPlan === "annual" ? effectiveAnnualPrice : effectiveMonthlyPrice;
   const finalPrice = promoApplied
     ? Math.max(0, basePrice - (promoApplied.discount_amount || 0) - basePrice * (promoApplied.discount_percent || 0) / 100)
     : basePrice;
@@ -106,6 +117,7 @@ export const PremiumModal = ({ open, onOpenChange, studentId, isPremium, associa
           plan: selectedPlan,
           associationCode: code.trim().toUpperCase() || undefined,
           promoCode: promoApplied ? promoCode.trim().toUpperCase() : undefined,
+          familyExtraChild,
         },
       });
 
@@ -154,6 +166,12 @@ export const PremiumModal = ({ open, onOpenChange, studentId, isPremium, associa
           </div>
         ) : (
           <div className="space-y-4">
+            {familyExtraChild && (
+              <div className="bg-amber-50 border border-amber-300 rounded-lg p-3 text-sm text-amber-800">
+                <p className="font-bold mb-1">Desconto Familiar Aplicado</p>
+                <p className="text-xs">Este educando excede os 3 incluídos no Plano Familiar. Beneficia de <strong>40% de desconto no mensal</strong> ou <strong>50% no anual</strong>.</p>
+              </div>
+            )}
             {/* Plan Toggle */}
             <div className="grid grid-cols-2 gap-2">
               <button
@@ -164,8 +182,16 @@ export const PremiumModal = ({ open, onOpenChange, studentId, isPremium, associa
                     : "border-border hover:border-primary/50"
                 }`}
               >
+                {familyExtraChild && (
+                  <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                    -40%
+                  </div>
+                )}
                 <p className="font-display font-bold text-sm">Mensal</p>
-                <p className="font-display text-xl font-bold">€{monthlyPrice.toFixed(2)}</p>
+                {familyExtraChild && (
+                  <p className="font-display text-xs text-muted-foreground line-through">€{monthlyPrice.toFixed(2)}</p>
+                )}
+                <p className="font-display text-xl font-bold">€{effectiveMonthlyPrice.toFixed(2)}</p>
                 <p className="font-body text-xs text-muted-foreground">/mês</p>
               </button>
               <button
@@ -177,10 +203,13 @@ export const PremiumModal = ({ open, onOpenChange, studentId, isPremium, associa
                 }`}
               >
                 <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-secondary text-secondary-foreground text-[10px] font-bold px-2 py-0.5 rounded-full">
-                  Poupa 10%
+                  {familyExtraChild ? "Poupa 50%" : "Poupa 10%"}
                 </div>
                 <p className="font-display font-bold text-sm">Anual</p>
-                <p className="font-display text-xl font-bold">€{annualPrice.toFixed(2)}</p>
+                {familyExtraChild && (
+                  <p className="font-display text-xs text-muted-foreground line-through">€{annualPrice.toFixed(2)}</p>
+                )}
+                <p className="font-display text-xl font-bold">€{effectiveAnnualPrice.toFixed(2)}</p>
                 <p className="font-body text-xs text-muted-foreground">€{monthlyEquivalent}/mês</p>
               </button>
             </div>

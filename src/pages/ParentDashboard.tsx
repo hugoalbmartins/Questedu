@@ -102,7 +102,7 @@ const ParentDashboard = () => {
 
     const totalEmails = authorizedEmails.length;
     if (totalEmails >= 5) {
-      toast.error("Máximo de 5 educandos autorizados");
+      toast.error("Máximo de 5 educandos autorizados (3 incluídos no Plano Familiar + 2 com desconto individual)");
       return;
     }
 
@@ -376,6 +376,11 @@ const ParentDashboard = () => {
                 {authorizedEmails.length < 5 && (
                   <div className="mt-4 p-4 border border-dashed border-border rounded-lg">
                     <Label className="font-body font-semibold text-sm">Adicionar educando</Label>
+                    {authorizedEmails.length >= 3 && (
+                      <p className="font-body text-xs text-amber-700 bg-amber-50 rounded px-2 py-1.5 mt-1">
+                        O Plano Familiar cobre até 3 educandos. O {authorizedEmails.length + 1}º educando terá subscrição individual com <strong>40% de desconto no mensal</strong> ou <strong>50% no anual</strong>.
+                      </p>
+                    )}
                     <div className="flex gap-2 mt-2">
                       <Input
                         type="email"
@@ -626,6 +631,7 @@ const ParentDashboard = () => {
           associationCode={premiumChild.association_code}
           createdAt={premiumChild.created_at}
           subscriptionType={premiumChild.subscription_type}
+          familyExtraChild={children.indexOf(premiumChild) >= 3}
         />
       )}
       </div>

@@ -161,8 +161,13 @@ const ParentRegisterPage = () => {
               )}
             </div>
             <p className="text-xs text-muted-foreground font-body">
-              Indique o email e ano de cada educando (mín. 1, máx. 5)
+              O Plano Familiar inclui até 3 educandos. A partir do 4º, subscrição individual com desconto de 40% (mensal) ou 50% (anual).
             </p>
+            {childEmails.length >= 3 && (
+              <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2 font-body">
+                Os educandos {childEmails.slice(3).map((_, i) => i + 4).join(", ")} terão subscrição individual com desconto familiar.
+              </div>
+            )}
             {childEmails.map((child, i) => (
               <div key={i} className="flex gap-2 items-center">
                 <Input

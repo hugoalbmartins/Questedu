@@ -220,9 +220,13 @@ interface FamilyPlanCardProps {
 
 const FamilyPlanCard = ({ children, premiumCount, onUpgrade }: FamilyPlanCardProps) => {
   const totalChildren = children.length;
-  const individualCost = totalChildren * 1.99;
+  const coveredByPlan = Math.min(totalChildren, 3);
+  const extraChildren = Math.max(0, totalChildren - 3);
   const familyPlanCost = 4.99;
-  const savings = (individualCost - familyPlanCost).toFixed(2);
+  const extraMonthly = extraChildren * (1.99 * 0.6);
+  const totalCost = familyPlanCost + extraMonthly;
+  const individualCost = totalChildren * 1.99;
+  const savings = (individualCost - totalCost).toFixed(2);
 
   return (
     <div className="rounded-xl border-2 border-blue-400/50 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20 p-4">
@@ -233,17 +237,18 @@ const FamilyPlanCard = ({ children, premiumCount, onUpgrade }: FamilyPlanCardPro
         <div className="flex-1">
           <div className="flex items-center gap-2">
             <h4 className="font-bold text-sm">Plano Familiar</h4>
-            <Badge className="bg-blue-500 text-white text-[10px]">Novo</Badge>
+            <Badge className="bg-blue-500 text-white text-[10px]">Melhor Valor</Badge>
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            Todos os {totalChildren} educandos por €{familyPlanCost}/mês
+            {coveredByPlan} educando{coveredByPlan !== 1 ? "s" : ""} incluídos no plano
+            {extraChildren > 0 ? ` + ${extraChildren} com desconto` : ""}
           </p>
           <div className="flex items-center gap-3 mt-2">
             <div className="text-center">
               <p className="text-xs text-muted-foreground line-through">
                 €{individualCost.toFixed(2)}/mês
               </p>
-              <p className="text-sm font-bold text-blue-600">€{familyPlanCost}/mês</p>
+              <p className="text-sm font-bold text-blue-600">€{totalCost.toFixed(2)}/mês</p>
             </div>
             <div className="flex-1">
               <Badge className="bg-green-500 text-white">
@@ -255,7 +260,7 @@ const FamilyPlanCard = ({ children, premiumCount, onUpgrade }: FamilyPlanCardPro
           <div className="mt-3 grid grid-cols-2 gap-1">
             <div className="flex items-center gap-1 text-xs text-blue-700 dark:text-blue-300">
               <Check className="w-3 h-3 text-green-500" />
-              Até 4 educandos
+              Até 3 educandos incluídos
             </div>
             <div className="flex items-center gap-1 text-xs text-blue-700 dark:text-blue-300">
               <Check className="w-3 h-3 text-green-500" />
@@ -270,6 +275,11 @@ const FamilyPlanCard = ({ children, premiumCount, onUpgrade }: FamilyPlanCardPro
               Relatórios detalhados
             </div>
           </div>
+          {extraChildren > 0 && (
+            <div className="mt-2 text-xs text-amber-700 bg-amber-50 rounded px-2 py-1.5">
+              {extraChildren} educando{extraChildren > 1 ? "s" : ""} adicionais com 40% de desconto no mensal ou 50% no anual.
+            </div>
+          )}
         </div>
       </div>
       <Button

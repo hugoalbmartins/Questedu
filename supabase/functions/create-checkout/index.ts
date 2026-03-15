@@ -37,7 +37,7 @@ Deno.serve(async (req) => {
     const user = data.user;
     if (!user?.email) throw new Error("User not authenticated");
 
-    const { studentId, associationCode, promoCode, plan } = await req.json();
+    const { studentId, associationCode, promoCode, plan, familyExtraChild } = await req.json();
     if (!studentId) throw new Error("Student ID is required");
 
     const selectedPlan = plan === "annual" ? "annual" : "monthly";
@@ -63,6 +63,19 @@ Deno.serve(async (req) => {
     }
 
     const discounts: any[] = [];
+
+    if (familyExtraChild) {
+      const discountPercent = selectedPlan === "annual" ? 50 : 40;
+      const familyCoupon = await stripe.coupons.create({
+        percent_off: discountPercent,
+        duration: "forever",
+        name: `Desconto Familiar ${discountPercent}%`,
+      });
+      discounts.push({ coupon: familyCoupon.id });
+      metadata.family_extra_child = "true";
+      metadata.family_discount_percent = String(discountPercent);
+    }
+
     if (promoCode) {
       const supabaseAdmin = createClient(
         Deno.env.get("SUPABASE_URL") ?? "",
