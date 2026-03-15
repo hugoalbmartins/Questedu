@@ -22,6 +22,9 @@ import InstallPage from "./pages/InstallPage";
 import EmailVerifiedPage from "./pages/EmailVerifiedPage";
 import AssociationDashboard from "./pages/AssociationDashboard";
 import ImportSchoolsPage from "./pages/ImportSchoolsPage";
+import TermsPage from "./pages/TermsPage";
+import PrivacyPage from "./pages/PrivacyPage";
+import CookiesPage from "./pages/CookiesPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -52,6 +55,9 @@ const App = () => (
             <Route path="/install" element={<InstallPage />} />
             <Route path="/association" element={<AssociationDashboard />} />
             <Route path="/import-schools" element={<ImportSchoolsPage />} />
+            <Route path="/terms" element={<TermsPage />} />
+            <Route path="/privacy" element={<PrivacyPage />} />
+            <Route path="/cookies" element={<CookiesPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
