@@ -127,7 +127,7 @@ const AssociationRegisterPage = () => {
           <p className="font-body text-xs text-muted-foreground">
             <strong>Nota:</strong> O registo deve ser solicitado pelo Presidente ou Vice-Presidente da Associação, 
             com email oficial da mesma. A ata da associação deve ser atualizada anualmente até final de dezembro.
-            Por cada subscrição Premium com o código da associação, <strong>1€ reverte para a associação</strong>.
+            Por cada subscrição Premium individual ou familiar (até 3 filhos) com o código da associação, <strong>20% do valor pago reverte para a associação</strong>.
           </p>
         </div>
 

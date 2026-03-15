@@ -30,6 +30,9 @@ export const PremiumModal = ({ open, onOpenChange, studentId, isPremium, associa
   const [promoCode, setPromoCode] = useState("");
   const [promoApplied, setPromoApplied] = useState<{ discount_percent: number; discount_amount: number } | null>(null);
   const [validatingPromo, setValidatingPromo] = useState(false);
+  const [giftCardCode, setGiftCardCode] = useState("");
+  const [giftCardApplied, setGiftCardApplied] = useState<{ premium_days: number; coins_value: number; diamonds_value: number } | null>(null);
+  const [validatingGiftCard, setValidatingGiftCard] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<"monthly" | "annual">("annual");
 
   const registrationDate = new Date(createdAt);
@@ -108,6 +111,31 @@ export const PremiumModal = ({ open, onOpenChange, studentId, isPremium, associa
     setValidatingPromo(false);
   };
 
+  const handleValidateGiftCard = async () => {
+    if (!giftCardCode.trim()) return;
+    setValidatingGiftCard(true);
+    try {
+      const { data: card, error } = await supabase
+        .from("gift_cards")
+        .select("premium_days, coins_value, diamonds_value, is_active, expires_at, current_redemptions, max_redemptions")
+        .eq("code", giftCardCode.trim().toUpperCase())
+        .maybeSingle();
+      if (error || !card) {
+        toast.error("Gift card inválido.");
+      } else if (!card.is_active || (card.expires_at && new Date(card.expires_at) < new Date())) {
+        toast.error("Gift card expirado ou inativo.");
+      } else if (card.current_redemptions >= card.max_redemptions) {
+        toast.error("Gift card já foi totalmente utilizado.");
+      } else {
+        setGiftCardApplied({ premium_days: card.premium_days, coins_value: card.coins_value, diamonds_value: card.diamonds_value });
+        toast.success("Gift card válido! Os benefícios serão aplicados após a subscrição.");
+      }
+    } catch (e: any) {
+      toast.error("Erro ao validar gift card: " + e.message);
+    }
+    setValidatingGiftCard(false);
+  };
+
   const handleCheckout = async () => {
     setCheckingOut(true);
     try {
@@ -117,6 +145,7 @@ export const PremiumModal = ({ open, onOpenChange, studentId, isPremium, associa
           plan: selectedPlan,
           associationCode: code.trim().toUpperCase() || undefined,
           promoCode: promoApplied ? promoCode.trim().toUpperCase() : undefined,
+          giftCardCode: giftCardApplied ? giftCardCode.trim().toUpperCase() : undefined,
           familyExtraChild,
         },
       });
@@ -251,6 +280,39 @@ export const PremiumModal = ({ open, onOpenChange, studentId, isPremium, associa
                   />
                   <Button size="sm" variant="outline" onClick={handleValidatePromo} disabled={validatingPromo}>
                     {validatingPromo ? "..." : "Aplicar"}
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            {/* Gift Card */}
+            <div className="border border-border rounded-lg p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <Sparkles className="w-4 h-4 text-primary" />
+                <Label className="font-body font-semibold text-sm">Gift Card</Label>
+              </div>
+              {giftCardApplied ? (
+                <div className="space-y-1">
+                  <p className="font-body text-sm text-green-600">
+                    ✅ Gift card aplicado: código <strong>{giftCardCode.toUpperCase()}</strong>
+                  </p>
+                  <p className="font-body text-xs text-muted-foreground">
+                    {giftCardApplied.premium_days > 0 && `+${giftCardApplied.premium_days} dias Premium `}
+                    {giftCardApplied.coins_value > 0 && `+${giftCardApplied.coins_value} moedas `}
+                    {giftCardApplied.diamonds_value > 0 && `+${giftCardApplied.diamonds_value} diamantes`}
+                  </p>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <Input
+                    value={giftCardCode}
+                    onChange={e => setGiftCardCode(e.target.value.toUpperCase())}
+                    placeholder="GC-XXXXXXXX"
+                    className="flex-1"
+                    maxLength={15}
+                  />
+                  <Button size="sm" variant="outline" onClick={handleValidateGiftCard} disabled={validatingGiftCard}>
+                    {validatingGiftCard ? "..." : "Aplicar"}
                   </Button>
                 </div>
               )}

@@ -14,6 +14,7 @@ const AssociationDashboard = () => {
   const [donations, setDonations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [subscriberCounts, setSubscriberCounts] = useState({ monthly: 0, annual: 0 });
+  const [donationBreakdown, setDonationBreakdown] = useState({ monthly: 0, annual: 0, pending: 0 });
 
   const loadData = async () => {
     if (!user?.email) return;
@@ -54,6 +55,17 @@ const AssociationDashboard = () => {
       const monthly = students.filter((s: any) => s.subscription_type === "monthly").length;
       const annual = students.filter((s: any) => s.subscription_type === "annual").length;
       setSubscriberCounts({ monthly, annual });
+
+      // Expected monthly commission: 20% of each subscription
+      const monthlyCommission = monthly * 1.99 * 0.20;
+      const annualCommission = annual * 21.49 * 0.20;
+      const totalRaised = Number(assoc.total_raised || 0);
+      const totalPaid = Number(assoc.total_paid || 0);
+      setDonationBreakdown({
+        monthly: monthlyCommission,
+        annual: annualCommission,
+        pending: totalRaised - totalPaid,
+      });
     }
 
     setLoading(false);
@@ -153,17 +165,37 @@ const AssociationDashboard = () => {
         <Card className="p-4">
           <div className="flex items-center gap-2 mb-3">
             <CreditCard className="w-5 h-5 text-primary" />
-            <h2 className="font-display font-bold">Pagamentos</h2>
+            <h2 className="font-display font-bold">Pagamentos e Comissões</h2>
           </div>
-          <div className="grid grid-cols-2 gap-4 mb-3">
-            <div>
-              <p className="font-body text-sm text-muted-foreground">Total Angariado</p>
-              <p className="font-display text-xl font-bold">€{Number(association.total_raised || 0).toFixed(2)}</p>
+          <div className="grid grid-cols-3 gap-3 mb-4">
+            <div className="bg-muted/40 rounded-lg p-3 text-center">
+              <p className="font-body text-xs text-muted-foreground mb-1">Total Angariado</p>
+              <p className="font-display text-xl font-bold text-secondary">€{Number(association.total_raised || 0).toFixed(2)}</p>
             </div>
-            <div>
-              <p className="font-body text-sm text-muted-foreground">Total Pago</p>
+            <div className="bg-muted/40 rounded-lg p-3 text-center">
+              <p className="font-body text-xs text-muted-foreground mb-1">Total Pago</p>
               <p className="font-display text-xl font-bold">€{Number(association.total_paid || 0).toFixed(2)}</p>
             </div>
+            <div className="bg-muted/40 rounded-lg p-3 text-center">
+              <p className="font-body text-xs text-muted-foreground mb-1">Por Receber</p>
+              <p className={`font-display text-xl font-bold ${donationBreakdown.pending > 0 ? "text-amber-600" : "text-secondary"}`}>
+                €{donationBreakdown.pending.toFixed(2)}
+              </p>
+            </div>
+          </div>
+          <div className="border border-border rounded-lg p-3 mb-3 space-y-2">
+            <p className="font-body text-xs font-semibold text-muted-foreground uppercase tracking-wide">Comissão estimada por período</p>
+            <div className="flex justify-between items-center">
+              <span className="font-body text-sm">Subscritores mensais ({subscriberCounts.monthly} × €1,99 × 20%)</span>
+              <span className="font-body text-sm font-semibold">€{donationBreakdown.monthly.toFixed(2)}/mês</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="font-body text-sm">Subscritores anuais ({subscriberCounts.annual} × €21,49 × 20%)</span>
+              <span className="font-body text-sm font-semibold">€{donationBreakdown.annual.toFixed(2)}/ano</span>
+            </div>
+            <p className="font-body text-xs text-muted-foreground pt-1 border-t border-border">
+              Válido para subscrições individuais e familiares até 3 filhos. Filhos adicionais não geram comissão.
+            </p>
           </div>
           <p className="font-body text-xs text-muted-foreground">
             Os pagamentos são efetuados quando o saldo atinge €100 ou no final do ano letivo.

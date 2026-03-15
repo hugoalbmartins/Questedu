@@ -37,7 +37,7 @@ Deno.serve(async (req) => {
     const user = data.user;
     if (!user?.email) throw new Error("User not authenticated");
 
-    const { studentId, associationCode, promoCode, plan, familyExtraChild } = await req.json();
+    const { studentId, associationCode, promoCode, giftCardCode, plan, familyExtraChild } = await req.json();
     if (!studentId) throw new Error("Student ID is required");
 
     const selectedPlan = plan === "annual" ? "annual" : "monthly";
@@ -60,6 +60,9 @@ Deno.serve(async (req) => {
     };
     if (associationCode) {
       metadata.association_code = associationCode;
+    }
+    if (giftCardCode) {
+      metadata.gift_card_code = giftCardCode;
     }
 
     const discounts: any[] = [];

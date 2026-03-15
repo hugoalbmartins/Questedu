@@ -186,8 +186,21 @@ const AdminDashboard = () => {
 
   const loadAssociations = async () => {
     const { data } = await supabase.from("parent_associations").select("*").order("created_at", { ascending: false });
-    setAssociations(data || []);
-    setStats(prev => ({ ...prev, totalAssociations: data?.length || 0 }));
+    if (!data) { setAssociations([]); return; }
+
+    const enriched = await Promise.all(data.map(async (assoc) => {
+      const { data: students } = await supabase
+        .from("students")
+        .select("subscription_type" as any)
+        .eq("association_code", assoc.association_code)
+        .eq("is_premium", true);
+      const monthly = students?.filter((s: any) => s.subscription_type === "monthly").length || 0;
+      const annual = students?.filter((s: any) => s.subscription_type === "annual").length || 0;
+      return { ...assoc, _monthly: monthly, _annual: annual };
+    }));
+
+    setAssociations(enriched);
+    setStats(prev => ({ ...prev, totalAssociations: data.length }));
   };
 
   const loadAdminList = async () => {
@@ -646,10 +659,21 @@ const AdminDashboard = () => {
                               <p className="font-display font-bold">€{Number(a.total_paid || 0).toFixed(2)}</p>
                             </div>
                             <div>
-                              <p className="font-body text-xs text-muted-foreground">Em Dívida</p>
+                              <p className="font-body text-xs text-muted-foreground">A Pagar</p>
                               <p className={`font-display font-bold ${balance > 0 ? "text-destructive" : "text-secondary"}`}>
                                 €{balance.toFixed(2)}
                               </p>
+                            </div>
+                          </div>
+                          <div className="bg-background/60 rounded-md p-2 mb-3 text-xs space-y-1">
+                            <p className="font-semibold text-muted-foreground uppercase tracking-wide mb-1">Comissão estimada por período</p>
+                            <div className="flex justify-between">
+                              <span>{a._monthly || 0} subscr. mensais × €1,99 × 20%</span>
+                              <span className="font-semibold">€{((a._monthly || 0) * 1.99 * 0.20).toFixed(2)}/mês</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>{a._annual || 0} subscr. anuais × €21,49 × 20%</span>
+                              <span className="font-semibold">€{((a._annual || 0) * 21.49 * 0.20).toFixed(2)}/ano</span>
                             </div>
                           </div>
                           {balance > 0 && (

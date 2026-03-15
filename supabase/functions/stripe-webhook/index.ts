@@ -54,6 +54,7 @@ Deno.serve(async (req) => {
         const studentId = metadata.student_id;
         const plan = metadata.plan || "monthly";
         const associationCode = metadata.association_code;
+        const giftCardCode = metadata.gift_card_code;
         const isFamilyExtraChild = metadata.family_extra_child === "true";
 
         const expiresAt = new Date();
@@ -107,6 +108,44 @@ Deno.serve(async (req) => {
                 }),
               })
               .eq("id", association.id);
+          }
+        }
+
+        if (giftCardCode) {
+          const { data: card } = await supabaseAdmin
+            .from("gift_cards")
+            .select("id, premium_days, coins_value, diamonds_value, is_active, expires_at, current_redemptions, max_redemptions")
+            .eq("code", giftCardCode)
+            .maybeSingle();
+
+          if (card && card.is_active && card.current_redemptions < card.max_redemptions && (!card.expires_at || new Date(card.expires_at) >= new Date())) {
+            const { data: student } = await supabaseAdmin
+              .from("students")
+              .select("coins, diamonds, premium_expires_at")
+              .eq("id", studentId)
+              .maybeSingle();
+
+            if (student) {
+              const newExpiry = student.premium_expires_at
+                ? new Date(new Date(student.premium_expires_at).getTime() + card.premium_days * 86400000).toISOString()
+                : new Date(Date.now() + card.premium_days * 86400000).toISOString();
+
+              await supabaseAdmin
+                .from("students")
+                .update({
+                  coins: (student.coins || 0) + (card.coins_value || 0),
+                  diamonds: (student.diamonds || 0) + (card.diamonds_value || 0),
+                  ...(card.premium_days > 0 ? { premium_expires_at: newExpiry } : {}),
+                })
+                .eq("id", studentId);
+
+              await supabaseAdmin
+                .from("gift_cards")
+                .update({ current_redemptions: card.current_redemptions + 1 })
+                .eq("id", card.id);
+
+              console.log(`Gift card ${giftCardCode} redeemed for student ${studentId}`);
+            }
           }
         }
 
