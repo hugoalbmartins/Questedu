@@ -2,9 +2,10 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { Settings, Bell, BookX } from "lucide-react";
+import { Settings, Bell, BookX, Gift } from "lucide-react";
 import { toast } from "sonner";
 import { ErrorNotebookModal } from "./ErrorNotebookModal";
+import { RedeemGiftCardModal } from "./RedeemGiftCardModal";
 
 interface SettingsPanelProps {
   studentId: string;
@@ -16,6 +17,7 @@ export const SettingsPanel = ({ studentId, quizRemindersEnabled, onUpdate }: Set
   const [reminders, setReminders] = useState(quizRemindersEnabled);
   const [saving, setSaving] = useState(false);
   const [errorNotebookOpen, setErrorNotebookOpen] = useState(false);
+  const [giftCardModalOpen, setGiftCardModalOpen] = useState(false);
 
   const toggleReminders = async (enabled: boolean) => {
     setSaving(true);
@@ -58,7 +60,17 @@ export const SettingsPanel = ({ studentId, quizRemindersEnabled, onUpdate }: Set
           />
         </div>
 
-        <div className="border-t pt-3">
+        <div className="border-t pt-3 space-y-2">
+          <Button
+            onClick={() => setGiftCardModalOpen(true)}
+            variant="default"
+            className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600"
+            size="sm"
+          >
+            <Gift className="w-4 h-4 mr-2" />
+            Resgatar Gift Card
+          </Button>
+
           <Button
             onClick={() => setErrorNotebookOpen(true)}
             variant="outline"
@@ -78,6 +90,13 @@ export const SettingsPanel = ({ studentId, quizRemindersEnabled, onUpdate }: Set
         isOpen={errorNotebookOpen}
         onClose={() => setErrorNotebookOpen(false)}
         studentId={studentId}
+      />
+
+      <RedeemGiftCardModal
+        open={giftCardModalOpen}
+        onOpenChange={setGiftCardModalOpen}
+        studentId={studentId}
+        onSuccess={onUpdate}
       />
     </div>
   );

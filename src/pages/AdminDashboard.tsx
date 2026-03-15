@@ -8,9 +8,10 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { LogOut, Users, ShieldCheck, Building2, UserPlus, Trash2, Shield, Ban, CircleCheck as CheckCircle, Pencil, Eye, EyeOff, Search, ChevronLeft, ChevronRight, Tag, MailCheck, Crown, TriangleAlert as AlertTriangle, Gavel } from "lucide-react";
+import { LogOut, Users, ShieldCheck, Building2, UserPlus, Trash2, Shield, Ban, CircleCheck as CheckCircle, Pencil, Eye, EyeOff, Search, ChevronLeft, ChevronRight, Tag, MailCheck, Crown, TriangleAlert as AlertTriangle, Gavel, Gift } from "lucide-react";
 import { PromoCodesTab } from "@/components/admin/PromoCodesTab";
 import { GrantPremiumTab } from "@/components/admin/GrantPremiumTab";
+import { GiftCardsTab } from "@/components/admin/GiftCardsTab";
 import { AdminReportsPanel } from "@/components/admin/AdminReportsPanel";
 import { AdminPenaltiesPanel } from "@/components/admin/AdminPenaltiesPanel";
 import { toast } from "sonner";
@@ -503,7 +504,7 @@ const AdminDashboard = () => {
 
         <Tabs defaultValue="users">
           <div className="overflow-x-auto -mx-4 px-4 mb-6">
-            <TabsList className="inline-flex w-auto min-w-full sm:grid sm:grid-cols-9 sm:w-full">
+            <TabsList className="inline-flex w-auto min-w-full sm:grid sm:grid-cols-10 sm:w-full">
               <TabsTrigger value="users" className="font-body text-xs gap-1 whitespace-nowrap">
                 <Users className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Utilizadores</span><span className="sm:hidden">Users</span>
               </TabsTrigger>
@@ -518,6 +519,9 @@ const AdminDashboard = () => {
               </TabsTrigger>
               <TabsTrigger value="promos" className="font-body text-xs gap-1 whitespace-nowrap">
                 <Tag className="w-3.5 h-3.5" /> Promos
+              </TabsTrigger>
+              <TabsTrigger value="giftcards" className="font-body text-xs gap-1 whitespace-nowrap">
+                <Gift className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Gift Cards</span><span className="sm:hidden">Gifts</span>
               </TabsTrigger>
               <TabsTrigger value="premium" className="font-body text-xs gap-1 whitespace-nowrap">
                 <Crown className="w-3.5 h-3.5" /> Premium
@@ -701,6 +705,10 @@ const AdminDashboard = () => {
           {/* PROMO CODES TAB */}
           <TabsContent value="promos">
             <PromoCodesTab />
+          </TabsContent>
+
+          <TabsContent value="giftcards">
+            <GiftCardsTab />
           </TabsContent>
 
           {/* GRANT PREMIUM TAB */}
