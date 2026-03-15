@@ -2,6 +2,11 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import Stripe from "npm:stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 
+const PLAN_AMOUNTS: Record<string, number> = {
+  monthly: 1.99,
+  annual: 21.49,
+};
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
@@ -79,13 +84,15 @@ Deno.serve(async (req) => {
           throw updateError;
         }
 
-        if (associationCode && session.amount_total && !isFamilyExtraChild) {
-          const amount = session.amount_total / 100;
-          const donationAmount = amount * 0.20;
+        if (associationCode && !isFamilyExtraChild) {
+          // Commission is always based on the full plan value, regardless of whether
+          // a promo code or gift card reduced the actual payment to zero.
+          const planAmount = PLAN_AMOUNTS[plan] ?? PLAN_AMOUNTS.monthly;
+          const donationAmount = planAmount * 0.20;
 
           const { data: association } = await supabaseAdmin
             .from("parent_associations")
-            .select("id")
+            .select("id, total_raised")
             .eq("association_code", associationCode)
             .eq("status", "approved")
             .maybeSingle();
@@ -97,17 +104,15 @@ Deno.serve(async (req) => {
                 association_id: association.id,
                 student_id: studentId,
                 amount: donationAmount,
-                payment_id: session.payment_intent as string,
+                payment_id: session.payment_intent as string || session.id,
               });
 
             await supabaseAdmin
               .from("parent_associations")
-              .update({
-                total_raised: supabaseAdmin.rpc("increment", {
-                  x: donationAmount
-                }),
-              })
+              .update({ total_raised: (association.total_raised || 0) + donationAmount })
               .eq("id", association.id);
+
+            console.log(`Association commission recorded: €${donationAmount} for ${associationCode} (plan: ${plan})`);
           }
         }
 

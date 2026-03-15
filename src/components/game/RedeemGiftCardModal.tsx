@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +29,19 @@ export function RedeemGiftCardModal({
 }: RedeemGiftCardModalProps) {
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
+  const [associationCode, setAssociationCode] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!studentId) return;
+    supabase
+      .from("students")
+      .select("association_code" as any)
+      .eq("id", studentId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) setAssociationCode((data as any).association_code || null);
+      });
+  }, [studentId]);
 
   const formatCode = (value: string) => {
     const cleaned = value.toUpperCase().replace(/[^A-Z0-9]/g, "");
@@ -50,11 +63,12 @@ export function RedeemGiftCardModal({
       const { data, error } = await supabase.rpc("redeem_gift_card", {
         code_param: code.trim(),
         student_id_param: studentId,
-      });
+        association_code_param: associationCode || null,
+      } as any);
 
       if (error) throw error;
 
-      const result = data[0];
+      const result = (data as any)[0];
 
       if (!result.success) {
         toast.error(result.error_message || "Código inválido");
@@ -123,6 +137,12 @@ export function RedeemGiftCardModal({
               Insere o código de 16 caracteres que recebeste
             </p>
           </div>
+
+          {associationCode && (
+            <div className="bg-muted/40 border border-border rounded-lg px-3 py-2 text-xs text-muted-foreground">
+              Código de associação ativo: <strong>{associationCode}</strong> — se o gift card incluir dias Premium, 20% do valor equivalente será contabilizado para a associação.
+            </div>
+          )}
 
           <div className="bg-gradient-to-br from-amber-50 to-orange-50 p-4 rounded-lg border border-amber-200">
             <h4 className="font-semibold text-sm mb-2 text-amber-900">
