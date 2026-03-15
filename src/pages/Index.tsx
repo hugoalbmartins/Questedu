@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { sendEmail } from "@/lib/email";
+import { supabase } from "@/integrations/supabase/client";
 import { BookOpen, Trophy, Shield, Sparkles, Brain, Heart, Target, Users, ChevronDown, MessageSquare, FileText, Cookie, Mail, Check, X, Zap, Star, Gamepad2, ChartBar as BarChart3, Lock, Smartphone, Menu } from "lucide-react";
 
 const FAQS = [
@@ -123,6 +124,12 @@ const Index = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [billingAnnual, setBillingAnnual] = useState(false);
+  const [giftCardModalOpen, setGiftCardModalOpen] = useState(false);
+  const [giftCardPlan, setGiftCardPlan] = useState("individual_monthly");
+  const [giftCardQty, setGiftCardQty] = useState(1);
+  const [giftCardBuyerEmail, setGiftCardBuyerEmail] = useState("");
+  const [giftCardBuyerName, setGiftCardBuyerName] = useState("");
+  const [sendingGiftCard, setSendingGiftCard] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -170,6 +177,33 @@ const Index = () => {
     setSendingContact(false);
   };
 
+  const handleGiftCardCheckout = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!giftCardBuyerEmail) return;
+    setSendingGiftCard(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-gift-card-checkout", {
+        body: {
+          planType: giftCardPlan,
+          buyerEmail: giftCardBuyerEmail,
+          buyerName: giftCardBuyerName,
+          quantity: giftCardQty,
+        },
+      });
+      if (error) throw error;
+      if (data?.url) {
+        window.open(data.url, "_blank");
+        setGiftCardModalOpen(false);
+        setGiftCardBuyerEmail("");
+        setGiftCardBuyerName("");
+        setGiftCardQty(1);
+      }
+    } catch (err: any) {
+      toast.error("Erro ao iniciar pagamento: " + err.message);
+    }
+    setSendingGiftCard(false);
+  };
+
   return (
     <div className="min-h-screen bg-white text-slate-900 font-body overflow-x-hidden">
 
@@ -199,6 +233,9 @@ const Index = () => {
             </a>
             <a href="#pricing" className="text-slate-600 hover:text-amber-700 transition-colors">
               Preços
+            </a>
+            <a href="#gift-cards" className="text-slate-600 hover:text-amber-700 transition-colors">
+              Gift Cards
             </a>
             <a href="#parents" className="text-slate-600 hover:text-amber-700 transition-colors">
               Para Pais
@@ -653,6 +690,139 @@ const Index = () => {
           </p>
         </div>
       </section>
+
+      {/* ── GIFT CARDS ── */}
+      <section id="gift-cards" className="py-24 bg-slate-50">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6">
+          <div className="text-center mb-14">
+            <span className="inline-block bg-rose-100 text-rose-700 text-sm font-bold px-4 py-1.5 rounded-full mb-4">
+              Oferece Premium
+            </span>
+            <h2 className="font-display text-3xl sm:text-4xl font-bold text-slate-900 mb-3">
+              O presente perfeito para um aluno
+            </h2>
+            <p className="text-slate-500 text-lg max-w-xl mx-auto">
+              Oferece meses ou um ano de acesso Premium a um familiar ou amigo. O codigo chega por email e pode ser resgatado a qualquer momento.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-10">
+            {[
+              { planType: "individual_monthly", label: "Individual", period: "1 Mes", price: "€1,99", days: 30, color: "border-blue-300 bg-blue-50", badge: "bg-blue-500", accent: "text-blue-700", btnClass: "bg-blue-600 hover:bg-blue-700" },
+              { planType: "family_monthly", label: "Familiar", period: "1 Mes", price: "€4,99", days: 30, color: "border-teal-300 bg-teal-50", badge: "bg-teal-500", accent: "text-teal-700", btnClass: "bg-teal-600 hover:bg-teal-700" },
+              { planType: "individual_annual", label: "Individual", period: "1 Ano", price: "€21,49", days: 365, color: "border-amber-300 bg-amber-50", badge: "bg-amber-500", accent: "text-amber-700", btnClass: "bg-amber-500 hover:bg-amber-600" },
+              { planType: "family_annual", label: "Familiar", period: "1 Ano", price: "€53,88", days: 365, color: "border-orange-300 bg-orange-50", badge: "bg-orange-500", accent: "text-orange-700", btnClass: "bg-orange-500 hover:bg-orange-600" },
+            ].map((card) => (
+              <div key={card.planType} className={`rounded-2xl border-2 ${card.color} p-6 flex flex-col gap-4`}>
+                <div>
+                  <span className={`inline-block ${card.badge} text-white text-xs font-bold px-3 py-1 rounded-full mb-3`}>
+                    {card.label}
+                  </span>
+                  <p className={`font-display text-2xl font-bold text-slate-900`}>{card.price}</p>
+                  <p className={`text-sm font-semibold ${card.accent} mt-0.5`}>{card.period} de Premium</p>
+                </div>
+                <ul className="text-xs text-slate-600 space-y-1.5 flex-1">
+                  <li className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-green-500 flex-shrink-0" /> Valido 1 ano apos compra</li>
+                  <li className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-green-500 flex-shrink-0" /> Codigo enviado por email</li>
+                  <li className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-green-500 flex-shrink-0" /> Facil de resgatar no jogo</li>
+                  {card.label === "Familiar" && (
+                    <li className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-green-500 flex-shrink-0" /> Ate 3 filhos incluidos</li>
+                  )}
+                </ul>
+                <Button
+                  className={`w-full ${card.btnClass} text-white font-bold rounded-xl py-4 text-sm`}
+                  onClick={() => {
+                    setGiftCardPlan(card.planType);
+                    setGiftCardModalOpen(true);
+                  }}
+                >
+                  Oferecer por {card.price}
+                </Button>
+              </div>
+            ))}
+          </div>
+
+          <div className="text-center">
+            <p className="text-slate-500 text-sm">
+              Precisa de mais de 5 gift cards?{" "}
+              <button
+                onClick={() => setContactOpen(true)}
+                className="text-slate-700 font-semibold underline underline-offset-2 hover:text-slate-900 transition-colors"
+              >
+                Entre em contacto connosco
+              </button>{" "}
+              e diga-nos o que precisa para podermos ajudar.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Gift Card Purchase Modal */}
+      <Dialog open={giftCardModalOpen} onOpenChange={setGiftCardModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-display text-xl">Comprar Gift Card</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleGiftCardCheckout} className="space-y-4">
+            <div>
+              <Label className="font-semibold text-sm">Tipo de Gift Card</Label>
+              <Select value={giftCardPlan} onValueChange={setGiftCardPlan}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="individual_monthly">Individual — 1 Mes (€1,99)</SelectItem>
+                  <SelectItem value="family_monthly">Familiar — 1 Mes (€4,99)</SelectItem>
+                  <SelectItem value="individual_annual">Individual — 1 Ano (€21,49)</SelectItem>
+                  <SelectItem value="family_annual">Familiar — 1 Ano (€53,88)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="font-semibold text-sm">Quantidade (max. 5)</Label>
+              <Input
+                type="number"
+                min="1"
+                max="5"
+                value={giftCardQty}
+                onChange={(e) => setGiftCardQty(Math.min(5, Math.max(1, parseInt(e.target.value) || 1)))}
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label className="font-semibold text-sm">O teu Nome</Label>
+              <Input
+                value={giftCardBuyerName}
+                onChange={(e) => setGiftCardBuyerName(e.target.value)}
+                placeholder="Para personalizarmos o email"
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label className="font-semibold text-sm">O teu Email</Label>
+              <Input
+                type="email"
+                required
+                value={giftCardBuyerEmail}
+                onChange={(e) => setGiftCardBuyerEmail(e.target.value)}
+                placeholder="Enviaremos o(s) codigo(s) aqui"
+                className="mt-1"
+              />
+            </div>
+            <p className="text-xs text-slate-500">
+              Apos o pagamento, os codigos chegam por email. Cada codigo e valido durante 1 ano.
+              {giftCardQty > 1 && " Precisas de mais de 5? Contacta-nos."}
+            </p>
+            <Button
+              type="submit"
+              className="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-5"
+              disabled={sendingGiftCard}
+            >
+              {sendingGiftCard ? "A processar..." : `Pagar e Receber Codigo${giftCardQty > 1 ? "s" : ""}`}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {/* ── PARENTS ── */}
       <section id="parents" className="py-24 bg-gradient-to-br from-teal-50 to-cyan-50">

@@ -51,6 +51,86 @@ Deno.serve(async (req) => {
         const session = event.data.object as Stripe.Checkout.Session;
         const metadata = session.metadata;
 
+        if (metadata?.gift_card_purchase === "true") {
+          const planType = metadata.plan_type;
+          const premiumDays = parseInt(metadata.premium_days || "30");
+          const pricePaid = parseFloat(metadata.price_paid || "1.99");
+          const cardType = metadata.card_type || "premium_month";
+          const qty = parseInt(metadata.quantity || "1");
+          const buyerEmail = metadata.buyer_email;
+          const buyerName = metadata.buyer_name || "Comprador";
+
+          const expiresAt = new Date();
+          expiresAt.setFullYear(expiresAt.getFullYear() + 1);
+
+          const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+          const genCode = () => {
+            let code = "";
+            for (let i = 0; i < 16; i++) {
+              if (i > 0 && i % 4 === 0) code += "-";
+              code += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return code;
+          };
+
+          const records = Array.from({ length: qty }, () => ({
+            code: genCode(),
+            card_type: cardType,
+            plan_type: planType,
+            price_paid: pricePaid,
+            premium_days: premiumDays,
+            coins_value: 0,
+            diamonds_value: 0,
+            max_redemptions: 1,
+            expires_at: expiresAt.toISOString(),
+            notes: `Comprado por ${buyerName} (${buyerEmail}) via loja — sessão ${session.id}`,
+          }));
+
+          const { data: createdCards, error: insertError } = await supabaseAdmin
+            .from("gift_cards")
+            .insert(records)
+            .select("code");
+
+          if (insertError) {
+            console.error("Error creating gift cards after purchase:", insertError);
+          } else {
+            const codes = (createdCards || []).map((c: any) => c.code);
+            console.log(`Created ${codes.length} gift card(s) for ${buyerEmail}: ${codes.join(", ")}`);
+
+            const codesHtml = codes.map((c: string) =>
+              `<div style="font-family:monospace;font-size:18px;font-weight:bold;letter-spacing:2px;background:#f5f5f5;padding:12px 20px;border-radius:8px;border:1px solid #ddd;display:inline-block;margin:8px 0;">${c}</div>`
+            ).join("<br>");
+
+            const planLabels: Record<string, string> = {
+              individual_monthly: "Premium Individual — 1 Mês",
+              family_monthly: "Plano Familiar — 1 Mês",
+              individual_annual: "Premium Individual — 1 Ano",
+              family_annual: "Plano Familiar — 1 Ano",
+            };
+            const planLabel = planLabels[planType] || planType;
+
+            await supabaseAdmin.functions.invoke("send-email", {
+              body: {
+                to: buyerEmail,
+                subject: `Os teus Gift Cards Questeduca — ${planLabel}`,
+                html: `
+                  <div style="font-family:sans-serif;max-width:600px;margin:0 auto;">
+                    <h2 style="color:#1a1a1a;">Obrigado pela tua compra!</h2>
+                    <p>Olá ${buyerName},</p>
+                    <p>Aqui estão os teus <strong>${codes.length} Gift Card(s) Questeduca</strong> do plano <strong>${planLabel}</strong>:</p>
+                    <div style="margin:24px 0;">${codesHtml}</div>
+                    <p style="color:#555;">Cada código dá acesso Premium durante ${premiumDays >= 365 ? "1 ano" : "1 mês"} e é válido até ${expiresAt.toLocaleDateString("pt-PT")}.</p>
+                    <p style="color:#555;">Para resgatar: entra no Questeduca, vai ao menu Premium e introduz o código no campo "Gift Card".</p>
+                    <hr style="border:none;border-top:1px solid #eee;margin:24px 0;">
+                    <p style="font-size:12px;color:#999;">Questeduca · suporte@questeduca.pt</p>
+                  </div>
+                `,
+              },
+            });
+          }
+          break;
+        }
+
         if (!metadata?.student_id) {
           console.error("No student_id in metadata");
           break;
@@ -85,10 +165,12 @@ Deno.serve(async (req) => {
         }
 
         if (associationCode && !isFamilyExtraChild) {
-          // Commission is always based on the full plan value, regardless of whether
-          // a promo code or gift card reduced the actual payment to zero.
-          const planAmount = PLAN_AMOUNTS[plan] ?? PLAN_AMOUNTS.monthly;
-          const donationAmount = planAmount * 0.20;
+          // When a promo/discount code was used, commission is 20% of amount actually paid.
+          // When no discount, use full plan amount.
+          const amountPaidEur = session.amount_total != null
+            ? session.amount_total / 100
+            : (PLAN_AMOUNTS[plan] ?? PLAN_AMOUNTS.monthly);
+          const donationAmount = amountPaidEur * 0.20;
 
           const { data: association } = await supabaseAdmin
             .from("parent_associations")
@@ -252,6 +334,8 @@ Deno.serve(async (req) => {
           if (metadata?.student_id) {
             const studentId = metadata.student_id;
             const plan = metadata.plan || "monthly";
+            const associationCode = metadata.association_code;
+            const isFamilyExtraChild = metadata.family_extra_child === "true";
 
             const expiresAt = new Date();
             if (plan === "annual") {
@@ -268,6 +352,38 @@ Deno.serve(async (req) => {
                 updated_at: new Date().toISOString(),
               })
               .eq("id", studentId);
+
+            if (associationCode && !isFamilyExtraChild && invoice.billing_reason === "subscription_cycle") {
+              const amountPaidEur = invoice.amount_paid != null
+                ? invoice.amount_paid / 100
+                : (PLAN_AMOUNTS[plan] ?? PLAN_AMOUNTS.monthly);
+              const donationAmount = amountPaidEur * 0.20;
+
+              const { data: association } = await supabaseAdmin
+                .from("parent_associations")
+                .select("id, total_raised")
+                .eq("association_code", associationCode)
+                .eq("status", "approved")
+                .maybeSingle();
+
+              if (association) {
+                await supabaseAdmin
+                  .from("association_donations")
+                  .insert({
+                    association_id: association.id,
+                    student_id: studentId,
+                    amount: donationAmount,
+                    payment_id: invoice.payment_intent as string || invoice.id,
+                  });
+
+                await supabaseAdmin
+                  .from("parent_associations")
+                  .update({ total_raised: (association.total_raised || 0) + donationAmount })
+                  .eq("id", association.id);
+
+                console.log(`Renewal commission recorded: €${donationAmount} for ${associationCode}`);
+              }
+            }
 
             console.log(`Payment succeeded for student ${studentId}`);
           }
