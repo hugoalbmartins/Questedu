@@ -121,7 +121,7 @@ const AssociationDashboard = () => {
             </Button>
           </div>
           <p className="font-body text-xs text-muted-foreground mt-2">
-            Partilhe este código com os encarregados de educação. 10% de cada subscrição reverte para a associação.
+            Partilhe este código com os encarregados de educação. 20% de cada subscrição reverte para a associação.
           </p>
         </Card>
 

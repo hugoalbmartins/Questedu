@@ -83,7 +83,7 @@ export const PremiumModal = ({ open, onOpenChange, studentId, isPremium, associa
     if (error) {
       toast.error("Erro ao guardar código.");
     } else {
-      toast.success(`Código da ${(association as any).name} associado! 10% da subscrição reverte para a associação.`);
+      toast.success(`Código da ${(association as any).name} associado! 20% da subscrição reverte para a associação.`);
     }
     setSavingCode(false);
   };
@@ -264,7 +264,7 @@ export const PremiumModal = ({ open, onOpenChange, studentId, isPremium, associa
               </div>
               {associationCode ? (
                 <p className="font-body text-sm text-muted-foreground">
-                  <Heart className="w-3 h-3 inline text-destructive" /> Código ativo: <strong>{associationCode}</strong> — 10% reverte para a associação.
+                  <Heart className="w-3 h-3 inline text-destructive" /> Código ativo: <strong>{associationCode}</strong> — 20% reverte para a associação.
                 </p>
               ) : canSetCode ? (
                 <div className="flex gap-2">
@@ -288,7 +288,7 @@ export const PremiumModal = ({ open, onOpenChange, studentId, isPremium, associa
                 </p>
               )}
               <p className="font-body text-xs text-muted-foreground mt-1">
-                10% da subscrição reverte para a Associação de Pais da escola.
+                20% da subscrição reverte para a Associação de Pais da escola.
               </p>
             </div>
 

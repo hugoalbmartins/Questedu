@@ -54,6 +54,7 @@ Deno.serve(async (req) => {
         const studentId = metadata.student_id;
         const plan = metadata.plan || "monthly";
         const associationCode = metadata.association_code;
+        const isFamilyExtraChild = metadata.family_extra_child === "true";
 
         const expiresAt = new Date();
         if (plan === "annual") {
@@ -77,9 +78,9 @@ Deno.serve(async (req) => {
           throw updateError;
         }
 
-        if (associationCode && session.amount_total) {
+        if (associationCode && session.amount_total && !isFamilyExtraChild) {
           const amount = session.amount_total / 100;
-          const donationAmount = amount * 0.10;
+          const donationAmount = amount * 0.20;
 
           const { data: association } = await supabaseAdmin
             .from("parent_associations")

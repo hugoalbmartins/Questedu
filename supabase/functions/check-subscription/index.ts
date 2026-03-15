@@ -140,8 +140,9 @@ Deno.serve(async (req) => {
           .update(updateData)
           .eq("id", studentId);
 
-        // Handle association donation calculation with improved logic for premium users
-        if (student?.association_code) {
+        // Handle association donation — skip for extra children (4th+ on family plan)
+        const isFamilyExtraChild = subscription.metadata?.family_extra_child === "true";
+        if (student?.association_code && !isFamilyExtraChild) {
           const { data: association } = await supabaseClient
             .from("parent_associations")
             .select("id, total_raised")
@@ -164,7 +165,7 @@ Deno.serve(async (req) => {
               
               // Calculate proportion based on remaining days
               const proportion = remainingDays / totalDays;
-              donationAmount = PLAN_AMOUNTS.annual * 0.10 * proportion;
+              donationAmount = PLAN_AMOUNTS.annual * 0.20 * proportion;
               
               logStep("Calculated proportional donation for association code set after subscription", {
                 associationSetAt: associationSetAt.toISOString(),
@@ -177,8 +178,8 @@ Deno.serve(async (req) => {
             } else {
               // Standard calculation for new subscriptions or monthly
               donationAmount = subscriptionType === "annual"
-                ? PLAN_AMOUNTS.annual * 0.10
-                : PLAN_AMOUNTS.monthly * 0.10;
+                ? PLAN_AMOUNTS.annual * 0.20
+                : PLAN_AMOUNTS.monthly * 0.20;
             }
 
             // Check if donation for this period already exists
