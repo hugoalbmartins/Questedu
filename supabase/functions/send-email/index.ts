@@ -1,8 +1,9 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
 interface EmailRequest {
@@ -12,10 +13,9 @@ interface EmailRequest {
   text?: string;
 }
 
-serve(async (req) => {
-  // Handle CORS preflight
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+Deno.serve(async (req: Request) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { status: 200, headers: corsHeaders });
   }
 
   try {
@@ -23,27 +23,29 @@ serve(async (req) => {
 
     if (!to || !subject || !html) {
       return new Response(
-        JSON.stringify({ error: 'Missing required fields: to, subject, html' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: "Missing required fields: to, subject, html" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const smtpHost = Deno.env.get('SMTP_HOST')!;
-    const smtpPort = parseInt(Deno.env.get('SMTP_PORT') || '465');
-    const smtpUser = Deno.env.get('SMTP_USER')!;
-    const smtpPassword = Deno.env.get('SMTP_PASSWORD')!;
+    const smtpHost = Deno.env.get("SMTP_HOST");
+    const smtpPort = parseInt(Deno.env.get("SMTP_PORT") || "465");
+    const smtpUser = Deno.env.get("SMTP_USER");
+    const smtpPassword = Deno.env.get("SMTP_PASSWORD");
 
-    // Use Deno's native SMTP via external service
-    // Since Deno edge functions can't do direct SMTP, we'll use a simple HTTP relay approach
-    // For now, we'll construct the email and use a workaround
+    if (!smtpHost || !smtpUser || !smtpPassword) {
+      return new Response(
+        JSON.stringify({ error: "SMTP credentials not configured" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
-    // Base64 encode credentials for SMTP AUTH
     const authString = btoa(`\x00${smtpUser}\x00${smtpPassword}`);
-    
-    // Create email content in MIME format
+
     const boundary = `----=_Part_${Date.now()}`;
+    const plainText = text || html.replace(/<[^>]*>/g, "");
     const emailContent = [
-      `From: Questeduca <noreply@questeduca.pt>`,
+      `From: Questeduca <${smtpUser}>`,
       `To: ${to}`,
       `Subject: ${subject}`,
       `MIME-Version: 1.0`,
@@ -53,7 +55,7 @@ serve(async (req) => {
       `Content-Type: text/plain; charset=utf-8`,
       `Content-Transfer-Encoding: 7bit`,
       ``,
-      text || html.replace(/<[^>]*>/g, ''),
+      plainText,
       ``,
       `--${boundary}`,
       `Content-Type: text/html; charset=utf-8`,
@@ -62,9 +64,8 @@ serve(async (req) => {
       html,
       ``,
       `--${boundary}--`,
-    ].join('\r\n');
+    ].join("\r\n");
 
-    // Connect to SMTP server using Deno.connect with TLS
     const conn = await Deno.connectTls({
       hostname: smtpHost,
       port: smtpPort,
@@ -74,39 +75,45 @@ serve(async (req) => {
     const decoder = new TextDecoder();
 
     const readResponse = async (): Promise<string> => {
-      const buffer = new Uint8Array(1024);
+      const buffer = new Uint8Array(4096);
       const n = await conn.read(buffer);
       return decoder.decode(buffer.subarray(0, n || 0));
     };
 
     const sendCommand = async (cmd: string): Promise<string> => {
-      await conn.write(encoder.encode(cmd + '\r\n'));
+      await conn.write(encoder.encode(cmd + "\r\n"));
       return await readResponse();
     };
 
-    // SMTP conversation
-    await readResponse(); // Initial greeting
-    await sendCommand(`EHLO questeduca`);
-    await sendCommand(`AUTH PLAIN ${authString}`);
+    await readResponse();
+    await sendCommand(`EHLO questeduca.pt`);
+    const authResp = await sendCommand(`AUTH PLAIN ${authString}`);
+
+    if (!authResp.startsWith("235")) {
+      conn.close();
+      return new Response(
+        JSON.stringify({ error: "SMTP authentication failed", details: authResp }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     await sendCommand(`MAIL FROM:<${smtpUser}>`);
     await sendCommand(`RCPT TO:<${to}>`);
     await sendCommand(`DATA`);
-    await conn.write(encoder.encode(emailContent + '\r\n.\r\n'));
+    await conn.write(encoder.encode(emailContent + "\r\n.\r\n"));
     await readResponse();
     await sendCommand(`QUIT`);
-
     conn.close();
 
     return new Response(
-      JSON.stringify({ success: true, message: 'Email sent successfully' }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ success: true, message: "Email sent successfully" }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
-
   } catch (error) {
-    console.error('Email error:', error);
+    console.error("Email error:", error);
     return new Response(
-      JSON.stringify({ error: 'Failed to send email', details: error.message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ error: "Failed to send email", details: error.message }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });
