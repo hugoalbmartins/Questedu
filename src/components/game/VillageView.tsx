@@ -18,7 +18,7 @@ import { TutorialOverlay } from './TutorialOverlay';
 import { useResources } from '@/hooks/useResources';
 import { TerrainElement } from '@/lib/terrainGeneration';
 import { toast } from 'sonner';
-import { BookOpen, Shield, Users, Sparkles, Music, Volume2, Maximize, Crown, Lock, Heart, Apple, Droplets, GraduationCap, ArrowLeftRight, Pickaxe } from 'lucide-react';
+import { BookOpen, Shield, Users, Sparkles, Music, Volume2, Maximize, Crown, Lock, Heart, Apple, ArrowLeftRight, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface VillageViewProps {
@@ -219,27 +219,30 @@ export const VillageView = ({ student, onQuiz, onRefresh, onPremium }: VillageVi
     }
     setAnimatedCitizens(citizens);
 
-    // Animation loop for citizens
+    // Animation loop for citizens - throttled to 20fps
     let running = true;
-    const animate = () => {
+    let lastCitizenFrame = 0;
+    const CITIZEN_FPS = 20;
+    const CITIZEN_FRAME_MS = 1000 / CITIZEN_FPS;
+    const animate = (ts: number) => {
       if (!running) return;
+      citizenAnimRef.current = requestAnimationFrame(animate);
+      if (ts - lastCitizenFrame < CITIZEN_FRAME_MS) return;
+      lastCitizenFrame = ts;
       setAnimatedCitizens(prev => {
         const updated = prev.map(c => {
           updateCitizen(c, roadTiles);
-
-          // Randomly assign complaints to citizens
           if (simState?.complaints.length && c.complaintTimer <= 0 && Math.random() < 0.005) {
             const complaint = simState.complaints[Math.floor(Math.random() * simState.complaints.length)];
             c.complaint = `${complaint.emoji} ${complaint.message}`;
-            c.complaintTimer = 120; // ~2 seconds at 60fps
+            c.complaintTimer = 80;
           }
           return c;
         });
         return [...updated];
       });
-      citizenAnimRef.current = requestAnimationFrame(animate);
     };
-    animate();
+    citizenAnimRef.current = requestAnimationFrame(animate);
 
     return () => { running = false; cancelAnimationFrame(citizenAnimRef.current); };
   }, [buildings, gridSize, stats.citizens]);
@@ -355,7 +358,7 @@ export const VillageView = ({ student, onQuiz, onRefresh, onPremium }: VillageVi
     setSelectedBuilding(null);
     setGhostPos(null);
     onRefresh();
-  }, [selectedBuilding, fullGrid, student, onRefresh, isFree, buildings.length]);
+  }, [selectedBuilding, fullGrid, student, onRefresh, isFree, buildings.length, resources, spendResources]);
 
   const handleTileHover = useCallback((gx: number, gy: number) => {
     if (!selectedBuilding) return;
@@ -436,6 +439,8 @@ export const VillageView = ({ student, onQuiz, onRefresh, onPremium }: VillageVi
     onRefresh();
   };
 
+  const [hudExpanded, setHudExpanded] = useState(false);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -446,98 +451,120 @@ export const VillageView = ({ student, onQuiz, onRefresh, onPremium }: VillageVi
 
   return (
     <div className="relative h-[calc(100vh-10rem)]">
-      {/* Top action bar - single row with scroll */}
+      {/* Compact top HUD */}
       <div className="absolute top-1 left-1 right-1 z-20">
-        <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide pb-1">
-          <Button size="icon" variant="outline" onClick={toggleMusic}
-            className="h-7 w-7 flex-shrink-0 bg-card/90 backdrop-blur-sm"
-            title={musicOn ? 'Desligar música' : 'Ligar música'}>
-            {musicOn ? <Music className="w-3.5 h-3.5 text-primary" /> : <Volume2 className="w-3.5 h-3.5 text-muted-foreground" />}
-          </Button>
-          <Button size="sm" variant="outline" onClick={() => { setShowTrade(true); SFX.click(); }}
-            className="h-7 bg-card/90 backdrop-blur-sm text-[10px] px-2 flex-shrink-0">
-            <ArrowLeftRight className="w-3 h-3 mr-0.5" />Trade
-          </Button>
-          <Button size="sm" variant="outline" onClick={() => { setShowExpansion(true); SFX.click(); }}
-            className="h-7 bg-card/90 backdrop-blur-sm text-[10px] px-2 flex-shrink-0">
-            <Maximize className="w-3 h-3 mr-0.5" />Expandir
-          </Button>
+        {/* Primary action row - always visible */}
+        <div className="flex items-center gap-1">
           <Button size="sm" onClick={() => { onQuiz(); SFX.click(); }}
-            className="h-7 bg-primary text-primary-foreground font-bold shadow-lg text-[10px] px-2 flex-shrink-0">
-            <BookOpen className="w-3.5 h-3.5 mr-0.5" />Quiz
+            className="h-8 bg-primary text-primary-foreground font-bold shadow-md text-xs px-3 flex-shrink-0">
+            <BookOpen className="w-3.5 h-3.5 mr-1" />Quiz
           </Button>
-        </div>
-      </div>
 
-      {/* Stats row - below action bar */}
-      <div className="absolute top-9 left-1 right-1 z-20">
-        <div className="flex gap-1 overflow-x-auto scrollbar-hide pb-1">
-          <div className="bg-card/90 backdrop-blur-sm rounded px-1.5 py-0.5 flex items-center gap-0.5 text-[10px] font-body border border-border flex-shrink-0">
-            <Users className="w-3 h-3 text-citizen" />
-            <span className="font-bold">{stats.citizens}</span>
-          </div>
-          <div className="bg-card/90 backdrop-blur-sm rounded px-1.5 py-0.5 flex items-center gap-0.5 text-[10px] font-body border border-border flex-shrink-0">
-            <Shield className="w-3 h-3 text-secondary" />
-            <span className="font-bold">{stats.defense}</span>
-          </div>
-          <div className="bg-card/90 backdrop-blur-sm rounded px-1.5 py-0.5 flex items-center gap-0.5 text-[10px] font-body border border-border flex-shrink-0">
-            <Sparkles className="w-3 h-3 text-primary" />
-            <span className="font-bold">{stats.xp}</span>
-          </div>
-          <div className="bg-card/90 backdrop-blur-sm rounded px-1.5 py-0.5 flex items-center gap-0.5 text-[10px] font-body border border-border flex-shrink-0">
-            <Maximize className="w-3 h-3 text-muted-foreground" />
-            <span className="font-bold">{gridSize}²</span>
-          </div>
-          {simState && (
-            <>
-              <div className="bg-card/90 backdrop-blur-sm rounded px-1.5 py-0.5 flex items-center gap-0.5 text-[10px] font-body border border-border flex-shrink-0" style={{ borderColor: SEASON_CONFIG[simState.season].color + '80' }}>
-                <span className="text-[10px]">{SEASON_CONFIG[simState.season].emoji}</span>
-                <span className="font-bold">×{simState.seasonMultiplier}</span>
-              </div>
-              <div className={`bg-card/90 backdrop-blur-sm rounded px-1.5 py-0.5 flex items-center gap-0.5 text-[10px] font-body border flex-shrink-0 ${simState.foodPerMin >= simState.foodConsumedPerMin ? 'border-green-500/50' : 'border-destructive/50'}`}>
-                <Apple className="w-3 h-3 text-green-500" />
-                <span className="font-bold">{simState.foodPerMin}/{simState.foodConsumedPerMin}</span>
-              </div>
-              <div className={`bg-card/90 backdrop-blur-sm rounded px-1.5 py-0.5 flex items-center gap-0.5 text-[10px] font-body border flex-shrink-0 ${simState.happiness >= 50 ? 'border-green-500/50' : 'border-destructive/50'}`}>
-                <Heart className={`w-3 h-3 ${simState.happiness >= 50 ? 'text-green-500' : 'text-destructive'}`} />
-                <span className="font-bold">{simState.happiness}%</span>
-              </div>
-              {simState.diseaseRisk > 30 && (
-                <div className="bg-card/90 backdrop-blur-sm rounded px-1.5 py-0.5 flex items-center gap-0.5 text-[10px] font-body border border-destructive/50 animate-pulse flex-shrink-0">
-                  <span className="text-[10px]">🤒</span>
-                  <span className="font-bold text-destructive">{simState.diseaseRisk}%</span>
-                </div>
-              )}
-            </>
-          )}
-          {isFree && (
-            <div className="bg-card/90 backdrop-blur-sm rounded px-1.5 py-0.5 flex items-center gap-0.5 text-[10px] font-body border border-gold/50 flex-shrink-0">
-              <Lock className="w-3 h-3 text-gold" />
-              <span className="font-bold text-gold">{buildings.length}/{FREE_BUILDING_LIMIT}</span>
+          {/* Core stats - compact pills */}
+          <div className="flex items-center gap-1 flex-1 overflow-x-auto scrollbar-hide">
+            <div className="bg-black/50 backdrop-blur-sm rounded-full px-2 py-0.5 flex items-center gap-1 text-[10px] text-white flex-shrink-0">
+              <Users className="w-3 h-3 text-blue-300" />
+              <span className="font-semibold">{stats.citizens}</span>
             </div>
-          )}
-        </div>
-      </div>
+            {simState && (
+              <>
+                <div className={`bg-black/50 backdrop-blur-sm rounded-full px-2 py-0.5 flex items-center gap-1 text-[10px] flex-shrink-0 ${simState.happiness >= 50 ? 'text-green-300' : 'text-red-300'}`}>
+                  <Heart className="w-3 h-3" />
+                  <span className="font-semibold">{simState.happiness}%</span>
+                </div>
+                <div className={`bg-black/50 backdrop-blur-sm rounded-full px-2 py-0.5 flex items-center gap-1 text-[10px] flex-shrink-0 ${simState.foodPerMin >= simState.foodConsumedPerMin ? 'text-green-300' : 'text-red-300'}`}>
+                  <Apple className="w-3 h-3" />
+                  <span className="font-semibold">{simState.foodPerMin}/{simState.foodConsumedPerMin}</span>
+                </div>
+              </>
+            )}
+            {isFree && (
+              <div className="bg-black/50 backdrop-blur-sm rounded-full px-2 py-0.5 flex items-center gap-1 text-[10px] text-yellow-300 flex-shrink-0">
+                <Lock className="w-3 h-3" />
+                <span className="font-semibold">{buildings.length}/{FREE_BUILDING_LIMIT}</span>
+              </div>
+            )}
+          </div>
 
-      {/* Resource bar */}
-      <div className="absolute top-[4.25rem] left-1 z-20">
-        <ResourceBar resources={resources} />
+          {/* Expand toggle */}
+          <button
+            onClick={() => setHudExpanded(p => !p)}
+            className="h-8 w-8 flex-shrink-0 bg-black/50 backdrop-blur-sm rounded-full flex items-center justify-center text-white/70 hover:text-white transition-colors"
+          >
+            {hudExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+          </button>
+        </div>
+
+        {/* Expanded panel */}
+        {hudExpanded && (
+          <div className="mt-1 bg-black/70 backdrop-blur-sm rounded-xl p-2 space-y-1.5">
+            {/* Actions */}
+            <div className="flex gap-1">
+              <Button size="icon" variant="ghost" onClick={toggleMusic}
+                className="h-7 w-7 text-white/70 hover:text-white hover:bg-white/10"
+                title={musicOn ? 'Desligar música' : 'Ligar música'}>
+                {musicOn ? <Music className="w-3.5 h-3.5 text-primary" /> : <Volume2 className="w-3.5 h-3.5" />}
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => { setShowTrade(true); SFX.click(); hudExpanded && setHudExpanded(false); }}
+                className="h-7 text-white/70 hover:text-white hover:bg-white/10 text-[10px] px-2">
+                <ArrowLeftRight className="w-3 h-3 mr-0.5" />Trade
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => { setShowExpansion(true); SFX.click(); setHudExpanded(false); }}
+                className="h-7 text-white/70 hover:text-white hover:bg-white/10 text-[10px] px-2">
+                <Maximize className="w-3 h-3 mr-0.5" />Expandir
+              </Button>
+            </div>
+
+            {/* Extended stats */}
+            <div className="flex flex-wrap gap-1">
+              <div className="bg-white/10 rounded-lg px-2 py-0.5 flex items-center gap-1 text-[10px] text-white flex-shrink-0">
+                <Shield className="w-3 h-3 text-blue-300" />
+                <span>{stats.defense}</span>
+              </div>
+              <div className="bg-white/10 rounded-lg px-2 py-0.5 flex items-center gap-1 text-[10px] text-white flex-shrink-0">
+                <Sparkles className="w-3 h-3 text-yellow-300" />
+                <span>{stats.xp} XP</span>
+              </div>
+              <div className="bg-white/10 rounded-lg px-2 py-0.5 flex items-center gap-1 text-[10px] text-white flex-shrink-0">
+                <Maximize className="w-3 h-3 text-gray-300" />
+                <span>{gridSize}×{gridSize}</span>
+              </div>
+              {simState && (
+                <>
+                  <div className="bg-white/10 rounded-lg px-2 py-0.5 flex items-center gap-1 text-[10px] text-white flex-shrink-0" style={{ borderLeft: `2px solid ${SEASON_CONFIG[simState.season].color}` }}>
+                    <span>{SEASON_CONFIG[simState.season].emoji}</span>
+                    <span>×{simState.seasonMultiplier}</span>
+                  </div>
+                  {simState.diseaseRisk > 30 && (
+                    <div className="bg-red-900/70 rounded-lg px-2 py-0.5 flex items-center gap-1 text-[10px] text-red-300 animate-pulse flex-shrink-0">
+                      <span>🤒</span>
+                      <span>{simState.diseaseRisk}%</span>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* Resources */}
+            <ResourceBar resources={resources} />
+          </div>
+        )}
       </div>
 
       {xpLimited && (
-        <div className="absolute top-[4.25rem] left-1 right-1 z-20 bg-destructive/90 text-destructive-foreground text-[10px] font-body px-2 py-1 rounded backdrop-blur-sm animate-pulse">
-          <Crown className="w-3 h-3 inline mr-1" />
+        <div className="absolute top-10 left-1 right-1 z-20 bg-destructive/90 text-destructive-foreground text-[10px] font-body px-2 py-1 rounded backdrop-blur-sm animate-pulse flex items-center gap-1">
+          <Crown className="w-3 h-3" />
           XP máximo atingido! Upgrade Premium para continuar.
         </div>
       )}
 
       {/* Simulation alerts */}
-      {simState && simState.complaints.length > 0 && (
+      {simState && simState.complaints.length > 0 && !hudExpanded && (
         <div className="absolute bottom-20 left-1 z-20 space-y-0.5 max-w-[180px]">
-          {simState.complaints.slice(0, 2).map((c, i) => (
-            <div key={i} className="bg-card/90 backdrop-blur-sm rounded px-1.5 py-0.5 text-[9px] font-body border border-destructive/30 flex items-center gap-0.5">
+          {simState.complaints.slice(0, 1).map((c, i) => (
+            <div key={i} className="bg-black/60 backdrop-blur-sm rounded-lg px-2 py-1 text-[9px] font-body flex items-center gap-1 text-white">
               <span>{c.emoji}</span>
-              <span className="text-destructive">{c.message}</span>
+              <span className="text-red-300">{c.message}</span>
             </div>
           ))}
         </div>

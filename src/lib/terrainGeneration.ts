@@ -35,7 +35,7 @@ const COASTAL_DISTRICTS = ['lisboa', 'porto', 'faro', 'setubal', 'aveiro', 'leir
 const RIVER_DISTRICTS = ['santarem', 'coimbra', 'portalegre', 'evora', 'castelo_branco', 'vila_real'];
 const LAKE_DISTRICTS = ['braganca', 'guarda', 'viseu', 'braga', 'beja'];
 
-const WILDERNESS_BORDER = 15;
+const WILDERNESS_BORDER = 6;
 
 export function generateTerrain(config: TerrainConfig): TerrainElement[] {
   const { district, gridSize, seed } = config;
@@ -109,39 +109,33 @@ export function generateTerrain(config: TerrainConfig): TerrainElement[] {
         Math.max(0, -x), Math.max(0, x - gridSize + 1),
         Math.max(0, -y), Math.max(0, y - gridSize + 1)
       );
-      const treeDensity = 0.28 + distFromGrid * 0.07;
+      const treeDensity = 0.18 + distFromGrid * 0.04;
 
       if (rand() < treeDensity) {
         const type = rand() < 0.55 ? 'pine' : 'oak';
         elements.push({ id: id++, type, gx: x + rand() * 0.6 - 0.3, gy: y + rand() * 0.6 - 0.3, scale: 0.7 + rand() * 0.6, variant: Math.floor(rand() * 5), animOffset: rand() * Math.PI * 2 });
       }
 
-      if (rand() < 0.14) {
+      if (rand() < 0.07) {
         elements.push({ id: id++, type: 'bush', gx: x + rand() * 0.8 - 0.4, gy: y + rand() * 0.8 - 0.4, scale: 0.4 + rand() * 0.4, variant: Math.floor(rand() * 4), animOffset: rand() * Math.PI * 2 });
       }
 
-      // Flowers (new)
-      if (rand() < 0.06 && distFromGrid <= 4) {
+      if (rand() < 0.03 && distFromGrid <= 3) {
         elements.push({ id: id++, type: 'flower', gx: x + rand() * 0.7 - 0.35, gy: y + rand() * 0.7 - 0.35, scale: 0.3 + rand() * 0.4, variant: Math.floor(rand() * 5), animOffset: rand() * Math.PI * 2 });
       }
 
-      // Mushrooms (new)
-      if (rand() < 0.03 && distFromGrid >= 3) {
-        elements.push({ id: id++, type: 'mushroom', gx: x + rand() * 0.5, gy: y + rand() * 0.5, scale: 0.3 + rand() * 0.3, variant: Math.floor(rand() * 3), animOffset: rand() * Math.PI * 2 });
-      }
-
-      if (rand() < 0.08) {
+      if (rand() < 0.04) {
         elements.push({ id: id++, type: rand() < 0.7 ? 'rock_small' : 'rock_large', gx: x + rand() * 0.5, gy: y + rand() * 0.5, scale: 0.5 + rand() * 0.5, variant: Math.floor(rand() * 3), animOffset: rand() * Math.PI * 2 });
       }
 
-      if (rand() < 0.02 && distFromGrid >= 2) {
+      if (rand() < 0.015 && distFromGrid >= 2) {
         elements.push({ id: id++, type: rand() < 0.5 ? 'iron_ore' : 'coal_ore', gx: x + rand() * 0.3, gy: y + rand() * 0.3, scale: 0.6 + rand() * 0.4, variant: Math.floor(rand() * 2), animOffset: rand() * Math.PI * 2 });
       }
     }
   }
 
   // Animals
-  const animalCount = Math.floor(totalSize * 0.8);
+  const animalCount = Math.floor(totalSize * 0.35);
   for (let i = 0; i < animalCount; i++) {
     const gx = minBound + rand() * totalSize;
     const gy = minBound + rand() * totalSize;

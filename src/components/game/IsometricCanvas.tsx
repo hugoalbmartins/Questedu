@@ -46,6 +46,8 @@ export const IsometricCanvas = ({
   const [spritesLoaded, setSpritesLoaded] = useState(false);
   const animFrameRef = useRef<number>(0);
   const timeRef = useRef(0);
+  const lastFrameTime = useRef(0);
+  const canvasSize = useRef({ w: 0, h: 0 });
 
   const fullGrid = useMemo(() => applyBuildingsToGrid(grid, buildings), [grid, buildings]);
 
@@ -108,16 +110,21 @@ export const IsometricCanvas = ({
     return closest;
   }, [terrainElements]);
 
-  // Animation loop
+  // Animation loop - capped at ~30fps
   useEffect(() => {
     let running = true;
-    const loop = () => {
+    const TARGET_FPS = 30;
+    const FRAME_MS = 1000 / TARGET_FPS;
+    const loop = (timestamp: number) => {
       if (!running) return;
-      timeRef.current += 0.016;
-      render();
       animFrameRef.current = requestAnimationFrame(loop);
+      const elapsed = timestamp - lastFrameTime.current;
+      if (elapsed < FRAME_MS) return;
+      lastFrameTime.current = timestamp - (elapsed % FRAME_MS);
+      timeRef.current += elapsed * 0.001;
+      render();
     };
-    loop();
+    animFrameRef.current = requestAnimationFrame(loop);
     return () => { running = false; cancelAnimationFrame(animFrameRef.current); };
   }, [fullGrid, buildings, camera, zoom, ghostPos, selectedBuilding, canPlaceGhost, gridSize, spritesLoaded, productionReady, animatedCitizens, complaints]);
 
@@ -167,9 +174,12 @@ export const IsometricCanvas = ({
     const dpr = window.devicePixelRatio || 1;
     const w = canvas.clientWidth;
     const h = canvas.clientHeight;
-    canvas.width = w * dpr;
-    canvas.height = h * dpr;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    if (canvasSize.current.w !== w || canvasSize.current.h !== h) {
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      canvasSize.current = { w, h };
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
 
     ctx.clearRect(0, 0, w, h);
     ctx.fillStyle = '#0e200a';
