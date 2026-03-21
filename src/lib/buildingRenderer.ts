@@ -25,7 +25,9 @@ function lighten(hex: string, amt: number): string {
   return `rgb(${Math.min(255, Math.floor(r + (255 - r) * amt))},${Math.min(255, Math.floor(g + (255 - g) * amt))},${Math.min(255, Math.floor(b + (255 - b) * amt))})`;
 }
 
-function isoLeftFace(ctx: CanvasRenderingContext2D, sx: number, sy: number, w: number, h: number, wallH: number, fill: string) {
+// ===== CORE ISO PRIMITIVES WITH BOLD OUTLINES =====
+
+function isoLeftFace(ctx: CanvasRenderingContext2D, sx: number, sy: number, w: number, h: number, wallH: number, fill: string, outline = true) {
   ctx.beginPath();
   ctx.moveTo(sx, sy);
   ctx.lineTo(sx - w / 2, sy + h / 4);
@@ -34,9 +36,14 @@ function isoLeftFace(ctx: CanvasRenderingContext2D, sx: number, sy: number, w: n
   ctx.closePath();
   ctx.fillStyle = fill;
   ctx.fill();
+  if (outline) {
+    ctx.strokeStyle = darken(fill, 0.45);
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+  }
 }
 
-function isoRightFace(ctx: CanvasRenderingContext2D, sx: number, sy: number, w: number, h: number, wallH: number, fill: string) {
+function isoRightFace(ctx: CanvasRenderingContext2D, sx: number, sy: number, w: number, h: number, wallH: number, fill: string, outline = true) {
   ctx.beginPath();
   ctx.moveTo(sx, sy);
   ctx.lineTo(sx + w / 2, sy + h / 4);
@@ -45,9 +52,14 @@ function isoRightFace(ctx: CanvasRenderingContext2D, sx: number, sy: number, w: 
   ctx.closePath();
   ctx.fillStyle = fill;
   ctx.fill();
+  if (outline) {
+    ctx.strokeStyle = darken(fill, 0.45);
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+  }
 }
 
-function isoTopFace(ctx: CanvasRenderingContext2D, sx: number, sy: number, w: number, h: number, wallH: number, fill: string) {
+function isoTopFace(ctx: CanvasRenderingContext2D, sx: number, sy: number, w: number, h: number, wallH: number, fill: string, outline = true) {
   ctx.beginPath();
   ctx.moveTo(sx, sy - wallH);
   ctx.lineTo(sx + w / 2, sy - wallH + h / 4);
@@ -56,617 +68,611 @@ function isoTopFace(ctx: CanvasRenderingContext2D, sx: number, sy: number, w: nu
   ctx.closePath();
   ctx.fillStyle = fill;
   ctx.fill();
-}
-
-function isoBox(ctx: CanvasRenderingContext2D, sx: number, sy: number, w: number, h: number, wallH: number, baseColor: string) {
-  isoLeftFace(ctx, sx, sy, w, h, wallH, darken(baseColor, 0.15));
-  isoRightFace(ctx, sx, sy, w, h, wallH, darken(baseColor, 0.28));
-  isoTopFace(ctx, sx, sy, w, h, wallH, baseColor);
-}
-
-function isoBoxEdges(ctx: CanvasRenderingContext2D, sx: number, sy: number, w: number, h: number, wallH: number, alpha = 0.2) {
-  ctx.strokeStyle = `rgba(0,0,0,${alpha})`;
-  ctx.lineWidth = 0.6;
-  ctx.beginPath();
-  ctx.moveTo(sx, sy); ctx.lineTo(sx, sy - wallH);
-  ctx.moveTo(sx - w / 2, sy + h / 4); ctx.lineTo(sx - w / 2, sy + h / 4 - wallH);
-  ctx.moveTo(sx + w / 2, sy + h / 4); ctx.lineTo(sx + w / 2, sy + h / 4 - wallH);
-  ctx.moveTo(sx, sy - wallH);
-  ctx.lineTo(sx + w / 2, sy - wallH + h / 4);
-  ctx.lineTo(sx, sy - wallH + h / 2);
-  ctx.lineTo(sx - w / 2, sy - wallH + h / 4);
-  ctx.closePath();
-  ctx.stroke();
-}
-
-function drawFoundation(ctx: CanvasRenderingContext2D, sx: number, sy: number, tw: number, th: number, color: string) {
-  const fH = 3;
-  isoLeftFace(ctx, sx, sy + 1, tw, th, fH, darken(color, 0.2));
-  isoRightFace(ctx, sx, sy + 1, tw, th, fH, darken(color, 0.35));
-  isoTopFace(ctx, sx, sy + 1, tw, th, fH, color);
-}
-
-function drawWindow(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, isLeft: boolean) {
-  const shutterColor = '#5a4020';
-  ctx.fillStyle = 'rgba(60,80,120,0.85)';
-  ctx.fillRect(x, y, w, h);
-  ctx.fillStyle = 'rgba(100,150,220,0.4)';
-  ctx.fillRect(x + 0.5, y + 0.5, w * 0.45, h * 0.45);
-  ctx.strokeStyle = isLeft ? '#7a5a30' : '#6a4a20';
-  ctx.lineWidth = 0.4;
-  ctx.strokeRect(x, y, w, h);
-  ctx.beginPath();
-  ctx.moveTo(x + w / 2, y);
-  ctx.lineTo(x + w / 2, y + h);
-  ctx.moveTo(x, y + h / 2);
-  ctx.lineTo(x + w, y + h / 2);
-  ctx.stroke();
-  if (w > 3) {
-    ctx.fillStyle = shutterColor;
-    ctx.fillRect(x - 1, y, 1, h);
-    ctx.fillRect(x + w, y, 1, h);
+  if (outline) {
+    ctx.strokeStyle = darken(fill, 0.35);
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
   }
 }
 
-function drawDoor(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, color: string) {
-  ctx.fillStyle = color;
+function isoBox(ctx: CanvasRenderingContext2D, sx: number, sy: number, w: number, h: number, wallH: number, lightColor: string, outline = true) {
+  isoLeftFace(ctx, sx, sy, w, h, wallH, darken(lightColor, 0.12), outline);
+  isoRightFace(ctx, sx, sy, w, h, wallH, darken(lightColor, 0.28), outline);
+  isoTopFace(ctx, sx, sy, w, h, wallH, lightColor, outline);
+}
+
+// Bold window with visible frame
+function drawBoldWindow(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, glowColor = '#7ec8e8') {
+  ctx.fillStyle = '#2a3a55';
+  ctx.fillRect(x - 0.5, y - 0.5, w + 1, h + 1);
+  const grad = ctx.createLinearGradient(x, y, x + w, y + h);
+  grad.addColorStop(0, lighten(glowColor, 0.3));
+  grad.addColorStop(0.5, glowColor);
+  grad.addColorStop(1, darken(glowColor, 0.2));
+  ctx.fillStyle = grad;
+  ctx.fillRect(x, y, w, h);
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.fillRect(x, y, w * 0.4, h * 0.4);
+  ctx.strokeStyle = '#3a2a15';
+  ctx.lineWidth = 0.8;
+  ctx.strokeRect(x - 0.5, y - 0.5, w + 1, h + 1);
+  if (w >= 4) {
+    ctx.beginPath();
+    ctx.moveTo(x + w / 2, y);
+    ctx.lineTo(x + w / 2, y + h);
+    ctx.stroke();
+  }
+  if (h >= 4) {
+    ctx.beginPath();
+    ctx.moveTo(x, y + h / 2);
+    ctx.lineTo(x + w, y + h / 2);
+    ctx.stroke();
+  }
+}
+
+function drawBoldDoor(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, color: string) {
+  ctx.fillStyle = darken(color, 0.15);
   ctx.beginPath();
   ctx.moveTo(x, y + h);
-  ctx.lineTo(x, y + 2);
-  ctx.quadraticCurveTo(x + w / 2, y - 1, x + w, y + 2);
+  ctx.lineTo(x, y + w * 0.3);
+  ctx.quadraticCurveTo(x + w / 2, y - 1, x + w, y + w * 0.3);
   ctx.lineTo(x + w, y + h);
   ctx.closePath();
   ctx.fill();
-  ctx.strokeStyle = darken(color, 0.3);
-  ctx.lineWidth = 0.5;
-  ctx.stroke();
-  ctx.fillStyle = '#c0a040';
+  ctx.fillStyle = color;
+  ctx.fillRect(x + 0.8, y + w * 0.4, w - 1.6, h - w * 0.4);
+  ctx.strokeStyle = darken(color, 0.5);
+  ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.arc(x + w * 0.7, y + h * 0.5, 0.6, 0, Math.PI * 2);
+  ctx.moveTo(x, y + h);
+  ctx.lineTo(x, y + w * 0.3);
+  ctx.quadraticCurveTo(x + w / 2, y - 1, x + w, y + w * 0.3);
+  ctx.lineTo(x + w, y + h);
+  ctx.stroke();
+  ctx.fillStyle = '#daa520';
+  ctx.beginPath();
+  ctx.arc(x + w * 0.72, y + h * 0.55, 0.9, 0, Math.PI * 2);
   ctx.fill();
 }
 
-function drawGableRoof(ctx: CanvasRenderingContext2D, sx: number, sy: number, tw: number, th: number, wallH: number, roofH: number, color: string) {
+// Gable roof with bold strokes and ridge detail
+function drawBoldGableRoof(ctx: CanvasRenderingContext2D, sx: number, sy: number, tw: number, th: number, wallH: number, roofH: number, color: string) {
   const topY = sy - wallH;
   const peakY = topY - roofH;
-  ctx.fillStyle = darken(color, 0.1);
-  ctx.beginPath();
-  ctx.moveTo(sx, peakY);
-  ctx.lineTo(sx + tw / 2, topY + th / 4);
-  ctx.lineTo(sx, topY + th / 2);
-  ctx.closePath();
-  ctx.fill();
   ctx.fillStyle = color;
   ctx.beginPath();
   ctx.moveTo(sx, peakY);
-  ctx.lineTo(sx - tw / 2, topY + th / 4);
-  ctx.lineTo(sx, topY + th / 2);
+  ctx.lineTo(sx - tw / 2 - 2, topY + th / 4 + 1);
+  ctx.lineTo(sx, topY + th / 2 + 1);
   ctx.closePath();
   ctx.fill();
-  ctx.strokeStyle = darken(color, 0.35);
-  ctx.lineWidth = 0.5;
+  ctx.fillStyle = darken(color, 0.18);
   ctx.beginPath();
   ctx.moveTo(sx, peakY);
-  ctx.lineTo(sx + tw / 2, topY + th / 4);
+  ctx.lineTo(sx + tw / 2 + 2, topY + th / 4 + 1);
+  ctx.lineTo(sx, topY + th / 2 + 1);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = darken(color, 0.5);
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
   ctx.moveTo(sx, peakY);
-  ctx.lineTo(sx - tw / 2, topY + th / 4);
+  ctx.lineTo(sx - tw / 2 - 2, topY + th / 4 + 1);
   ctx.moveTo(sx, peakY);
-  ctx.lineTo(sx, topY + th / 2);
+  ctx.lineTo(sx + tw / 2 + 2, topY + th / 4 + 1);
+  ctx.moveTo(sx, peakY);
+  ctx.lineTo(sx, topY + th / 2 + 1);
+  ctx.stroke();
+  ctx.strokeStyle = lighten(color, 0.2);
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(sx - tw / 2 - 2, topY + th / 4 + 1);
+  ctx.lineTo(sx, topY + th / 2 + 1);
+  ctx.lineTo(sx + tw / 2 + 2, topY + th / 4 + 1);
   ctx.stroke();
   for (let i = 1; i <= 3; i++) {
     const t = i / 4;
-    ctx.globalAlpha = 0.15;
-    ctx.strokeStyle = darken(color, 0.4);
-    ctx.lineWidth = 0.3;
-    const ly = peakY + (topY + th / 4 - peakY) * t;
-    const lx1 = sx - (tw / 2) * t;
-    const lx2 = sx;
+    ctx.strokeStyle = `rgba(0,0,0,0.08)`;
+    ctx.lineWidth = 0.4;
+    const fy = peakY + (topY + th / 4 + 1 - peakY) * t;
     ctx.beginPath();
-    ctx.moveTo(lx1, ly);
-    ctx.lineTo(lx2, ly + th / 4 * t);
+    ctx.moveTo(sx - (tw / 2 + 2) * t, fy);
+    ctx.lineTo(sx, fy + th / 4 * t);
     ctx.stroke();
-    const ry = peakY + (topY + th / 4 - peakY) * t;
-    const rx1 = sx + (tw / 2) * t;
-    ctx.beginPath();
-    ctx.moveTo(rx1, ry);
-    ctx.lineTo(sx, ry + th / 4 * t);
-    ctx.stroke();
-    ctx.globalAlpha = 1;
   }
 }
 
 function drawHipRoof(ctx: CanvasRenderingContext2D, sx: number, sy: number, tw: number, th: number, wallH: number, roofH: number, color: string) {
   const topY = sy - wallH;
   const peakY = topY - roofH;
-  const ridgeW = tw * 0.25;
+  const ridgeLen = tw * 0.2;
+  // Front left face
   ctx.fillStyle = color;
   ctx.beginPath();
-  ctx.moveTo(sx - ridgeW / 2, peakY);
-  ctx.lineTo(sx - tw / 2, topY + th / 4);
-  ctx.lineTo(sx, topY + th / 2);
-  ctx.lineTo(sx + ridgeW / 2, peakY);
+  ctx.moveTo(sx - ridgeLen / 2, peakY);
+  ctx.lineTo(sx - tw / 2 - 2, topY + th / 4 + 1);
+  ctx.lineTo(sx, topY + th / 2 + 1);
+  ctx.lineTo(sx + ridgeLen / 2, peakY);
   ctx.closePath();
   ctx.fill();
-  ctx.fillStyle = darken(color, 0.12);
+  // Front right face
+  ctx.fillStyle = darken(color, 0.16);
   ctx.beginPath();
-  ctx.moveTo(sx + ridgeW / 2, peakY);
-  ctx.lineTo(sx + tw / 2, topY + th / 4);
-  ctx.lineTo(sx, topY + th / 2);
+  ctx.moveTo(sx + ridgeLen / 2, peakY);
+  ctx.lineTo(sx + tw / 2 + 2, topY + th / 4 + 1);
+  ctx.lineTo(sx, topY + th / 2 + 1);
   ctx.closePath();
   ctx.fill();
-  ctx.fillStyle = darken(color, 0.05);
+  // Back left
+  ctx.fillStyle = lighten(color, 0.06);
   ctx.beginPath();
-  ctx.moveTo(sx - ridgeW / 2, peakY);
-  ctx.lineTo(sx - tw / 2, topY + th / 4);
+  ctx.moveTo(sx - ridgeLen / 2, peakY);
+  ctx.lineTo(sx - tw / 2 - 2, topY + th / 4 + 1);
   ctx.lineTo(sx, topY);
-  ctx.lineTo(sx + ridgeW / 2, peakY);
+  ctx.lineTo(sx + ridgeLen / 2, peakY);
   ctx.closePath();
   ctx.fill();
-  ctx.fillStyle = darken(color, 0.18);
+  // Back right
+  ctx.fillStyle = darken(color, 0.22);
   ctx.beginPath();
-  ctx.moveTo(sx + ridgeW / 2, peakY);
-  ctx.lineTo(sx + tw / 2, topY + th / 4);
+  ctx.moveTo(sx + ridgeLen / 2, peakY);
+  ctx.lineTo(sx + tw / 2 + 2, topY + th / 4 + 1);
   ctx.lineTo(sx, topY);
   ctx.closePath();
   ctx.fill();
-  ctx.strokeStyle = darken(color, 0.35);
-  ctx.lineWidth = 0.5;
+  // Bold ridge + edge outlines
+  ctx.strokeStyle = darken(color, 0.5);
+  ctx.lineWidth = 1.5;
   ctx.beginPath();
-  ctx.moveTo(sx - ridgeW / 2, peakY);
-  ctx.lineTo(sx + ridgeW / 2, peakY);
+  ctx.moveTo(sx - ridgeLen / 2, peakY);
+  ctx.lineTo(sx + ridgeLen / 2, peakY);
+  ctx.stroke();
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.moveTo(sx - ridgeLen / 2, peakY);
+  ctx.lineTo(sx - tw / 2 - 2, topY + th / 4 + 1);
+  ctx.moveTo(sx + ridgeLen / 2, peakY);
+  ctx.lineTo(sx + tw / 2 + 2, topY + th / 4 + 1);
+  ctx.moveTo(sx - ridgeLen / 2, peakY);
+  ctx.lineTo(sx, topY);
+  ctx.moveTo(sx + ridgeLen / 2, peakY);
+  ctx.lineTo(sx, topY);
+  ctx.moveTo(sx, topY + th / 2 + 1);
+  ctx.lineTo(sx - tw / 2 - 2, topY + th / 4 + 1);
+  ctx.moveTo(sx, topY + th / 2 + 1);
+  ctx.lineTo(sx + tw / 2 + 2, topY + th / 4 + 1);
+  ctx.stroke();
+  // Eave highlight
+  ctx.strokeStyle = lighten(color, 0.25);
+  ctx.lineWidth = 0.8;
+  ctx.beginPath();
+  ctx.moveTo(sx - tw / 2 - 2, topY + th / 4 + 1);
+  ctx.lineTo(sx, topY + th / 2 + 1);
+  ctx.lineTo(sx + tw / 2 + 2, topY + th / 4 + 1);
   ctx.stroke();
 }
 
-function drawStoneTexture(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, rows: number, isLeft: boolean) {
-  ctx.strokeStyle = 'rgba(0,0,0,0.12)';
-  ctx.lineWidth = 0.3;
-  const rowH = h / rows;
-  for (let r = 0; r < rows; r++) {
-    const ry = y + r * rowH;
-    ctx.beginPath();
-    if (isLeft) {
-      ctx.moveTo(x, ry);
-      ctx.lineTo(x + w, ry - w * 0.25);
-    } else {
-      ctx.moveTo(x, ry);
-      ctx.lineTo(x + w, ry - w * 0.25);
-    }
-    ctx.stroke();
-    const offset = r % 2 === 0 ? w * 0.4 : w * 0.6;
-    ctx.beginPath();
-    ctx.moveTo(x + offset, ry);
-    ctx.lineTo(x + offset, ry + rowH);
-    ctx.stroke();
-  }
-}
-
 function drawChimney(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, color: string, time: number) {
-  isoLeftFace(ctx, x, y + h, w, w * 0.5, h, darken(color, 0.1));
-  isoRightFace(ctx, x, y + h, w, w * 0.5, h, darken(color, 0.25));
-  isoTopFace(ctx, x, y + h, w, w * 0.5, h, color);
-  ctx.fillStyle = 'rgba(50,50,50,0.6)';
+  isoBox(ctx, x, y + h, w, w * 0.5, h, color);
+  ctx.fillStyle = '#1a1a1a';
   ctx.beginPath();
-  ctx.ellipse(x, y, w * 0.2, w * 0.1, 0, 0, Math.PI * 2);
+  ctx.ellipse(x, y, w * 0.18, w * 0.09, 0, 0, Math.PI * 2);
   ctx.fill();
-  const smokeAlpha = (Math.sin(time * 3) + 1) * 0.15;
   for (let i = 0; i < 3; i++) {
-    const so = Math.sin(time * 2 + i) * 2;
-    ctx.fillStyle = `rgba(180,180,180,${smokeAlpha - i * 0.03})`;
+    const so = Math.sin(time * 2 + i * 1.3) * 2;
+    const alpha = 0.25 - i * 0.06;
+    ctx.fillStyle = `rgba(160,160,160,${alpha})`;
     ctx.beginPath();
-    ctx.arc(x + so, y - 3 - i * 4, 2 + i, 0, Math.PI * 2);
+    ctx.arc(x + so, y - 2 - i * 4, 2.5 + i * 0.8, 0, Math.PI * 2);
     ctx.fill();
   }
 }
 
-function woodBeamPattern(ctx: CanvasRenderingContext2D, sx: number, sy: number, tw: number, wallH: number, isLeft: boolean) {
-  ctx.strokeStyle = 'rgba(90,60,30,0.35)';
-  ctx.lineWidth = 0.8;
-  const halfW = tw / 2;
-  const qH = wallH / 3;
-  for (let i = 1; i <= 2; i++) {
-    const bY = sy - qH * i;
-    ctx.beginPath();
-    if (isLeft) {
-      ctx.moveTo(sx, bY);
-      ctx.lineTo(sx - halfW, bY + halfW * 0.25);
-    } else {
-      ctx.moveTo(sx, bY);
-      ctx.lineTo(sx + halfW, bY + halfW * 0.25);
-    }
-    ctx.stroke();
-  }
-  ctx.beginPath();
-  if (isLeft) {
-    ctx.moveTo(sx - halfW * 0.5, sy + halfW * 0.125);
-    ctx.lineTo(sx - halfW * 0.5, sy + halfW * 0.125 - wallH);
-  } else {
-    ctx.moveTo(sx + halfW * 0.5, sy + halfW * 0.125);
-    ctx.lineTo(sx + halfW * 0.5, sy + halfW * 0.125 - wallH);
-  }
-  ctx.stroke();
-}
-
 function getPhases(progress: number) {
-  const wallPhase = Math.min(Math.max((progress - 0.33) / 0.33, 0), 1);
-  const roofPhase = Math.min(Math.max((progress - 0.66) / 0.34, 0), 1);
-  const foundPhase = Math.min(progress / 0.33, 1);
-  return { foundPhase, wallPhase, roofPhase };
+  return {
+    foundPhase: Math.min(progress / 0.33, 1),
+    wallPhase: Math.min(Math.max((progress - 0.33) / 0.33, 0), 1),
+    roofPhase: Math.min(Math.max((progress - 0.66) / 0.34, 0), 1),
+  };
 }
 
-function drawConstructionScaffolding(ctx: CanvasRenderingContext2D, sx: number, sy: number, tw: number, wallH: number, time: number) {
-  ctx.strokeStyle = '#a08040';
-  ctx.lineWidth = 0.8;
-  const poleH = wallH * 1.1;
-  for (let i = -1; i <= 1; i += 2) {
-    const px = sx + i * tw * 0.35;
-    ctx.beginPath();
-    ctx.moveTo(px, sy + 2);
-    ctx.lineTo(px, sy + 2 - poleH);
-    ctx.stroke();
-  }
-  for (let j = 1; j <= 3; j++) {
-    const hy = sy + 2 - poleH * (j / 4);
-    ctx.beginPath();
-    ctx.moveTo(sx - tw * 0.35, hy);
-    ctx.lineTo(sx + tw * 0.35, hy);
-    ctx.stroke();
-  }
-  ctx.fillStyle = '#b09050';
-  ctx.fillRect(sx - tw * 0.35, sy + 2 - poleH * 0.75, tw * 0.7, 2);
+function drawFoundation(ctx: CanvasRenderingContext2D, sx: number, sy: number, tw: number, th: number, color: string) {
+  isoBox(ctx, sx, sy + 2, tw, th, 3, color);
 }
 
-function drawProgressBar(ctx: CanvasRenderingContext2D, sx: number, sy: number, wallH: number, tw: number, progress: number, time: number) {
-  const barW = tw * 0.5;
+function drawProgressBar(ctx: CanvasRenderingContext2D, sx: number, sy: number, topY: number, tw: number, progress: number) {
+  const barW = tw * 0.55;
   const barX = sx - barW / 2;
-  const barY = sy - wallH - 18;
-  ctx.fillStyle = 'rgba(0,0,0,0.55)';
+  const barY = topY - 12;
+  ctx.fillStyle = 'rgba(0,0,0,0.6)';
   ctx.beginPath();
   ctx.roundRect(barX - 2, barY - 2, barW + 4, 10, 4);
   ctx.fill();
-  ctx.fillStyle = '#333';
+  ctx.fillStyle = '#444';
   ctx.beginPath();
-  ctx.roundRect(barX, barY, barW, 6, 2);
+  ctx.roundRect(barX, barY, barW, 6, 3);
   ctx.fill();
-  const grad = ctx.createLinearGradient(barX, barY, barX + barW * progress, barY);
-  grad.addColorStop(0, '#e8a020');
-  grad.addColorStop(1, '#f0c040');
+  const grad = ctx.createLinearGradient(barX, barY, barX + barW * progress, barY + 6);
+  grad.addColorStop(0, '#f0a020');
+  grad.addColorStop(1, '#e8d040');
   ctx.fillStyle = grad;
   ctx.beginPath();
-  ctx.roundRect(barX, barY, barW * progress, 6, 2);
+  ctx.roundRect(barX, barY, barW * progress, 6, 3);
   ctx.fill();
   ctx.fillStyle = 'rgba(255,255,255,0.3)';
   ctx.beginPath();
-  ctx.roundRect(barX, barY, barW * progress, 3, [2, 2, 0, 0]);
+  ctx.roundRect(barX + 1, barY, barW * progress - 2, 3, [2, 2, 0, 0]);
   ctx.fill();
 }
 
-// ===== INDIVIDUAL BUILDING RENDERERS =====
+function drawScaffolding(ctx: CanvasRenderingContext2D, sx: number, sy: number, tw: number, wallH: number) {
+  ctx.strokeStyle = '#b08840';
+  ctx.lineWidth = 1.2;
+  for (let i = -1; i <= 1; i += 2) {
+    const px = sx + i * tw * 0.3;
+    ctx.beginPath();
+    ctx.moveTo(px, sy + 2);
+    ctx.lineTo(px, sy + 2 - wallH * 1.05);
+    ctx.stroke();
+  }
+  ctx.strokeStyle = '#c0a050';
+  ctx.lineWidth = 1;
+  for (let j = 1; j <= 3; j++) {
+    const hy = sy + 2 - wallH * (j / 3.5);
+    ctx.beginPath();
+    ctx.moveTo(sx - tw * 0.3, hy);
+    ctx.lineTo(sx + tw * 0.3, hy);
+    ctx.stroke();
+  }
+}
+
+// ===== BUILDING RENDERERS =====
 
 function drawHouse(d: DrawCtx) {
   const { ctx, sx, sy, tw, th, level, progress, time } = d;
   const { foundPhase, wallPhase, roofPhase } = getPhases(progress);
-  const wallColor = level >= 3 ? '#c8b090' : '#d4b896';
-  const roofColor = level >= 4 ? '#8b4513' : level >= 2 ? '#9a5a1a' : '#8b6914';
-  const baseWallH = 16 + level * 3;
-  const wH = Math.round(baseWallH * foundPhase);
+  const wallLight = level >= 4 ? '#f0dbb8' : level >= 3 ? '#e8d0a8' : level >= 2 ? '#dcc498' : '#d4b888';
+  const roofColor = level >= 4 ? '#c44420' : level >= 3 ? '#b84828' : level >= 2 ? '#a85830' : '#8b6914';
+  const wallH = Math.round((18 + level * 4) * foundPhase);
 
-  drawFoundation(ctx, sx, sy, tw, th, '#a08868');
-  if (wH < 3) return;
+  drawFoundation(ctx, sx, sy, tw, th, '#9a8868');
+  if (wallH < 4) return;
 
-  isoLeftFace(ctx, sx, sy, tw, th, wH, wallColor);
-  isoRightFace(ctx, sx, sy, tw, th, wH, darken(wallColor, 0.14));
+  isoLeftFace(ctx, sx, sy, tw, th, wallH, wallLight);
+  isoRightFace(ctx, sx, sy, tw, th, wallH, darken(wallLight, 0.16));
 
-  if (wallPhase > 0) {
-    woodBeamPattern(ctx, sx, sy, tw, wH, true);
-    woodBeamPattern(ctx, sx, sy, tw, wH, false);
-
-    if (wallPhase > 0.5) {
-      drawDoor(ctx, sx - 3, sy - 8, 5, 7, '#5a3a18');
-    }
-    if (wallPhase > 0.7) {
-      drawWindow(ctx, sx - tw / 4 - 1.5, sy - wH * 0.6, 4, 3.5, true);
-    }
-    if (level >= 2 && wallPhase > 0.8) {
-      drawWindow(ctx, sx + tw / 4 - 3, sy - wH * 0.6 + th / 8, 4, 3.5, false);
-    }
+  if (wallPhase > 0.3) {
+    drawBoldDoor(ctx, sx - 3, sy - 9, 5, 8, '#6a3a15');
+  }
+  if (wallPhase > 0.5) {
+    drawBoldWindow(ctx, sx - tw / 3.5, sy - wallH * 0.62, 5, 4);
+  }
+  if (level >= 2 && wallPhase > 0.7) {
+    drawBoldWindow(ctx, sx + tw / 6 - 2, sy - wallH * 0.6 + th / 10, 5, 4, '#90d0f0');
+  }
+  if (level >= 4 && wallPhase > 0.8) {
+    drawBoldWindow(ctx, sx - tw / 4, sy - wallH * 0.85, 4, 3, '#b0d8f0');
   }
 
-  if (wallPhase < 1) {
-    drawConstructionScaffolding(ctx, sx, sy, tw, wH, time);
-  }
+  if (wallPhase < 0.95) drawScaffolding(ctx, sx, sy, tw, wallH);
 
   if (roofPhase > 0) {
     ctx.globalAlpha = roofPhase;
-    const rH = (10 + level * 2) * roofPhase;
-    drawGableRoof(ctx, sx, sy, tw * 1.08, th * 1.08, wH - 1, rH, roofColor);
+    const rH = (12 + level * 3) * roofPhase;
+    drawBoldGableRoof(ctx, sx, sy, tw * 1.1, th * 1.1, wallH - 1, rH, roofColor);
     if (level >= 3) {
-      drawChimney(ctx, sx + tw * 0.25, sy - wH - rH * 0.4, 5, 6, '#8a6050', time);
+      drawChimney(ctx, sx + tw * 0.22, sy - wallH - rH * 0.35, 6, 7, '#8a5040', time);
     }
     ctx.globalAlpha = 1;
   }
-
-  isoBoxEdges(ctx, sx, sy, tw, th, wH, 0.15);
 }
 
 function drawMansion(d: DrawCtx) {
   const { ctx, sx, sy, tw, th, level, progress, time } = d;
   const { foundPhase, wallPhase, roofPhase } = getPhases(progress);
-  const wallColor = level >= 3 ? '#d8c8a0' : '#d0b888';
-  const accentColor = level >= 4 ? '#a08050' : '#8a6a40';
-  const baseWallH = 22 + level * 4;
-  const wH = Math.round(baseWallH * foundPhase);
+  const wallLight = level >= 4 ? '#f4e8cc' : level >= 3 ? '#eadcb8' : '#dcd0a8';
+  const trimColor = level >= 3 ? '#8a6a3a' : '#7a5a30';
+  const wallH = Math.round((26 + level * 5) * foundPhase);
 
   drawFoundation(ctx, sx, sy, tw, th, '#a09070');
-  if (wH < 3) return;
+  if (wallH < 4) return;
 
-  isoLeftFace(ctx, sx, sy, tw, th, wH, wallColor);
-  isoRightFace(ctx, sx, sy, tw, th, wH, darken(wallColor, 0.14));
+  isoLeftFace(ctx, sx, sy, tw, th, wallH, wallLight);
+  isoRightFace(ctx, sx, sy, tw, th, wallH, darken(wallLight, 0.14));
 
-  if (wallPhase > 0) {
-    ctx.strokeStyle = accentColor;
-    ctx.lineWidth = 1.2;
-    const cornerH = wH * 0.8;
-    ctx.beginPath();
-    ctx.moveTo(sx - tw / 2, sy + th / 4 - 2);
-    ctx.lineTo(sx - tw / 2, sy + th / 4 - 2 - cornerH);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(sx + tw / 2, sy + th / 4 - 2);
-    ctx.lineTo(sx + tw / 2, sy + th / 4 - 2 - cornerH);
-    ctx.stroke();
-
-    woodBeamPattern(ctx, sx, sy, tw, wH, true);
-
-    if (wallPhase > 0.4) {
-      drawDoor(ctx, sx - 4, sy - 10, 7, 9, '#4a2a10');
-      ctx.fillStyle = accentColor;
-      ctx.fillRect(sx - 5, sy - 10 - 2, 9, 2);
-    }
-    if (wallPhase > 0.6) {
-      drawWindow(ctx, sx - tw / 3, sy - wH * 0.55, 5, 4, true);
-      drawWindow(ctx, sx + tw / 5 - 3, sy - wH * 0.55 + th / 6, 5, 4, false);
-    }
-    if (level >= 2 && wallPhase > 0.8) {
-      drawWindow(ctx, sx - tw / 4 - 1, sy - wH * 0.8, 4, 3.5, true);
-      drawWindow(ctx, sx + tw / 6, sy - wH * 0.8 + th / 8, 4, 3.5, false);
-    }
+  // Corner pilasters
+  if (wallPhase > 0.2) {
+    ctx.fillStyle = trimColor;
+    ctx.fillRect(sx - tw / 2 - 0.5, sy + th / 4 - wallH * 0.9, 2.5, wallH * 0.88);
+    ctx.fillRect(sx + tw / 2 - 2, sy + th / 4 - wallH * 0.9, 2.5, wallH * 0.88);
+    ctx.strokeStyle = darken(trimColor, 0.4);
+    ctx.lineWidth = 0.6;
+    ctx.strokeRect(sx - tw / 2 - 0.5, sy + th / 4 - wallH * 0.9, 2.5, wallH * 0.88);
   }
 
-  if (wallPhase < 1) {
-    drawConstructionScaffolding(ctx, sx, sy, tw, wH, time);
+  if (wallPhase > 0.3) {
+    drawBoldDoor(ctx, sx - 4, sy - 12, 8, 11, '#4a2a10');
+    // Ornate doorframe
+    ctx.strokeStyle = trimColor;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(sx - 5, sy - 1);
+    ctx.lineTo(sx - 5, sy - 13);
+    ctx.lineTo(sx + 5, sy - 13);
+    ctx.lineTo(sx + 5, sy - 1);
+    ctx.stroke();
+    ctx.fillStyle = trimColor;
+    ctx.fillRect(sx - 6, sy - 14, 12, 2);
   }
+  if (wallPhase > 0.5) {
+    drawBoldWindow(ctx, sx - tw / 2.8, sy - wallH * 0.5, 6, 5);
+    drawBoldWindow(ctx, sx + tw / 5 - 3, sy - wallH * 0.48 + th / 8, 6, 5);
+  }
+  if (level >= 2 && wallPhase > 0.7) {
+    drawBoldWindow(ctx, sx - tw / 3, sy - wallH * 0.78, 5, 4, '#a0d0e8');
+    drawBoldWindow(ctx, sx + tw / 5.5 - 2, sy - wallH * 0.76 + th / 10, 5, 4, '#a0d0e8');
+  }
+
+  if (wallPhase < 0.95) drawScaffolding(ctx, sx, sy, tw, wallH);
 
   if (roofPhase > 0) {
     ctx.globalAlpha = roofPhase;
-    const rH = (14 + level * 2) * roofPhase;
-    drawHipRoof(ctx, sx, sy, tw * 1.06, th * 1.06, wH - 1, rH, level >= 3 ? '#7a3a10' : '#8b4513');
-    drawChimney(ctx, sx + tw * 0.22, sy - wH - rH * 0.3, 6, 7, '#8a6850', time);
-    if (level >= 4) {
-      drawChimney(ctx, sx - tw * 0.18, sy - wH - rH * 0.3, 5, 6, '#8a6850', time);
-    }
+    const rH = (14 + level * 3) * roofPhase;
+    drawHipRoof(ctx, sx, sy, tw * 1.08, th * 1.08, wallH - 1, rH, level >= 3 ? '#8a3015' : '#9a4820');
+    drawChimney(ctx, sx + tw * 0.2, sy - wallH - rH * 0.25, 6, 8, '#8a5848', time);
+    if (level >= 4) drawChimney(ctx, sx - tw * 0.15, sy - wallH - rH * 0.25, 5, 7, '#8a5848', time);
     ctx.globalAlpha = 1;
   }
-
-  isoBoxEdges(ctx, sx, sy, tw, th, wH, 0.12);
 }
 
 function drawTower(d: DrawCtx) {
   const { ctx, sx, sy, tw, th, level, progress, time } = d;
   const { foundPhase, wallPhase, roofPhase } = getPhases(progress);
-  const tW = tw * 0.65;
-  const tH = th * 0.65;
-  const stoneColor = level >= 3 ? '#a0a098' : '#909088';
-  const baseWallH = 30 + level * 6;
-  const wH = Math.round(baseWallH * foundPhase);
+  const tW = tw * 0.7;
+  const tH = th * 0.7;
+  const stone = level >= 3 ? '#b0a8a0' : '#989088';
+  const wallH = Math.round((34 + level * 7) * foundPhase);
 
-  drawFoundation(ctx, sx, sy, tW * 1.2, tH * 1.2, '#787870');
-  if (wH < 3) return;
+  drawFoundation(ctx, sx, sy, tW * 1.2, tH * 1.2, '#707068');
+  if (wallH < 4) return;
 
-  isoLeftFace(ctx, sx, sy, tW, tH, wH, stoneColor);
-  isoRightFace(ctx, sx, sy, tW, tH, wH, darken(stoneColor, 0.16));
+  isoLeftFace(ctx, sx, sy, tW, tH, wallH, stone);
+  isoRightFace(ctx, sx, sy, tW, tH, wallH, darken(stone, 0.18));
 
+  // Stone block lines
   if (wallPhase > 0) {
-    drawStoneTexture(ctx, sx - tW / 2, sy + tH / 4, tW / 2, wH, Math.floor(wH / 5), true);
-    drawStoneTexture(ctx, sx, sy, tW / 2, wH, Math.floor(wH / 5), false);
-
-    if (wallPhase > 0.5) {
-      drawWindow(ctx, sx - tW / 4 - 1, sy - wH * 0.4, 3, 5, true);
-    }
-    if (level >= 2 && wallPhase > 0.7) {
-      drawWindow(ctx, sx + tW / 6 - 1, sy - wH * 0.6 + tH / 8, 3, 5, false);
-    }
-    if (wallPhase > 0.6) {
-      drawDoor(ctx, sx - 2.5, sy - 7, 4, 6, '#4a3a20');
+    ctx.strokeStyle = 'rgba(0,0,0,0.12)';
+    ctx.lineWidth = 0.5;
+    for (let j = 1; j <= 5; j++) {
+      const rowY = sy - wallH * (j / 6);
+      ctx.beginPath();
+      ctx.moveTo(sx, rowY);
+      ctx.lineTo(sx - tW / 2, rowY + tH / 4);
+      ctx.stroke();
     }
   }
 
-  if (wallPhase < 1) {
-    drawConstructionScaffolding(ctx, sx, sy, tW, wH, time);
+  if (wallPhase > 0.3) {
+    drawBoldDoor(ctx, sx - 2.5, sy - 8, 4, 7, '#3a2a10');
   }
+  if (wallPhase > 0.5) {
+    drawBoldWindow(ctx, sx - tW / 4, sy - wallH * 0.45, 3.5, 5, '#6ab0d8');
+  }
+  if (level >= 2 && wallPhase > 0.7) {
+    drawBoldWindow(ctx, sx - tW / 5, sy - wallH * 0.7, 3, 4.5, '#6ab0d8');
+  }
+
+  if (wallPhase < 0.95) drawScaffolding(ctx, sx, sy, tW, wallH);
 
   if (roofPhase > 0) {
     ctx.globalAlpha = roofPhase;
-    isoTopFace(ctx, sx, sy, tW, tH, wH, lighten(stoneColor, 0.1));
-    const merlonH = 4 + level;
+    isoTopFace(ctx, sx, sy, tW, tH, wallH, lighten(stone, 0.12));
+    // Merlons (battlements)
+    const mH = 5 + level;
+    const mW = tW * 0.18;
     for (let i = -1; i <= 1; i++) {
-      const mx = sx + i * tW / 3.5;
-      const myBase = sy - wH + Math.abs(i) * tH / 8;
-      isoLeftFace(ctx, mx, myBase + 1, tW * 0.2, tH * 0.2, merlonH, stoneColor);
-      isoRightFace(ctx, mx, myBase + 1, tW * 0.2, tH * 0.2, merlonH, darken(stoneColor, 0.16));
-      isoTopFace(ctx, mx, myBase + 1, tW * 0.2, tH * 0.2, merlonH, lighten(stoneColor, 0.15));
+      const mx = sx + i * tW / 3.2;
+      const myOff = Math.abs(i) * tH / 7;
+      isoBox(ctx, mx, sy - wallH + myOff + 1, mW, mW * 0.5, mH, stone);
     }
-    ctx.strokeStyle = '#5a4a30';
-    ctx.lineWidth = 1.5;
+    // Flag pole + flag
+    ctx.strokeStyle = '#4a3a20';
+    ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(sx, sy - wH - merlonH);
-    ctx.lineTo(sx, sy - wH - merlonH - 10 * roofPhase);
+    ctx.moveTo(sx, sy - wallH - mH);
+    ctx.lineTo(sx, sy - wallH - mH - 14 * roofPhase);
     ctx.stroke();
-    ctx.fillStyle = '#c04040';
+    const flagWave = Math.sin(time * 3.5) * 1.5;
+    ctx.fillStyle = '#d03030';
     ctx.beginPath();
-    ctx.moveTo(sx, sy - wH - merlonH - 10 * roofPhase);
-    ctx.lineTo(sx + 6, sy - wH - merlonH - 7 * roofPhase + Math.sin(time * 3) * 1);
-    ctx.lineTo(sx, sy - wH - merlonH - 4 * roofPhase);
+    ctx.moveTo(sx + 1, sy - wallH - mH - 14 * roofPhase);
+    ctx.lineTo(sx + 9, sy - wallH - mH - 10 * roofPhase + flagWave);
+    ctx.lineTo(sx + 1, sy - wallH - mH - 6 * roofPhase);
     ctx.closePath();
     ctx.fill();
+    ctx.strokeStyle = '#901515';
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
     ctx.globalAlpha = 1;
   }
-
-  isoBoxEdges(ctx, sx, sy, tW, tH, wH, 0.15);
 }
 
 function drawWorkshop(d: DrawCtx) {
   const { ctx, sx, sy, tw, th, level, progress, time } = d;
   const { foundPhase, wallPhase, roofPhase } = getPhases(progress);
-  const wallColor = level >= 3 ? '#c4a878' : '#b89868';
-  const baseWallH = 15 + level * 3;
-  const wH = Math.round(baseWallH * foundPhase);
+  const wallColor = level >= 3 ? '#d4b890' : '#c4a878';
+  const wallH = Math.round((16 + level * 3) * foundPhase);
 
   drawFoundation(ctx, sx, sy, tw, th, '#8a7050');
-  if (wH < 3) return;
+  if (wallH < 4) return;
 
-  isoLeftFace(ctx, sx, sy, tw, th, wH, wallColor);
-  isoRightFace(ctx, sx, sy, tw, th, wH, darken(wallColor, 0.14));
+  isoLeftFace(ctx, sx, sy, tw, th, wallH, wallColor);
+  isoRightFace(ctx, sx, sy, tw, th, wallH, darken(wallColor, 0.16));
 
-  if (wallPhase > 0) {
-    woodBeamPattern(ctx, sx, sy, tw, wH, true);
-    if (wallPhase > 0.5) {
-      drawDoor(ctx, sx - 4, sy - 9, 7, 8, '#5a3818');
-    }
-    if (wallPhase > 0.7) {
-      ctx.fillStyle = '#6a4a20';
-      ctx.fillRect(sx + tw / 5, sy - wH * 0.35, tw / 4, 2);
-      ctx.fillStyle = '#8a6a30';
-      ctx.fillRect(sx + tw / 5 + 1, sy - wH * 0.35 - 2, 2, 2);
-      ctx.fillRect(sx + tw / 5 + 5, sy - wH * 0.35 - 3, 1.5, 3);
-    }
+  // Wood beam pattern on left face
+  ctx.strokeStyle = 'rgba(80,50,20,0.3)';
+  ctx.lineWidth = 1;
+  for (let i = 1; i <= 2; i++) {
+    ctx.beginPath();
+    ctx.moveTo(sx, sy - wallH * (i / 3));
+    ctx.lineTo(sx - tw / 2, sy + th / 4 - wallH * (i / 3));
+    ctx.stroke();
+  }
+
+  if (wallPhase > 0.3) {
+    drawBoldDoor(ctx, sx - 4, sy - 9, 7, 8, '#5a3518');
+  }
+  if (wallPhase > 0.6) {
+    // Anvil / workbench on right
+    ctx.fillStyle = '#5a5050';
+    ctx.fillRect(sx + tw / 6, sy - 4, 5, 3);
+    ctx.fillStyle = '#3a3030';
+    ctx.fillRect(sx + tw / 6, sy - 5, 3, 1.5);
+    ctx.strokeStyle = '#2a2020';
+    ctx.lineWidth = 0.5;
+    ctx.strokeRect(sx + tw / 6, sy - 4, 5, 3);
   }
 
   if (roofPhase > 0) {
     ctx.globalAlpha = roofPhase;
-    const rH = (8 + level * 1.5) * roofPhase;
-    drawGableRoof(ctx, sx, sy, tw * 1.05, th * 1.05, wH - 1, rH, '#6a4a22');
-    drawChimney(ctx, sx + tw * 0.2, sy - wH - rH * 0.5, 6, 8 + level, '#6a4a3a', time);
+    const rH = (10 + level * 2) * roofPhase;
+    drawBoldGableRoof(ctx, sx, sy, tw * 1.08, th * 1.08, wallH - 1, rH, '#6a4a22');
+    drawChimney(ctx, sx + tw * 0.18, sy - wallH - rH * 0.4, 7, 10 + level * 2, '#5a3a2a', time);
     ctx.globalAlpha = 1;
   }
-
-  isoBoxEdges(ctx, sx, sy, tw, th, wH, 0.15);
 }
 
 function drawMarket(d: DrawCtx) {
   const { ctx, sx, sy, tw, th, level, progress, time } = d;
   const { foundPhase, wallPhase, roofPhase } = getPhases(progress);
-  const baseColor = '#c8a870';
-  const baseWallH = 12 + level * 2;
-  const wH = Math.round(baseWallH * foundPhase);
+  const wallColor = '#dcc498';
+  const wallH = Math.round((13 + level * 2) * foundPhase);
 
   drawFoundation(ctx, sx, sy, tw, th, '#a08858');
-  if (wH < 3) return;
+  if (wallH < 4) return;
 
-  isoLeftFace(ctx, sx, sy, tw, th, wH, baseColor);
-  isoRightFace(ctx, sx, sy, tw, th, wH, darken(baseColor, 0.14));
+  isoLeftFace(ctx, sx, sy, tw, th, wallH, wallColor);
+  isoRightFace(ctx, sx, sy, tw, th, wallH, darken(wallColor, 0.14));
 
-  if (wallPhase > 0) {
-    ctx.fillStyle = '#6a4a20';
-    ctx.fillRect(sx - tw / 4, sy - 2, tw / 2 * wallPhase, 2);
-    const numItems = 2 + level;
-    for (let i = 0; i < numItems; i++) {
-      const ix = sx - tw / 4 + i * 6;
-      const iy = sy - 4;
-      const colors = ['#c84040', '#40a040', '#c0a040', '#4080c0', '#a06040'];
-      ctx.fillStyle = colors[i % colors.length];
-      ctx.fillRect(ix, iy - 2.5 * wallPhase, 3, 2.5);
+  // Market counter on front
+  if (wallPhase > 0.3) {
+    const counterH = 5;
+    isoBox(ctx, sx, sy + 1, tw * 0.85, th * 0.85, counterH, '#b09050');
+    // Goods on counter
+    const goods = ['#cc3030', '#30aa30', '#ccaa30', '#3060cc', '#cc6030'];
+    for (let i = 0; i < 3 + level; i++) {
+      const gx = sx - tw / 4 + i * 5;
+      const gy = sy - counterH + 1;
+      ctx.fillStyle = goods[i % goods.length];
+      ctx.beginPath();
+      ctx.arc(gx, gy - 1.5, 2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = darken(goods[i % goods.length], 0.3);
+      ctx.lineWidth = 0.5;
+      ctx.stroke();
     }
   }
 
   if (roofPhase > 0) {
     ctx.globalAlpha = roofPhase;
-    const canopyH = wH + 6;
-    const canopyW = tw * 1.15;
-    const canopyTH = th * 1.15;
-    const stripeColor1 = level >= 3 ? '#b83030' : '#c04040';
-    const stripeColor2 = level >= 3 ? '#d8d0b0' : '#e0d8c0';
-    isoTopFace(ctx, sx, sy, canopyW, canopyTH, canopyH, stripeColor1);
-    ctx.strokeStyle = stripeColor2;
-    ctx.lineWidth = 1.5;
+    // Striped canopy
+    const canopyH = wallH + 7;
+    const canopyW = tw * 1.18;
+    const canopyTH = th * 1.18;
+    const stripe1 = level >= 3 ? '#cc2828' : '#d04040';
+    const stripe2 = '#f0e8d0';
+
+    // Canopy top face with stripes
+    isoTopFace(ctx, sx, sy, canopyW, canopyTH, canopyH, stripe1);
+    ctx.strokeStyle = stripe2;
+    ctx.lineWidth = 2;
     for (let i = -2; i <= 2; i++) {
       ctx.beginPath();
-      ctx.moveTo(sx + i * canopyW / 6, sy - canopyH);
-      ctx.lineTo(sx + i * canopyW / 6 + canopyW / 4, sy - canopyH + canopyTH / 4);
+      ctx.moveTo(sx + i * canopyW / 5.5, sy - canopyH + canopyTH * 0.05);
+      ctx.lineTo(sx + i * canopyW / 5.5 + canopyW / 4, sy - canopyH + canopyTH / 4 + canopyTH * 0.05);
       ctx.stroke();
     }
+
+    // Support poles
     ctx.strokeStyle = '#5a3a18';
-    ctx.lineWidth = 1;
+    ctx.lineWidth = 2;
     for (let p = -1; p <= 1; p += 2) {
-      const px = sx + p * tw * 0.4;
+      const px = sx + p * tw * 0.38;
       ctx.beginPath();
-      ctx.moveTo(px, sy + 2);
-      ctx.lineTo(px, sy + 2 - canopyH);
+      ctx.moveTo(px, sy + 3);
+      ctx.lineTo(px, sy + 3 - canopyH);
       ctx.stroke();
     }
     ctx.globalAlpha = 1;
   }
-
-  isoBoxEdges(ctx, sx, sy, tw, th, wH, 0.12);
 }
 
 function drawBarracks(d: DrawCtx) {
   const { ctx, sx, sy, tw, th, level, progress, time } = d;
   const { foundPhase, wallPhase, roofPhase } = getPhases(progress);
-  const wallColor = level >= 3 ? '#8a8870' : '#7a7860';
-  const baseWallH = 18 + level * 3;
-  const wH = Math.round(baseWallH * foundPhase);
+  const wallColor = level >= 3 ? '#908870' : '#807860';
+  const wallH = Math.round((20 + level * 4) * foundPhase);
 
-  drawFoundation(ctx, sx, sy, tw, th, '#605840');
-  if (wH < 3) return;
+  drawFoundation(ctx, sx, sy, tw, th, '#585040');
+  if (wallH < 4) return;
 
-  isoLeftFace(ctx, sx, sy, tw, th, wH, wallColor);
-  isoRightFace(ctx, sx, sy, tw, th, wH, darken(wallColor, 0.14));
+  isoLeftFace(ctx, sx, sy, tw, th, wallH, wallColor);
+  isoRightFace(ctx, sx, sy, tw, th, wallH, darken(wallColor, 0.16));
 
-  if (wallPhase > 0) {
-    drawStoneTexture(ctx, sx - tw / 2, sy + th / 4, tw / 2, wH, Math.floor(wH / 6), true);
-    if (wallPhase > 0.5) {
-      drawDoor(ctx, sx - 4, sy - 10, 7, 9, '#3a2a10');
-    }
-    if (wallPhase > 0.7) {
-      drawWindow(ctx, sx - tw / 3, sy - wH * 0.6, 4, 3, true);
-      if (level >= 2) {
-        drawWindow(ctx, sx + tw / 5 - 2, sy - wH * 0.6 + th / 8, 4, 3, false);
-      }
-    }
+  // Stone pattern
+  ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+  ctx.lineWidth = 0.4;
+  for (let j = 1; j <= 4; j++) {
+    const ry = sy - wallH * (j / 5);
+    ctx.beginPath();
+    ctx.moveTo(sx, ry);
+    ctx.lineTo(sx - tw / 2, ry + th / 4);
+    ctx.stroke();
   }
+
+  if (wallPhase > 0.3) drawBoldDoor(ctx, sx - 4, sy - 11, 7, 10, '#3a2815');
+  if (wallPhase > 0.5) {
+    drawBoldWindow(ctx, sx - tw / 3, sy - wallH * 0.55, 4, 3.5, '#6ab0c8');
+    if (level >= 2) drawBoldWindow(ctx, sx + tw / 5, sy - wallH * 0.53 + th / 8, 4, 3.5, '#6ab0c8');
+  }
+
+  if (wallPhase < 0.95) drawScaffolding(ctx, sx, sy, tw, wallH);
 
   if (roofPhase > 0) {
     ctx.globalAlpha = roofPhase;
-    const rH = (10 + level * 1.5) * roofPhase;
-    drawGableRoof(ctx, sx, sy, tw * 1.04, th * 1.04, wH - 1, rH, '#5a5840');
-    ctx.strokeStyle = '#4a4a30';
-    ctx.lineWidth = 1.5;
+    const rH = (11 + level * 2) * roofPhase;
+    drawBoldGableRoof(ctx, sx, sy, tw * 1.06, th * 1.06, wallH - 1, rH, '#5a5840');
+    // Flag
+    ctx.strokeStyle = '#4a3a20';
+    ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(sx, sy - wH - rH);
-    ctx.lineTo(sx, sy - wH - rH - 12 * roofPhase);
+    ctx.moveTo(sx, sy - wallH - rH);
+    ctx.lineTo(sx, sy - wallH - rH - 14);
     ctx.stroke();
-    const flagWave = Math.sin(time * 3) * 1.5;
-    ctx.fillStyle = '#c04040';
+    const fw = Math.sin(time * 3) * 1.5;
+    ctx.fillStyle = '#cc3030';
     ctx.beginPath();
-    ctx.moveTo(sx, sy - wH - rH - 12 * roofPhase);
-    ctx.lineTo(sx + 8, sy - wH - rH - 9 * roofPhase + flagWave);
-    ctx.lineTo(sx, sy - wH - rH - 6 * roofPhase);
+    ctx.moveTo(sx + 1, sy - wallH - rH - 14);
+    ctx.lineTo(sx + 9, sy - wallH - rH - 10 + fw);
+    ctx.lineTo(sx + 1, sy - wallH - rH - 6);
     ctx.closePath();
     ctx.fill();
-    ctx.strokeStyle = '#901010';
-    ctx.lineWidth = 0.5;
+    ctx.strokeStyle = '#881515';
+    ctx.lineWidth = 0.7;
     ctx.stroke();
     ctx.globalAlpha = 1;
   }
-
-  isoBoxEdges(ctx, sx, sy, tw, th, wH, 0.15);
 }
 
 function drawFarm(d: DrawCtx) {
   const { ctx, sx, sy, tw, th, level, progress, time } = d;
   const { foundPhase, wallPhase, roofPhase } = getPhases(progress);
 
-  ctx.fillStyle = '#7a5a2a';
+  // Rich soil base
+  const soilGrad = ctx.createLinearGradient(sx - tw / 2, sy, sx + tw / 2, sy + th / 2);
+  soilGrad.addColorStop(0, '#7a5a2a');
+  soilGrad.addColorStop(1, '#5a3a1a');
+  ctx.fillStyle = soilGrad;
   ctx.beginPath();
   ctx.moveTo(sx, sy + 2);
   ctx.lineTo(sx + tw / 2, sy + 2 + th / 4);
@@ -674,52 +680,74 @@ function drawFarm(d: DrawCtx) {
   ctx.lineTo(sx - tw / 2, sy + 2 + th / 4);
   ctx.closePath();
   ctx.fill();
+  ctx.strokeStyle = '#4a2a10';
+  ctx.lineWidth = 1.2;
+  ctx.stroke();
 
+  // Furrows
   if (foundPhase > 0.3) {
-    ctx.strokeStyle = '#5a3a10';
-    ctx.lineWidth = 0.6;
-    for (let i = 0; i < 4; i++) {
-      const t = (i + 1) / 5;
+    ctx.strokeStyle = '#4a3010';
+    ctx.lineWidth = 0.7;
+    for (let i = 0; i < 5; i++) {
+      const t = (i + 1) / 6;
+      const x1 = sx - tw / 2 * (1 - t) + tw / 2 * t;
+      const y1 = sy + th / 4 * (1 - t) + 2;
+      const x2 = sx + tw / 2 * t - tw / 2 * (1 - t);
       ctx.beginPath();
-      ctx.moveTo(sx - tw / 2 * (1 - t), sy + th / 4 * (1 - t) + 2);
-      ctx.lineTo(sx + tw / 2 * (1 - t), sy + th / 4 * (1 - t) + 2);
+      ctx.moveTo(x1 - tw / 3, y1 + th / 8);
+      ctx.lineTo(x2 + tw / 3, y1 - th / 8);
       ctx.stroke();
     }
   }
 
+  // Fence
   if (wallPhase > 0) {
     ctx.strokeStyle = '#8a6a30';
-    ctx.lineWidth = 0.8;
-    ctx.setLineDash([2, 2]);
+    ctx.lineWidth = 1.2;
     ctx.beginPath();
-    ctx.moveTo(sx - tw / 2, sy + th / 4 + 1);
-    ctx.lineTo(sx - tw / 2, sy + th / 4 - 3);
+    ctx.moveTo(sx - tw / 2 + 2, sy + th / 4 - 3);
     ctx.lineTo(sx, sy - 3);
-    ctx.lineTo(sx + tw / 2, sy + th / 4 - 3);
-    ctx.lineTo(sx + tw / 2, sy + th / 4 + 1);
+    ctx.lineTo(sx + tw / 2 - 2, sy + th / 4 - 3);
     ctx.stroke();
-    ctx.setLineDash([]);
+    // Fence posts
+    for (let i = 0; i <= 2; i++) {
+      const t = i / 2;
+      const px = sx - tw / 2 + 2 + (tw / 2 - 2) * t;
+      const py = sy + th / 4 - 3 - th / 4 * t;
+      ctx.fillStyle = '#7a5a20';
+      ctx.fillRect(px - 1, py - 4 * wallPhase, 2, 5 * wallPhase);
+    }
   }
 
+  // Crops
   if (roofPhase > 0) {
-    const cropColors = ['#228B22', '#32CD32', '#6B8E23', '#9ACD32', '#3CB371'];
-    const numCrops = 3 + level * 2;
+    const cropTypes = [
+      { stalk: '#1a6a10', head: '#30aa20', headSize: 2.2 },
+      { stalk: '#2a7a18', head: '#e8c820', headSize: 2 },
+      { stalk: '#1a5a08', head: '#d04020', headSize: 1.8 },
+    ];
+    const numCrops = 5 + level * 3;
     for (let i = 0; i < numCrops; i++) {
       const t = (i + 0.5) / numCrops;
+      const row = i % 4;
       const cx = sx - tw / 3 + tw * 0.66 * t;
-      const cy = sy + th / 8 - th / 4 * t + 2;
-      const sway = Math.sin(time * 1.5 + i * 1.3) * 1;
-      const h = (3 + level * 0.8) * roofPhase;
-      ctx.strokeStyle = '#2a6a10';
-      ctx.lineWidth = 0.5;
+      const cy = sy + th / 8 - th / 4 * t + 2 + row * 2;
+      const crop = cropTypes[i % cropTypes.length];
+      const sway = Math.sin(time * 1.5 + i * 1.1) * 0.8;
+      const h = (4 + level * 0.8) * roofPhase;
+      ctx.strokeStyle = crop.stalk;
+      ctx.lineWidth = 0.8;
       ctx.beginPath();
       ctx.moveTo(cx, cy);
       ctx.lineTo(cx + sway, cy - h);
       ctx.stroke();
-      ctx.fillStyle = cropColors[i % cropColors.length];
+      ctx.fillStyle = crop.head;
       ctx.beginPath();
-      ctx.ellipse(cx + sway, cy - h, 2 * roofPhase, 1.5 * roofPhase, 0, 0, Math.PI * 2);
+      ctx.arc(cx + sway, cy - h, crop.headSize * roofPhase, 0, Math.PI * 2);
       ctx.fill();
+      ctx.strokeStyle = darken(crop.head, 0.3);
+      ctx.lineWidth = 0.4;
+      ctx.stroke();
     }
   }
 }
@@ -727,207 +755,233 @@ function drawFarm(d: DrawCtx) {
 function drawHospital(d: DrawCtx) {
   const { ctx, sx, sy, tw, th, level, progress, time } = d;
   const { foundPhase, wallPhase, roofPhase } = getPhases(progress);
-  const wallColor = level >= 3 ? '#e8e4d8' : '#dcd8cc';
-  const baseWallH = 20 + level * 3;
-  const wH = Math.round(baseWallH * foundPhase);
+  const wallColor = level >= 3 ? '#f0ece0' : '#e4e0d4';
+  const wallH = Math.round((22 + level * 4) * foundPhase);
 
   drawFoundation(ctx, sx, sy, tw, th, '#b0a898');
-  if (wH < 3) return;
+  if (wallH < 4) return;
 
-  isoLeftFace(ctx, sx, sy, tw, th, wH, wallColor);
-  isoRightFace(ctx, sx, sy, tw, th, wH, darken(wallColor, 0.1));
+  isoLeftFace(ctx, sx, sy, tw, th, wallH, wallColor);
+  isoRightFace(ctx, sx, sy, tw, th, wallH, darken(wallColor, 0.1));
 
-  if (wallPhase > 0) {
-    if (wallPhase > 0.5) {
-      drawDoor(ctx, sx - 3.5, sy - 9, 6, 8, '#6a8a6a');
-    }
-    if (wallPhase > 0.7) {
-      drawWindow(ctx, sx - tw / 3, sy - wH * 0.55, 5, 4, true);
-      drawWindow(ctx, sx + tw / 5 - 2, sy - wH * 0.55 + th / 6, 5, 4, false);
-    }
-    if (level >= 2 && wallPhase > 0.9) {
-      drawWindow(ctx, sx - tw / 4, sy - wH * 0.8, 4, 3, true);
-    }
+  if (wallPhase > 0.3) drawBoldDoor(ctx, sx - 3.5, sy - 10, 6, 9, '#508050');
+  if (wallPhase > 0.5) {
+    drawBoldWindow(ctx, sx - tw / 2.8, sy - wallH * 0.5, 5, 4, '#90d8f0');
+    drawBoldWindow(ctx, sx + tw / 5 - 2, sy - wallH * 0.48 + th / 8, 5, 4, '#90d8f0');
   }
+  if (level >= 2 && wallPhase > 0.7) {
+    drawBoldWindow(ctx, sx - tw / 3.5, sy - wallH * 0.78, 4.5, 3.5, '#a0e0f8');
+  }
+
+  if (wallPhase < 0.95) drawScaffolding(ctx, sx, sy, tw, wallH);
 
   if (roofPhase > 0) {
     ctx.globalAlpha = roofPhase;
-    const rH = (10 + level * 2) * roofPhase;
-    drawHipRoof(ctx, sx, sy, tw * 1.04, th * 1.04, wH - 1, rH, '#8a8a80');
-
+    const rH = (11 + level * 2) * roofPhase;
+    drawHipRoof(ctx, sx, sy, tw * 1.05, th * 1.05, wallH - 1, rH, '#889088');
+    // Red cross
+    const crossY = sy - wallH - rH + 3;
     const pulse = Math.sin(time * 2) * 0.08 + 0.92;
     ctx.globalAlpha = roofPhase * pulse;
-    ctx.fillStyle = '#cc2222';
-    ctx.fillRect(sx - 1.5, sy - wH - rH + 2, 3, 7);
-    ctx.fillRect(sx - 4, sy - wH - rH + 4, 8, 3);
+    ctx.fillStyle = '#dd2222';
+    ctx.fillRect(sx - 2, crossY - 1, 4, 9);
+    ctx.fillRect(sx - 5, crossY + 2, 10, 3);
+    ctx.strokeStyle = '#aa1111';
+    ctx.lineWidth = 0.6;
+    ctx.strokeRect(sx - 2, crossY - 1, 4, 9);
+    ctx.strokeRect(sx - 5, crossY + 2, 10, 3);
     ctx.globalAlpha = 1;
   }
-
-  isoBoxEdges(ctx, sx, sy, tw, th, wH, 0.12);
 }
 
 function drawSchool(d: DrawCtx) {
   const { ctx, sx, sy, tw, th, level, progress, time } = d;
   const { foundPhase, wallPhase, roofPhase } = getPhases(progress);
-  const wallColor = level >= 3 ? '#e0d098' : '#d8c890';
-  const baseWallH = 20 + level * 3;
-  const wH = Math.round(baseWallH * foundPhase);
+  const wallColor = level >= 3 ? '#f0e0b0' : '#e0d098';
+  const wallH = Math.round((22 + level * 4) * foundPhase);
 
   drawFoundation(ctx, sx, sy, tw, th, '#a09060');
-  if (wH < 3) return;
+  if (wallH < 4) return;
 
-  isoLeftFace(ctx, sx, sy, tw, th, wH, wallColor);
-  isoRightFace(ctx, sx, sy, tw, th, wH, darken(wallColor, 0.12));
+  isoLeftFace(ctx, sx, sy, tw, th, wallH, wallColor);
+  isoRightFace(ctx, sx, sy, tw, th, wallH, darken(wallColor, 0.13));
 
-  if (wallPhase > 0) {
-    if (wallPhase > 0.5) {
-      drawDoor(ctx, sx - 3.5, sy - 9, 6, 8, '#4a3a18');
-    }
-    if (wallPhase > 0.6) {
-      drawWindow(ctx, sx - tw / 3, sy - wH * 0.55, 5, 4, true);
-      drawWindow(ctx, sx + tw / 5 - 2, sy - wH * 0.55 + th / 6, 5, 4, false);
-    }
-    if (level >= 2 && wallPhase > 0.8) {
-      drawWindow(ctx, sx - tw / 4 + 1, sy - wH * 0.8, 4, 3, true);
-      drawWindow(ctx, sx + tw / 6 - 1, sy - wH * 0.8 + th / 8, 4, 3, false);
-    }
+  if (wallPhase > 0.3) drawBoldDoor(ctx, sx - 3.5, sy - 10, 6, 9, '#4a3018');
+  if (wallPhase > 0.5) {
+    drawBoldWindow(ctx, sx - tw / 2.8, sy - wallH * 0.5, 5, 4, '#80c8e8');
+    drawBoldWindow(ctx, sx + tw / 5 - 2, sy - wallH * 0.48 + th / 8, 5, 4, '#80c8e8');
   }
+  if (level >= 2 && wallPhase > 0.7) {
+    drawBoldWindow(ctx, sx - tw / 3.5, sy - wallH * 0.78, 5, 4, '#90d0f0');
+    drawBoldWindow(ctx, sx + tw / 6, sy - wallH * 0.76 + th / 10, 5, 4, '#90d0f0');
+  }
+
+  if (wallPhase < 0.95) drawScaffolding(ctx, sx, sy, tw, wallH);
 
   if (roofPhase > 0) {
     ctx.globalAlpha = roofPhase;
-    const rH = (12 + level * 2) * roofPhase;
-    drawGableRoof(ctx, sx, sy, tw * 1.06, th * 1.06, wH - 1, rH, level >= 3 ? '#8a3020' : '#b04030');
-
-    const bellTowerH = 8 + level * 2;
-    const btW = 7;
-    isoLeftFace(ctx, sx, sy - wH - rH + 2, btW, btW * 0.5, bellTowerH * roofPhase, '#d0c080');
-    isoRightFace(ctx, sx, sy - wH - rH + 2, btW, btW * 0.5, bellTowerH * roofPhase, darken('#d0c080', 0.14));
-    isoTopFace(ctx, sx, sy - wH - rH + 2, btW, btW * 0.5, bellTowerH * roofPhase, lighten('#d0c080', 0.1));
+    const rH = (14 + level * 2) * roofPhase;
+    drawBoldGableRoof(ctx, sx, sy, tw * 1.08, th * 1.08, wallH - 1, rH, level >= 3 ? '#992820' : '#b84030');
+    // Bell tower
+    const btH = 10 + level * 3;
+    const btW = 8;
+    isoBox(ctx, sx, sy - wallH - rH + 3, btW, btW * 0.5, btH * roofPhase, '#d8c890');
+    // Bell
     if (roofPhase > 0.5) {
       ctx.fillStyle = '#c0a030';
       ctx.beginPath();
-      ctx.arc(sx, sy - wH - rH - bellTowerH * roofPhase + 5, 2, 0, Math.PI * 2);
+      ctx.arc(sx, sy - wallH - rH + 3 - btH * roofPhase + 4, 2.5, 0, Math.PI * 2);
       ctx.fill();
+      ctx.strokeStyle = '#8a7020';
+      ctx.lineWidth = 0.7;
+      ctx.stroke();
     }
+    // Pointed cap
+    const capTop = sy - wallH - rH + 3 - btH * roofPhase;
+    ctx.fillStyle = '#8a3020';
+    ctx.beginPath();
+    ctx.moveTo(sx, capTop - 5);
+    ctx.lineTo(sx - btW / 2 - 1, capTop);
+    ctx.lineTo(sx + btW / 2 + 1, capTop);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = '#6a2010';
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
     ctx.globalAlpha = 1;
   }
-
-  isoBoxEdges(ctx, sx, sy, tw, th, wH, 0.12);
 }
 
 function drawChurch(d: DrawCtx) {
   const { ctx, sx, sy, tw, th, level, progress, time } = d;
   const { foundPhase, wallPhase, roofPhase } = getPhases(progress);
-  const wallColor = level >= 3 ? '#ece8dc' : '#e4dcd0';
-  const baseWallH = 22 + level * 4;
-  const wH = Math.round(baseWallH * foundPhase);
+  const wallColor = level >= 3 ? '#f0ece0' : '#e8e0d4';
+  const wallH = Math.round((24 + level * 4) * foundPhase);
 
   drawFoundation(ctx, sx, sy, tw, th, '#b0a898');
-  if (wH < 3) return;
+  if (wallH < 4) return;
 
-  isoLeftFace(ctx, sx, sy, tw, th, wH, wallColor);
-  isoRightFace(ctx, sx, sy, tw, th, wH, darken(wallColor, 0.1));
+  isoLeftFace(ctx, sx, sy, tw, th, wallH, wallColor);
+  isoRightFace(ctx, sx, sy, tw, th, wallH, darken(wallColor, 0.1));
 
-  if (wallPhase > 0) {
-    drawStoneTexture(ctx, sx - tw / 2, sy + th / 4, tw / 2, wH, Math.floor(wH / 6), true);
-    if (wallPhase > 0.5) {
-      drawDoor(ctx, sx - 4, sy - 11, 7, 10, '#5a3a18');
-      ctx.strokeStyle = '#a08050';
-      ctx.lineWidth = 0.8;
-      ctx.beginPath();
-      ctx.arc(sx - 0.5, sy - 12, 4, Math.PI, 0);
-      ctx.stroke();
-    }
-    if (wallPhase > 0.7) {
-      ctx.fillStyle = 'rgba(200,160,60,0.4)';
-      ctx.beginPath();
-      ctx.arc(sx - tw / 4, sy - wH * 0.65, 3.5, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.strokeStyle = '#a08040';
-      ctx.lineWidth = 0.6;
-      ctx.stroke();
-    }
+  // Stone texture on left
+  ctx.strokeStyle = 'rgba(0,0,0,0.08)';
+  ctx.lineWidth = 0.4;
+  for (let j = 1; j <= 4; j++) {
+    const ry = sy - wallH * (j / 5);
+    ctx.beginPath();
+    ctx.moveTo(sx, ry);
+    ctx.lineTo(sx - tw / 2, ry + th / 4);
+    ctx.stroke();
   }
+
+  if (wallPhase > 0.3) {
+    drawBoldDoor(ctx, sx - 4.5, sy - 13, 8, 12, '#5a3818');
+    // Arched doorway
+    ctx.strokeStyle = '#9a7a50';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(sx - 0.5, sy - 13, 5, Math.PI, 0);
+    ctx.stroke();
+  }
+  if (wallPhase > 0.5) {
+    // Rose window
+    ctx.fillStyle = 'rgba(200,160,60,0.45)';
+    ctx.beginPath();
+    ctx.arc(sx - tw / 4, sy - wallH * 0.65, 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#b09050';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    // Inner cross pattern
+    ctx.lineWidth = 0.5;
+    ctx.beginPath();
+    ctx.moveTo(sx - tw / 4 - 3, sy - wallH * 0.65);
+    ctx.lineTo(sx - tw / 4 + 3, sy - wallH * 0.65);
+    ctx.moveTo(sx - tw / 4, sy - wallH * 0.65 - 3);
+    ctx.lineTo(sx - tw / 4, sy - wallH * 0.65 + 3);
+    ctx.stroke();
+  }
+
+  if (wallPhase < 0.95) drawScaffolding(ctx, sx, sy, tw, wallH);
 
   if (roofPhase > 0) {
     ctx.globalAlpha = roofPhase;
     const rH = (14 + level * 2) * roofPhase;
-    drawGableRoof(ctx, sx, sy, tw * 1.04, th * 1.04, wH - 1, rH, '#7a7068');
+    drawBoldGableRoof(ctx, sx, sy, tw * 1.05, th * 1.05, wallH - 1, rH, '#6a6058');
 
-    const spireH = 18 + level * 3;
-    const spW = 7;
-    isoLeftFace(ctx, sx, sy - wH - rH + 4, spW, spW * 0.5, spireH * roofPhase * 0.6, wallColor);
-    isoRightFace(ctx, sx, sy - wH - rH + 4, spW, spW * 0.5, spireH * roofPhase * 0.6, darken(wallColor, 0.1));
-
-    const spireTop = sy - wH - rH + 4 - spireH * roofPhase * 0.6;
-    ctx.fillStyle = '#8a7868';
+    // Steeple
+    const steepleH = 22 + level * 4;
+    const stW = 8;
+    isoBox(ctx, sx, sy - wallH - rH + 4, stW, stW * 0.5, steepleH * roofPhase * 0.5, wallColor);
+    const spireBase = sy - wallH - rH + 4 - steepleH * roofPhase * 0.5;
+    ctx.fillStyle = '#7a6858';
     ctx.beginPath();
-    ctx.moveTo(sx, spireTop - 8 * roofPhase);
-    ctx.lineTo(sx - 4, spireTop);
-    ctx.lineTo(sx + 4, spireTop);
+    ctx.moveTo(sx, spireBase - 10 * roofPhase);
+    ctx.lineTo(sx - stW / 2 - 1, spireBase);
+    ctx.lineTo(sx + stW / 2 + 1, spireBase);
     ctx.closePath();
     ctx.fill();
-
-    ctx.strokeStyle = '#c0a040';
-    ctx.lineWidth = 1.2;
-    const crossTop = spireTop - 8 * roofPhase;
+    ctx.strokeStyle = '#5a4838';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    // Cross
+    const crossTop = spireBase - 10 * roofPhase;
+    ctx.strokeStyle = '#d0a030';
+    ctx.lineWidth = 1.8;
     ctx.beginPath();
-    ctx.moveTo(sx, crossTop - 5);
-    ctx.lineTo(sx, crossTop + 2);
+    ctx.moveTo(sx, crossTop - 6);
+    ctx.lineTo(sx, crossTop + 1);
     ctx.stroke();
     ctx.beginPath();
-    ctx.moveTo(sx - 3, crossTop - 2);
-    ctx.lineTo(sx + 3, crossTop - 2);
+    ctx.moveTo(sx - 3.5, crossTop - 3);
+    ctx.lineTo(sx + 3.5, crossTop - 3);
     ctx.stroke();
-
     ctx.globalAlpha = 1;
   }
-
-  isoBoxEdges(ctx, sx, sy, tw, th, wH, 0.1);
 }
 
 function drawWell(d: DrawCtx) {
   const { ctx, sx, sy, tw, th, level, progress, time } = d;
   const { foundPhase, wallPhase, roofPhase } = getPhases(progress);
-  const stoneColor = '#b0a898';
-  const wellW = tw * 0.7;
-  const wellH = th * 0.7;
+  const stone = '#b8b0a0';
+  const wellW = tw * 0.65;
+  const wellH = th * 0.65;
   const wH = Math.round(10 * foundPhase);
 
-  drawFoundation(ctx, sx, sy, tw * 0.9, th * 0.9, '#908878');
-  if (wH < 2) return;
+  drawFoundation(ctx, sx, sy, tw * 0.85, th * 0.85, '#908878');
+  if (wH < 3) return;
 
-  isoLeftFace(ctx, sx, sy, wellW, wellH, wH, stoneColor);
-  isoRightFace(ctx, sx, sy, wellW, wellH, wH, darken(stoneColor, 0.14));
-  isoTopFace(ctx, sx, sy, wellW, wellH, wH, lighten(stoneColor, 0.1));
+  isoBox(ctx, sx, sy, wellW, wellH, wH, stone);
 
+  // Water inside
   if (wallPhase > 0) {
-    drawStoneTexture(ctx, sx - wellW / 2, sy + wellH / 4, wellW / 2, wH, 3, true);
-    ctx.fillStyle = '#406080';
+    ctx.fillStyle = '#4080a0';
     ctx.beginPath();
-    ctx.ellipse(sx, sy - wH + wellH / 4, wellW * 0.25, wellH * 0.15, 0, 0, Math.PI * 2);
+    ctx.ellipse(sx, sy - wH + wellH * 0.22, wellW * 0.22, wellH * 0.13, 0, 0, Math.PI * 2);
     ctx.fill();
-    const shimmer = Math.sin(time * 2) * 0.1;
-    ctx.fillStyle = `rgba(100,180,220,${0.3 + shimmer})`;
+    const shimmer = Math.sin(time * 2.5) * 0.12;
+    ctx.fillStyle = `rgba(110,200,240,${0.35 + shimmer})`;
     ctx.beginPath();
-    ctx.ellipse(sx, sy - wH + wellH / 4, wellW * 0.2, wellH * 0.1, 0, 0, Math.PI * 2);
+    ctx.ellipse(sx - 1, sy - wH + wellH * 0.2, wellW * 0.14, wellH * 0.07, 0, 0, Math.PI * 2);
     ctx.fill();
   }
 
+  // Roof structure
   if (roofPhase > 0) {
     ctx.globalAlpha = roofPhase;
-    ctx.strokeStyle = '#6a4a20';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(sx - wellW * 0.35, sy - wH);
-    ctx.lineTo(sx - wellW * 0.35, sy - wH - 10 * roofPhase);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(sx + wellW * 0.35, sy - wH);
-    ctx.lineTo(sx + wellW * 0.35, sy - wH - 10 * roofPhase);
-    ctx.stroke();
-    const roofY = sy - wH - 10 * roofPhase;
-    ctx.fillStyle = '#8a6a30';
+    // Posts
+    ctx.strokeStyle = '#5a3a18';
+    ctx.lineWidth = 2.5;
+    for (let i = -1; i <= 1; i += 2) {
+      ctx.beginPath();
+      ctx.moveTo(sx + i * wellW * 0.35, sy - wH);
+      ctx.lineTo(sx + i * wellW * 0.35, sy - wH - 12 * roofPhase);
+      ctx.stroke();
+    }
+    // Roof beam
+    const roofY = sy - wH - 12 * roofPhase;
+    ctx.fillStyle = '#8a6030';
     ctx.beginPath();
     ctx.moveTo(sx, roofY - 5);
     ctx.lineTo(sx - wellW * 0.5, roofY + 2);
@@ -936,12 +990,19 @@ function drawWell(d: DrawCtx) {
     ctx.fill();
     ctx.strokeStyle = '#5a3a18';
     ctx.lineWidth = 1;
+    ctx.stroke();
+    // Rope + bucket
+    ctx.strokeStyle = '#8a7040';
+    ctx.lineWidth = 0.8;
     ctx.beginPath();
-    ctx.moveTo(sx - 2, sy - wH - 6 * roofPhase);
-    ctx.lineTo(sx + wellW * 0.3, sy - wH - 3 * roofPhase);
+    ctx.moveTo(sx, roofY);
+    ctx.lineTo(sx + 2, sy - wH - 2);
     ctx.stroke();
     ctx.fillStyle = '#7a5a28';
-    ctx.fillRect(sx + wellW * 0.28, sy - wH - 1, 3, -5 * roofPhase);
+    ctx.fillRect(sx, sy - wH - 4, 4, 4);
+    ctx.strokeStyle = '#4a3018';
+    ctx.lineWidth = 0.6;
+    ctx.strokeRect(sx, sy - wH - 4, 4, 4);
     ctx.globalAlpha = 1;
   }
 }
@@ -949,39 +1010,46 @@ function drawWell(d: DrawCtx) {
 function drawFountain(d: DrawCtx) {
   const { ctx, sx, sy, tw, th, level, progress, time } = d;
   const { foundPhase, roofPhase } = getPhases(progress);
-  const stoneColor = '#c0b8a8';
-  const baseH = 5 * foundPhase;
+  const stone = '#c0b8a0';
 
-  drawFoundation(ctx, sx, sy, tw * 0.95, th * 0.95, '#a09888');
+  drawFoundation(ctx, sx, sy, tw * 0.9, th * 0.9, '#a09880');
 
-  if (baseH > 1) {
-    isoLeftFace(ctx, sx, sy, tw * 0.8, th * 0.8, baseH, stoneColor);
-    isoRightFace(ctx, sx, sy, tw * 0.8, th * 0.8, baseH, darken(stoneColor, 0.14));
-    isoTopFace(ctx, sx, sy, tw * 0.8, th * 0.8, baseH, lighten(stoneColor, 0.1));
+  if (foundPhase > 0.5) {
+    const baseH = 6;
+    isoBox(ctx, sx, sy, tw * 0.75, th * 0.75, baseH, stone);
 
+    // Water basin
+    ctx.fillStyle = '#3878a0';
+    ctx.beginPath();
+    ctx.ellipse(sx, sy - baseH + th * 0.08, tw * 0.23, th * 0.11, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = darken(stone, 0.3);
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.ellipse(sx, sy - baseH + th * 0.08, tw * 0.26, th * 0.13, 0, 0, Math.PI * 2);
+    ctx.stroke();
+
+    const shimmer = Math.sin(time * 3) * 0.15;
+    ctx.fillStyle = `rgba(120,210,255,${0.4 + shimmer})`;
+    ctx.beginPath();
+    ctx.ellipse(sx - 1, sy - baseH + th * 0.06, tw * 0.15, th * 0.06, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Central pillar + water spray
     if (roofPhase > 0) {
-      ctx.fillStyle = '#4080a0';
-      ctx.beginPath();
-      ctx.ellipse(sx, sy - baseH + th * 0.1, tw * 0.25, th * 0.12, 0, 0, Math.PI * 2);
-      ctx.fill();
-      const shimmer = Math.sin(time * 3) * 0.12;
-      ctx.fillStyle = `rgba(120,200,240,${0.35 + shimmer})`;
-      ctx.beginPath();
-      ctx.ellipse(sx, sy - baseH + th * 0.1, tw * 0.18, th * 0.08, 0, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.fillStyle = '#b0a898';
-      ctx.fillRect(sx - 1, sy - baseH - 4 * roofPhase, 2, 5 * roofPhase);
-
-      if (roofPhase > 0.5) {
-        for (let i = 0; i < 3; i++) {
-          const dropX = sx + Math.sin(time * 4 + i * 2) * 3;
-          const dropY = sy - baseH - 4 + i * 2;
-          ctx.fillStyle = `rgba(120,200,240,${0.5 - i * 0.15})`;
-          ctx.beginPath();
-          ctx.arc(dropX, dropY, 0.8, 0, Math.PI * 2);
-          ctx.fill();
-        }
+      ctx.fillStyle = stone;
+      ctx.fillRect(sx - 1.5, sy - baseH - 6 * roofPhase, 3, 7 * roofPhase);
+      ctx.strokeStyle = darken(stone, 0.3);
+      ctx.lineWidth = 0.6;
+      ctx.strokeRect(sx - 1.5, sy - baseH - 6 * roofPhase, 3, 7 * roofPhase);
+      // Water drops
+      for (let i = 0; i < 4; i++) {
+        const dx = Math.sin(time * 4 + i * 1.7) * (3 + i);
+        const dy = i * 2 + Math.abs(Math.sin(time * 3 + i)) * 2;
+        ctx.fillStyle = `rgba(120,210,255,${0.6 - i * 0.12})`;
+        ctx.beginPath();
+        ctx.arc(sx + dx, sy - baseH - 6 * roofPhase + dy, 0.8, 0, Math.PI * 2);
+        ctx.fill();
       }
     }
   }
@@ -990,116 +1058,124 @@ function drawFountain(d: DrawCtx) {
 function drawWindmill(d: DrawCtx) {
   const { ctx, sx, sy, tw, th, level, progress, time } = d;
   const { foundPhase, wallPhase, roofPhase } = getPhases(progress);
-  const wallColor = '#d0c8b0';
+  const stone = '#d8d0b8';
   const bodyW = tw * 0.55;
   const bodyH = th * 0.55;
-  const baseWallH = 28 + level * 5;
-  const wH = Math.round(baseWallH * foundPhase);
+  const wallH = Math.round((32 + level * 6) * foundPhase);
 
   drawFoundation(ctx, sx, sy, tw * 0.7, th * 0.7, '#908878');
-  if (wH < 3) return;
+  if (wallH < 4) return;
 
-  const taper = 0.85;
-  isoLeftFace(ctx, sx, sy, bodyW, bodyH, wH, wallColor);
-  isoRightFace(ctx, sx, sy, bodyW, bodyH, wH, darken(wallColor, 0.12));
+  // Tapered body
+  isoLeftFace(ctx, sx, sy, bodyW, bodyH, wallH, stone);
+  isoRightFace(ctx, sx, sy, bodyW, bodyH, wallH, darken(stone, 0.14));
 
-  ctx.fillStyle = darken(wallColor, 0.05);
-  ctx.beginPath();
-  ctx.moveTo(sx, sy);
-  ctx.lineTo(sx - bodyW / 2, sy + bodyH / 4);
-  ctx.lineTo(sx - bodyW / 2 * taper, sy + bodyH / 4 - wH);
-  ctx.lineTo(sx, sy - wH);
-  ctx.closePath();
-  ctx.fill();
-
-  if (wallPhase > 0) {
-    drawStoneTexture(ctx, sx - bodyW / 2, sy + bodyH / 4, bodyW / 2, wH, Math.floor(wH / 5), true);
-    if (wallPhase > 0.5) {
-      drawDoor(ctx, sx - 2.5, sy - 7, 4, 6, '#5a3a18');
-    }
-    if (wallPhase > 0.7) {
-      drawWindow(ctx, sx - bodyW / 4, sy - wH * 0.5, 3, 4, true);
-    }
-    if (level >= 2 && wallPhase > 0.9) {
-      drawWindow(ctx, sx - bodyW / 5, sy - wH * 0.75, 3, 3, true);
-    }
+  // Stone lines
+  ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+  ctx.lineWidth = 0.4;
+  for (let j = 1; j <= 5; j++) {
+    const ry = sy - wallH * (j / 6);
+    ctx.beginPath();
+    ctx.moveTo(sx, ry);
+    ctx.lineTo(sx - bodyW / 2, ry + bodyH / 4);
+    ctx.stroke();
   }
+
+  if (wallPhase > 0.3) drawBoldDoor(ctx, sx - 2.5, sy - 8, 4, 7, '#5a3818');
+  if (wallPhase > 0.5) drawBoldWindow(ctx, sx - bodyW / 4, sy - wallH * 0.5, 3.5, 4.5, '#80c0e0');
+  if (level >= 2 && wallPhase > 0.7) drawBoldWindow(ctx, sx - bodyW / 5, sy - wallH * 0.72, 3, 4, '#80c0e0');
 
   if (roofPhase > 0) {
     ctx.globalAlpha = roofPhase;
-    const capH = 8;
+    // Conical cap
     const capColor = '#8a6a40';
-    ctx.beginPath();
-    ctx.moveTo(sx, sy - wH - capH * roofPhase);
-    ctx.lineTo(sx - bodyW / 2 * taper - 2, sy - wH + bodyH / 4);
-    ctx.lineTo(sx + bodyW / 2 * taper + 2, sy - wH + bodyH / 4);
-    ctx.closePath();
     ctx.fillStyle = capColor;
+    ctx.beginPath();
+    ctx.moveTo(sx, sy - wallH - 10 * roofPhase);
+    ctx.lineTo(sx - bodyW / 2 - 2, sy - wallH + bodyH / 4);
+    ctx.lineTo(sx + bodyW / 2 + 2, sy - wallH + bodyH / 4);
+    ctx.closePath();
     ctx.fill();
+    ctx.strokeStyle = darken(capColor, 0.4);
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
 
-    const hubY = sy - wH - capH * roofPhase * 0.5 + 2;
-    const sailAngle = time * 1.2;
-    const sailLen = 16 + level * 2;
+    // Sails
+    const hubY = sy - wallH - 5 * roofPhase;
+    const sailAngle = time * 1.4;
+    const sailLen = 18 + level * 3;
     for (let i = 0; i < 4; i++) {
       const a = sailAngle + (i * Math.PI / 2);
       const endX = sx + Math.cos(a) * sailLen;
-      const endY = hubY + Math.sin(a) * sailLen * 0.45;
-      ctx.strokeStyle = '#6a4a20';
-      ctx.lineWidth = 1.5;
+      const endY = hubY + Math.sin(a) * sailLen * 0.42;
+      // Sail arm
+      ctx.strokeStyle = '#5a3a15';
+      ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.moveTo(sx, hubY);
       ctx.lineTo(endX, endY);
       ctx.stroke();
-      const nextA = a + 0.35;
-      const midX = sx + Math.cos(a) * sailLen * 0.85;
-      const midY = hubY + Math.sin(a) * sailLen * 0.85 * 0.45;
-      const sideX = sx + Math.cos(nextA) * sailLen * 0.7;
-      const sideY = hubY + Math.sin(nextA) * sailLen * 0.7 * 0.45;
-      ctx.fillStyle = 'rgba(220,210,180,0.65)';
+      // Sail canvas
+      const nextA = a + 0.3;
+      const midLen = sailLen * 0.85;
+      const sideLen = sailLen * 0.7;
+      ctx.fillStyle = 'rgba(240,230,200,0.7)';
       ctx.beginPath();
-      ctx.moveTo(sx + Math.cos(a) * sailLen * 0.25, hubY + Math.sin(a) * sailLen * 0.25 * 0.45);
-      ctx.lineTo(midX, midY);
-      ctx.lineTo(sideX, sideY);
+      ctx.moveTo(sx + Math.cos(a) * sailLen * 0.22, hubY + Math.sin(a) * sailLen * 0.22 * 0.42);
+      ctx.lineTo(sx + Math.cos(a) * midLen, hubY + Math.sin(a) * midLen * 0.42);
+      ctx.lineTo(sx + Math.cos(nextA) * sideLen, hubY + Math.sin(nextA) * sideLen * 0.42);
       ctx.closePath();
       ctx.fill();
+      ctx.strokeStyle = 'rgba(90,60,20,0.3)';
+      ctx.lineWidth = 0.5;
+      ctx.stroke();
     }
-    ctx.fillStyle = '#5a3a18';
+    // Hub
+    ctx.fillStyle = '#4a2a10';
     ctx.beginPath();
-    ctx.arc(sx, hubY, 2, 0, Math.PI * 2);
+    ctx.arc(sx, hubY, 3, 0, Math.PI * 2);
     ctx.fill();
+    ctx.strokeStyle = '#2a1a08';
+    ctx.lineWidth = 1;
+    ctx.stroke();
     ctx.globalAlpha = 1;
   }
-
-  isoBoxEdges(ctx, sx, sy, bodyW, bodyH, wH, 0.12);
 }
 
 function drawWall(d: DrawCtx) {
   const { ctx, sx, sy, tw, th, level, progress } = d;
   const { foundPhase } = getPhases(progress);
-  const wH = Math.round((8 + level * 2) * foundPhase);
-  if (wH < 1) return;
+  const wH = Math.round((9 + level * 3) * foundPhase);
+  if (wH < 2) return;
 
-  const wallColor = level >= 3 ? '#8a7a60' : '#7a6a50';
-  isoLeftFace(ctx, sx, sy, tw, th, wH, wallColor);
-  isoRightFace(ctx, sx, sy, tw, th, wH, darken(wallColor, 0.14));
-  isoTopFace(ctx, sx, sy, tw, th, wH, lighten(wallColor, 0.1));
+  const wallColor = level >= 3 ? '#9a8a68' : '#8a7a58';
+  isoBox(ctx, sx, sy + 1, tw, th, wH, wallColor);
 
-  ctx.strokeStyle = 'rgba(60,40,20,0.25)';
-  ctx.lineWidth = 0.4;
-  for (let i = 0; i < 3; i++) {
-    const ry = sy - wH * ((i + 1) / 4);
+  // Pointed stakes on top
+  for (let i = -2; i <= 2; i++) {
+    const px = sx + i * tw / 5.5;
+    const py = sy + 1 - wH + Math.abs(i) * th / 12;
+    ctx.fillStyle = darken(wallColor, 0.05);
     ctx.beginPath();
-    ctx.moveTo(sx, ry);
-    ctx.lineTo(sx - tw / 2, ry + th / 4);
+    ctx.moveTo(px, py - 4);
+    ctx.lineTo(px - 2, py);
+    ctx.lineTo(px + 2, py);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = darken(wallColor, 0.4);
+    ctx.lineWidth = 0.7;
     ctx.stroke();
   }
 
-  if (level >= 2) {
-    const mH = 3;
-    for (let i = -1; i <= 1; i += 2) {
-      const mx = sx + i * tw / 4;
-      ctx.fillStyle = darken(wallColor, 0.05);
-      ctx.fillRect(mx - 1.5, sy - wH - mH, 3, mH);
+  if (level >= 3) {
+    ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+    ctx.lineWidth = 0.4;
+    for (let j = 1; j <= 2; j++) {
+      const ry = sy + 1 - wH * (j / 3);
+      ctx.beginPath();
+      ctx.moveTo(sx, ry);
+      ctx.lineTo(sx - tw / 2, ry + th / 4);
+      ctx.stroke();
     }
   }
 }
@@ -1108,40 +1184,55 @@ function drawGarden(d: DrawCtx) {
   const { ctx, sx, sy, tw, th, level, progress, time } = d;
   const { roofPhase } = getPhases(progress);
 
-  drawFoundation(ctx, sx, sy, tw * 0.9, th * 0.9, '#5a7a3a');
+  drawFoundation(ctx, sx, sy, tw * 0.85, th * 0.85, '#5a8a3a');
 
   if (roofPhase > 0) {
-    const bushColors = ['#2d7a20', '#3a8a2a', '#4a9a3a', '#358a28'];
+    const bushColors = ['#2a8a1a', '#38a228', '#45b435', '#2d9020'];
     const numBushes = 2 + level;
     for (let i = 0; i < numBushes; i++) {
-      const bx = sx + (i - numBushes / 2 + 0.5) * 5;
-      const by = sy - 2 + Math.sin(i * 2.3) * 2;
-      const size = (3 + level * 0.5) * roofPhase;
+      const bx = sx + (i - numBushes / 2 + 0.5) * 6;
+      const by = sy - 2 + Math.sin(i * 2.1) * 2;
+      const size = (4 + level * 0.5) * roofPhase;
       const sway = Math.sin(time * 1.2 + i) * 0.5;
+      // Shadow
+      ctx.fillStyle = darken(bushColors[i % bushColors.length], 0.25);
+      ctx.beginPath();
+      ctx.arc(bx + sway + 1, by - size + 2, size * 0.85, 0, Math.PI * 2);
+      ctx.fill();
+      // Bush
       ctx.fillStyle = bushColors[i % bushColors.length];
       ctx.beginPath();
       ctx.arc(bx + sway, by - size, size, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = darken(bushColors[i % bushColors.length], 0.15);
+      // Highlight
+      ctx.fillStyle = lighten(bushColors[i % bushColors.length], 0.25);
       ctx.beginPath();
-      ctx.arc(bx + sway - 1, by - size + 1, size * 0.7, 0, Math.PI * 2);
+      ctx.arc(bx + sway - size * 0.3, by - size - size * 0.3, size * 0.35, 0, Math.PI * 2);
       ctx.fill();
+      ctx.strokeStyle = darken(bushColors[i % bushColors.length], 0.35);
+      ctx.lineWidth = 0.8;
+      ctx.beginPath();
+      ctx.arc(bx + sway, by - size, size, 0, Math.PI * 2);
+      ctx.stroke();
     }
 
     if (level >= 2) {
-      const flowerColors = ['#e04060', '#e0e040', '#e08040', '#c040e0'];
+      const flowerColors = ['#e84060', '#f0d040', '#e88040', '#f060a0'];
       for (let i = 0; i < level + 1; i++) {
-        const fx = sx + (i - level / 2) * 4;
-        const fy = sy + 1;
-        ctx.fillStyle = flowerColors[i % flowerColors.length];
-        ctx.beginPath();
-        ctx.arc(fx, fy - 3 * roofPhase, 1.2, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = '#2a6a10';
-        ctx.lineWidth = 0.5;
+        const fx = sx + (i - level / 2) * 5;
+        const fy = sy + 2;
+        ctx.strokeStyle = '#2a7a10';
+        ctx.lineWidth = 0.8;
         ctx.beginPath();
         ctx.moveTo(fx, fy);
-        ctx.lineTo(fx, fy - 2 * roofPhase);
+        ctx.lineTo(fx, fy - 4 * roofPhase);
+        ctx.stroke();
+        ctx.fillStyle = flowerColors[i % flowerColors.length];
+        ctx.beginPath();
+        ctx.arc(fx, fy - 4 * roofPhase - 1, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = darken(flowerColors[i % flowerColors.length], 0.2);
+        ctx.lineWidth = 0.4;
         ctx.stroke();
       }
     }
@@ -1151,203 +1242,225 @@ function drawGarden(d: DrawCtx) {
 function drawStatue(d: DrawCtx) {
   const { ctx, sx, sy, tw, th, level, progress } = d;
   const { foundPhase, wallPhase, roofPhase } = getPhases(progress);
-  const stoneColor = '#b0a898';
+  const stone = '#b8b0a0';
 
   drawFoundation(ctx, sx, sy, tw * 0.7, th * 0.7, '#908878');
 
   if (foundPhase > 0.5) {
-    const pedH = 8 * foundPhase;
-    isoLeftFace(ctx, sx, sy, tw * 0.4, th * 0.4, pedH, stoneColor);
-    isoRightFace(ctx, sx, sy, tw * 0.4, th * 0.4, pedH, darken(stoneColor, 0.14));
-    isoTopFace(ctx, sx, sy, tw * 0.4, th * 0.4, pedH, lighten(stoneColor, 0.1));
+    const pedH = 9;
+    isoBox(ctx, sx, sy, tw * 0.4, th * 0.4, pedH * foundPhase, stone);
 
     if (wallPhase > 0) {
+      const figH = (14 + level * 2) * wallPhase;
+      const figY = sy - pedH * foundPhase;
+      // Body
       ctx.fillStyle = '#8a7a68';
-      const figH = (12 + level * 2) * wallPhase;
-      ctx.fillRect(sx - 2, sy - pedH - figH, 4, figH);
+      ctx.fillRect(sx - 2.5, figY - figH, 5, figH);
+      ctx.strokeStyle = '#6a5a48';
+      ctx.lineWidth = 0.8;
+      ctx.strokeRect(sx - 2.5, figY - figH, 5, figH);
+      // Head
+      ctx.fillStyle = '#8a7a68';
       ctx.beginPath();
-      ctx.arc(sx, sy - pedH - figH - 2.5, 3, 0, Math.PI * 2);
+      ctx.arc(sx, figY - figH - 3, 3.5, 0, Math.PI * 2);
       ctx.fill();
+      ctx.strokeStyle = '#6a5a48';
+      ctx.lineWidth = 0.8;
+      ctx.stroke();
+      // Arms
       if (roofPhase > 0) {
         ctx.strokeStyle = '#7a6a58';
-        ctx.lineWidth = 1;
+        ctx.lineWidth = 1.5;
         ctx.beginPath();
-        ctx.moveTo(sx - 2, sy - pedH - figH * 0.6);
-        ctx.lineTo(sx - 5, sy - pedH - figH * 0.3);
+        ctx.moveTo(sx - 2.5, figY - figH * 0.6);
+        ctx.lineTo(sx - 6, figY - figH * 0.35);
         ctx.stroke();
         ctx.beginPath();
-        ctx.moveTo(sx + 2, sy - pedH - figH * 0.6);
-        ctx.lineTo(sx + 5, sy - pedH - figH * 0.4);
+        ctx.moveTo(sx + 2.5, figY - figH * 0.6);
+        ctx.lineTo(sx + 6, figY - figH * 0.4);
         ctx.stroke();
       }
     }
   }
 }
 
+// ===== MONUMENTS =====
+
 function drawMonumentCastle(d: DrawCtx) {
   const { ctx, sx, sy, tw, th, level, progress, time } = d;
   const { foundPhase, wallPhase, roofPhase } = getPhases(progress);
-  const stoneColor = '#b0a090';
-  const baseWallH = 32;
-  const wH = Math.round(baseWallH * foundPhase);
+  const stone = '#b8a898';
+  const wallH = Math.round(36 * foundPhase);
 
-  drawFoundation(ctx, sx, sy, tw, th, '#8a7a68');
-  if (wH < 3) return;
+  drawFoundation(ctx, sx, sy, tw, th, '#887868');
+  if (wallH < 4) return;
 
-  isoLeftFace(ctx, sx, sy, tw, th, wH, stoneColor);
-  isoRightFace(ctx, sx, sy, tw, th, wH, darken(stoneColor, 0.16));
+  isoLeftFace(ctx, sx, sy, tw, th, wallH, stone);
+  isoRightFace(ctx, sx, sy, tw, th, wallH, darken(stone, 0.18));
 
-  if (wallPhase > 0) {
-    drawStoneTexture(ctx, sx - tw / 2, sy + th / 4, tw / 2, wH, Math.floor(wH / 5), true);
-    drawStoneTexture(ctx, sx, sy, tw / 2, wH, Math.floor(wH / 5), false);
-    if (wallPhase > 0.5) {
-      drawDoor(ctx, sx - 4, sy - 11, 7, 10, '#3a2a10');
-      ctx.fillStyle = darken(stoneColor, 0.1);
-      ctx.fillRect(sx - 5, sy - 12, 9, 2);
-    }
-    if (wallPhase > 0.7) {
-      drawWindow(ctx, sx - tw / 3, sy - wH * 0.5, 3, 5, true);
-      drawWindow(ctx, sx + tw / 5 - 1, sy - wH * 0.5 + th / 8, 3, 5, false);
-    }
+  // Stone blocks
+  ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+  ctx.lineWidth = 0.5;
+  for (let j = 1; j <= 5; j++) {
+    const ry = sy - wallH * (j / 6);
+    ctx.beginPath();
+    ctx.moveTo(sx, ry);
+    ctx.lineTo(sx - tw / 2, ry + th / 4);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(sx, ry);
+    ctx.lineTo(sx + tw / 2, ry + th / 4);
+    ctx.stroke();
+  }
+
+  if (wallPhase > 0.3) {
+    drawBoldDoor(ctx, sx - 4, sy - 12, 7, 11, '#3a2510');
+    ctx.fillStyle = darken(stone, 0.1);
+    ctx.fillRect(sx - 5.5, sy - 13.5, 10, 2.5);
+  }
+  if (wallPhase > 0.5) {
+    drawBoldWindow(ctx, sx - tw / 3, sy - wallH * 0.5, 3.5, 5, '#6ab0c8');
+    drawBoldWindow(ctx, sx + tw / 5 - 1, sy - wallH * 0.48 + th / 8, 3.5, 5, '#6ab0c8');
   }
 
   if (roofPhase > 0) {
     ctx.globalAlpha = roofPhase;
-    isoTopFace(ctx, sx, sy, tw, th, wH, lighten(stoneColor, 0.08));
+    isoTopFace(ctx, sx, sy, tw, th, wallH, lighten(stone, 0.1));
 
-    const mH = 5;
+    // Merlons
+    const mH = 6;
     for (let i = -2; i <= 2; i++) {
       if (i === 0) continue;
       const mx = sx + i * tw / 5;
       const myOff = Math.abs(i) * th / 10;
-      isoLeftFace(ctx, mx, sy - wH + myOff + 1, tw * 0.12, th * 0.12, mH, stoneColor);
-      isoRightFace(ctx, mx, sy - wH + myOff + 1, tw * 0.12, th * 0.12, mH, darken(stoneColor, 0.16));
-      isoTopFace(ctx, mx, sy - wH + myOff + 1, tw * 0.12, th * 0.12, mH, lighten(stoneColor, 0.1));
+      isoBox(ctx, mx, sy - wallH + myOff + 1, tw * 0.11, th * 0.11, mH, stone);
     }
 
-    const towerH = 14;
+    // Corner towers with conical roofs
     for (let c = -1; c <= 1; c += 2) {
       const tx = sx + c * tw * 0.35;
       const tyOff = c > 0 ? th / 6 : 0;
-      isoLeftFace(ctx, tx, sy - wH + tyOff, tw * 0.22, th * 0.22, towerH * roofPhase, darken(stoneColor, 0.05));
-      isoRightFace(ctx, tx, sy - wH + tyOff, tw * 0.22, th * 0.22, towerH * roofPhase, darken(stoneColor, 0.2));
-      isoTopFace(ctx, tx, sy - wH + tyOff, tw * 0.22, th * 0.22, towerH * roofPhase, lighten(stoneColor, 0.12));
-
-      const coneH = 6 * roofPhase;
-      const coneBase = sy - wH + tyOff - towerH * roofPhase;
-      ctx.fillStyle = '#8a4020';
+      const towerH = 16 * roofPhase;
+      isoBox(ctx, tx, sy - wallH + tyOff, tw * 0.2, th * 0.2, towerH, darken(stone, 0.05));
+      // Conical roof
+      const coneBase = sy - wallH + tyOff - towerH;
+      ctx.fillStyle = '#8a3a18';
       ctx.beginPath();
-      ctx.moveTo(tx, coneBase - coneH);
+      ctx.moveTo(tx, coneBase - 8);
       ctx.lineTo(tx - tw * 0.12, coneBase);
       ctx.lineTo(tx + tw * 0.12, coneBase);
       ctx.closePath();
       ctx.fill();
+      ctx.strokeStyle = '#6a2a10';
+      ctx.lineWidth = 0.8;
+      ctx.stroke();
     }
 
-    ctx.strokeStyle = '#5a4a30';
-    ctx.lineWidth = 1.2;
+    // Central flag
+    ctx.strokeStyle = '#4a3a20';
+    ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(sx, sy - wH - mH);
-    ctx.lineTo(sx, sy - wH - mH - 10);
+    ctx.moveTo(sx, sy - wallH - mH);
+    ctx.lineTo(sx, sy - wallH - mH - 12);
     ctx.stroke();
-    const flagW = Math.sin(time * 3) * 1;
-    ctx.fillStyle = '#c04040';
+    const fw = Math.sin(time * 3) * 1.5;
+    ctx.fillStyle = '#d03030';
     ctx.beginPath();
-    ctx.moveTo(sx, sy - wH - mH - 10);
-    ctx.lineTo(sx + 7, sy - wH - mH - 7 + flagW);
-    ctx.lineTo(sx, sy - wH - mH - 4);
+    ctx.moveTo(sx + 1, sy - wallH - mH - 12);
+    ctx.lineTo(sx + 8, sy - wallH - mH - 9 + fw);
+    ctx.lineTo(sx + 1, sy - wallH - mH - 6);
     ctx.closePath();
     ctx.fill();
+    ctx.strokeStyle = '#901515';
+    ctx.lineWidth = 0.7;
+    ctx.stroke();
 
     ctx.globalAlpha = 1;
   }
-
-  isoBoxEdges(ctx, sx, sy, tw, th, wH, 0.12);
 }
 
 function drawTorreBelem(d: DrawCtx) {
   const { ctx, sx, sy, tw, th, level, progress, time } = d;
   const { foundPhase, wallPhase, roofPhase } = getPhases(progress);
-  const stoneColor = '#e0d8b8';
-  const baseWallH = 36;
-  const wH = Math.round(baseWallH * foundPhase);
-
-  drawFoundation(ctx, sx, sy, tw, th, '#c0b898');
-  if (wH < 3) return;
-
+  const stone = '#e8dcc0';
+  const wallH = Math.round(40 * foundPhase);
   const mainW = tw * 0.75;
   const mainH = th * 0.75;
-  isoLeftFace(ctx, sx, sy, mainW, mainH, wH, stoneColor);
-  isoRightFace(ctx, sx, sy, mainW, mainH, wH, darken(stoneColor, 0.12));
 
-  if (wallPhase > 0) {
-    drawStoneTexture(ctx, sx - mainW / 2, sy + mainH / 4, mainW / 2, wH, Math.floor(wH / 4), true);
-    if (wallPhase > 0.5) {
-      for (let i = 0; i < 3; i++) {
-        const ay = sy - wH * (0.3 + i * 0.2);
-        const ax = sx - mainW / 4 - 1;
-        ctx.strokeStyle = 'rgba(180,160,100,0.6)';
-        ctx.lineWidth = 0.7;
-        ctx.beginPath();
-        ctx.arc(ax, ay, 3, Math.PI, 0);
-        ctx.stroke();
-      }
+  drawFoundation(ctx, sx, sy, tw, th, '#c0b898');
+  if (wallH < 4) return;
+
+  isoLeftFace(ctx, sx, sy, mainW, mainH, wallH, stone);
+  isoRightFace(ctx, sx, sy, mainW, mainH, wallH, darken(stone, 0.14));
+
+  // Gothic arches on left wall
+  if (wallPhase > 0.3) {
+    ctx.strokeStyle = 'rgba(180,160,110,0.7)';
+    ctx.lineWidth = 0.9;
+    for (let i = 0; i < 3; i++) {
+      const ay = sy - wallH * (0.3 + i * 0.2);
+      const ax = sx - mainW / 4;
+      ctx.beginPath();
+      ctx.arc(ax, ay, 3, Math.PI, 0);
+      ctx.stroke();
     }
-    if (wallPhase > 0.7) {
-      drawWindow(ctx, sx - mainW / 4 - 1, sy - wH * 0.6, 3, 5, true);
-      drawWindow(ctx, sx + mainW / 5 - 1, sy - wH * 0.5 + mainH / 8, 3, 5, false);
-    }
+  }
+  if (wallPhase > 0.5) {
+    drawBoldWindow(ctx, sx - mainW / 4, sy - wallH * 0.6, 3.5, 5, '#7ec8e8');
+    drawBoldWindow(ctx, sx + mainW / 5, sy - wallH * 0.55 + mainH / 8, 3.5, 5, '#7ec8e8');
   }
 
   if (roofPhase > 0) {
     ctx.globalAlpha = roofPhase;
-    isoTopFace(ctx, sx, sy, mainW, mainH, wH, lighten(stoneColor, 0.08));
+    isoTopFace(ctx, sx, sy, mainW, mainH, wallH, lighten(stone, 0.08));
 
-    const mH = 5;
+    // Balcony ledge
+    const balconyH = 4;
+    isoBox(ctx, sx, sy - wallH * 0.5, tw * 0.9, th * 0.9, balconyH, darken(stone, 0.04));
+
+    // Merlons
     for (let i = -1; i <= 1; i++) {
       const mx = sx + i * mainW / 3.5;
-      const myOff = Math.abs(i) * mainH / 8;
-      isoLeftFace(ctx, mx, sy - wH + myOff, mainW * 0.15, mainH * 0.15, mH, stoneColor);
-      isoTopFace(ctx, mx, sy - wH + myOff, mainW * 0.15, mainH * 0.15, mH, lighten(stoneColor, 0.1));
+      const myOff = Math.abs(i) * mainH / 7;
+      isoBox(ctx, mx, sy - wallH + myOff, mainW * 0.13, mainH * 0.13, 5, stone);
     }
 
-    const balconyW = tw * 0.9;
-    const balconyH = th * 0.9;
-    const balconyWallH = 4;
-    isoLeftFace(ctx, sx, sy - wH * 0.5, balconyW, balconyH, balconyWallH, darken(stoneColor, 0.05));
-    isoRightFace(ctx, sx, sy - wH * 0.5, balconyW, balconyH, balconyWallH, darken(stoneColor, 0.18));
-    isoTopFace(ctx, sx, sy - wH * 0.5, balconyW, balconyH, balconyWallH, stoneColor);
+    // Turrets on corners
+    for (let c = -1; c <= 1; c += 2) {
+      const tx = sx + c * mainW * 0.35;
+      const tOff = c > 0 ? mainH / 7 : 0;
+      isoBox(ctx, tx, sy - wallH + tOff, mainW * 0.18, mainH * 0.18, 10 * roofPhase, lighten(stone, 0.05));
+      ctx.fillStyle = '#a08050';
+      ctx.beginPath();
+      ctx.arc(tx, sy - wallH + tOff - 10 * roofPhase - 1, mainW * 0.06, Math.PI, 0);
+      ctx.fill();
+    }
 
     ctx.globalAlpha = 1;
   }
-
-  isoBoxEdges(ctx, sx, sy, mainW, mainH, wH, 0.1);
 }
 
 function drawUniversidade(d: DrawCtx) {
   const { ctx, sx, sy, tw, th, level, progress, time } = d;
   const { foundPhase, wallPhase, roofPhase } = getPhases(progress);
-  const wallColor = '#e0d0a0';
-  const baseWallH = 30;
-  const wH = Math.round(baseWallH * foundPhase);
+  const wallColor = '#e8d8a8';
+  const wallH = Math.round(34 * foundPhase);
 
   drawFoundation(ctx, sx, sy, tw, th, '#b0a070');
-  if (wH < 3) return;
+  if (wallH < 4) return;
 
-  isoLeftFace(ctx, sx, sy, tw, th, wH, wallColor);
-  isoRightFace(ctx, sx, sy, tw, th, wH, darken(wallColor, 0.14));
+  isoLeftFace(ctx, sx, sy, tw, th, wallH, wallColor);
+  isoRightFace(ctx, sx, sy, tw, th, wallH, darken(wallColor, 0.14));
 
-  if (wallPhase > 0) {
-    if (wallPhase > 0.4) {
-      drawDoor(ctx, sx - 4, sy - 12, 7, 11, '#4a3018');
-      ctx.fillStyle = darken(wallColor, 0.15);
-      ctx.fillRect(sx - 5.5, sy - 13, 10, 2);
-    }
-    if (wallPhase > 0.6) {
-      for (let r = 0; r < 2; r++) {
-        for (let c = -1; c <= 1; c += 2) {
-          drawWindow(ctx, sx + c * tw / 4 - 2.5, sy - wH * (0.4 + r * 0.25), 5, 4, c < 0);
-        }
+  if (wallPhase > 0.3) {
+    drawBoldDoor(ctx, sx - 4, sy - 13, 7, 12, '#4a3018');
+    ctx.fillStyle = darken(wallColor, 0.15);
+    ctx.fillRect(sx - 5.5, sy - 14, 10, 2);
+  }
+  if (wallPhase > 0.5) {
+    for (let r = 0; r < 2; r++) {
+      for (let c = -1; c <= 1; c += 2) {
+        drawBoldWindow(ctx, sx + c * tw / 3.5 - 2.5, sy - wallH * (0.4 + r * 0.22), 5, 4, '#80c8e8');
       }
     }
   }
@@ -1355,96 +1468,103 @@ function drawUniversidade(d: DrawCtx) {
   if (roofPhase > 0) {
     ctx.globalAlpha = roofPhase;
     const rH = 10 * roofPhase;
-    drawHipRoof(ctx, sx, sy, tw * 1.04, th * 1.04, wH - 1, rH, '#8a6030');
+    drawHipRoof(ctx, sx, sy, tw * 1.05, th * 1.05, wallH - 1, rH, '#8a6030');
 
-    const towerH = 22;
-    const tW2 = 9;
-    isoLeftFace(ctx, sx, sy - wH - rH + 4, tW2, tW2 * 0.5, towerH * roofPhase, wallColor);
-    isoRightFace(ctx, sx, sy - wH - rH + 4, tW2, tW2 * 0.5, towerH * roofPhase, darken(wallColor, 0.14));
-
-    const clockY = sy - wH - rH + 4 - towerH * roofPhase * 0.4;
-    ctx.fillStyle = '#f0edd8';
+    // Clock tower
+    const tH = 24 * roofPhase;
+    const tW2 = 10;
+    isoBox(ctx, sx, sy - wallH - rH + 4, tW2, tW2 * 0.5, tH, wallColor);
+    // Clock face
+    const clockY = sy - wallH - rH + 4 - tH * 0.45;
+    ctx.fillStyle = '#f8f4e0';
     ctx.beginPath();
-    ctx.arc(sx, clockY, 3.5, 0, Math.PI * 2);
+    ctx.arc(sx, clockY, 4, 0, Math.PI * 2);
     ctx.fill();
     ctx.strokeStyle = '#5a4a30';
-    ctx.lineWidth = 0.5;
+    ctx.lineWidth = 0.8;
     ctx.stroke();
-    ctx.lineWidth = 0.6;
+    ctx.lineWidth = 0.7;
     ctx.beginPath();
     ctx.moveTo(sx, clockY);
-    ctx.lineTo(sx, clockY - 2.5);
+    ctx.lineTo(sx, clockY - 3);
     ctx.stroke();
     ctx.beginPath();
     ctx.moveTo(sx, clockY);
-    ctx.lineTo(sx + 1.5, clockY + 0.5);
+    ctx.lineTo(sx + 2, clockY + 0.5);
     ctx.stroke();
-
-    const domeY = sy - wH - rH + 4 - towerH * roofPhase;
+    // Dome on top
+    const domeY = sy - wallH - rH + 4 - tH;
     ctx.fillStyle = '#6a4a28';
     ctx.beginPath();
-    ctx.arc(sx, domeY + 2, tW2 * 0.35, Math.PI, 0);
+    ctx.arc(sx, domeY + 2.5, tW2 * 0.38, Math.PI, 0);
     ctx.fill();
-
+    ctx.strokeStyle = '#4a3018';
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
     ctx.globalAlpha = 1;
   }
-
-  isoBoxEdges(ctx, sx, sy, tw, th, wH, 0.1);
 }
 
 function drawTemploRomano(d: DrawCtx) {
   const { ctx, sx, sy, tw, th, level, progress } = d;
   const { foundPhase, wallPhase, roofPhase } = getPhases(progress);
-  const stoneColor = '#dcd4c4';
-  const baseWallH = 28;
-  const wH = Math.round(baseWallH * foundPhase);
+  const stone = '#e0d8c8';
+  const wallH = Math.round(30 * foundPhase);
 
-  const platH = 5;
-  isoLeftFace(ctx, sx, sy + 1, tw * 1.05, th * 1.05, platH, darken(stoneColor, 0.1));
-  isoRightFace(ctx, sx, sy + 1, tw * 1.05, th * 1.05, platH, darken(stoneColor, 0.22));
-  isoTopFace(ctx, sx, sy + 1, tw * 1.05, th * 1.05, platH, stoneColor);
+  // Raised platform
+  const platH = 6;
+  isoBox(ctx, sx, sy + 2, tw * 1.08, th * 1.08, platH, darken(stone, 0.08));
+  if (wallH < 6) return;
 
-  if (wH < 5) return;
-
+  // Columns
   if (wallPhase > 0) {
     const numCols = 5;
     for (let i = 0; i < numCols; i++) {
       const t = (i + 0.5) / numCols;
-      const colX = sx - tw / 2 * 0.7 + tw * 0.7 * t;
-      const colYBase = sy - platH + th / 4 * (0.5 - t) + 1;
-      const colW = 3;
-      const colH = wH * 0.85 * wallPhase;
-      isoLeftFace(ctx, colX, colYBase, colW, colW * 0.5, colH, stoneColor);
-      isoRightFace(ctx, colX, colYBase, colW, colW * 0.5, colH, darken(stoneColor, 0.12));
-      isoTopFace(ctx, colX, colYBase, colW + 1, colW * 0.5 + 0.5, colH, lighten(stoneColor, 0.08));
-      isoTopFace(ctx, colX, colYBase + colH, colW + 1, colW * 0.5 + 0.5, 0, lighten(stoneColor, 0.05));
+      const colX = sx - tw / 2 * 0.65 + tw * 0.65 * t;
+      const colYBase = sy - platH + th / 4 * (0.5 - t) + 2;
+      const colH = wallH * 0.8 * wallPhase;
+      const colW = 3.5;
+      // Column shaft
+      isoBox(ctx, colX, colYBase, colW, colW * 0.5, colH, stone);
+      // Capital (top)
+      isoBox(ctx, colX, colYBase - colH + 0.5, colW + 1.5, colW * 0.5 + 0.5, 2, lighten(stone, 0.1));
+      // Base
+      isoBox(ctx, colX, colYBase + 0.5, colW + 1, colW * 0.5 + 0.3, 1.5, darken(stone, 0.05));
     }
   }
 
+  // Entablature + pediment
   if (roofPhase > 0) {
     ctx.globalAlpha = roofPhase;
     const entH = 4;
-    isoLeftFace(ctx, sx, sy - platH - wH * 0.85 + 1, tw * 0.85, th * 0.85, entH, stoneColor);
-    isoRightFace(ctx, sx, sy - platH - wH * 0.85 + 1, tw * 0.85, th * 0.85, entH, darken(stoneColor, 0.12));
-    isoTopFace(ctx, sx, sy - platH - wH * 0.85 + 1, tw * 0.85, th * 0.85, entH, lighten(stoneColor, 0.08));
+    const entY = sy - platH - wallH * 0.8 + 2;
+    isoBox(ctx, sx, entY, tw * 0.85, th * 0.85, entH, lighten(stone, 0.05));
 
-    const pedH = 10 * roofPhase;
-    const pedTop = sy - platH - wH * 0.85 - entH - pedH + 1;
-    ctx.fillStyle = stoneColor;
+    // Pediment (triangular)
+    const pedH = 12 * roofPhase;
+    ctx.fillStyle = stone;
     ctx.beginPath();
-    ctx.moveTo(sx, pedTop);
-    ctx.lineTo(sx + tw * 0.42, sy - platH - wH * 0.85 - entH + 1);
-    ctx.lineTo(sx - tw * 0.42, sy - platH - wH * 0.85 - entH + 1 + th * 0.1);
+    ctx.moveTo(sx, entY - entH - pedH);
+    ctx.lineTo(sx - tw * 0.42, entY - entH);
+    ctx.lineTo(sx, entY - entH + th * 0.1);
     ctx.closePath();
     ctx.fill();
-    ctx.fillStyle = darken(stoneColor, 0.08);
+    ctx.fillStyle = darken(stone, 0.1);
     ctx.beginPath();
-    ctx.moveTo(sx, pedTop);
-    ctx.lineTo(sx + tw * 0.42, sy - platH - wH * 0.85 - entH + 1);
-    ctx.lineTo(sx, sy - platH - wH * 0.85 - entH + 1 - th * 0.1);
+    ctx.moveTo(sx, entY - entH - pedH);
+    ctx.lineTo(sx + tw * 0.42, entY - entH);
+    ctx.lineTo(sx, entY - entH + th * 0.1);
     ctx.closePath();
     ctx.fill();
-
+    ctx.strokeStyle = darken(stone, 0.4);
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(sx, entY - entH - pedH);
+    ctx.lineTo(sx - tw * 0.42, entY - entH);
+    ctx.moveTo(sx, entY - entH - pedH);
+    ctx.lineTo(sx + tw * 0.42, entY - entH);
+    ctx.stroke();
     ctx.globalAlpha = 1;
   }
 }
@@ -1452,43 +1572,49 @@ function drawTemploRomano(d: DrawCtx) {
 function drawBridge(d: DrawCtx) {
   const { ctx, sx, sy, tw, th, progress } = d;
   const { foundPhase, wallPhase, roofPhase } = getPhases(progress);
+  const metal = '#a0a098';
+  const bridgeH = 18 * foundPhase;
 
-  drawFoundation(ctx, sx, sy, tw, th, '#808080');
+  drawFoundation(ctx, sx, sy, tw, th, '#707068');
+  if (bridgeH < 4) return;
 
-  if (foundPhase > 0.5) {
-    const archColor = '#a0a098';
-    const bridgeH = 16;
-    isoLeftFace(ctx, sx, sy, tw, th, bridgeH * foundPhase, darken(archColor, 0.05));
-    isoRightFace(ctx, sx, sy, tw, th, bridgeH * foundPhase, darken(archColor, 0.18));
-    isoTopFace(ctx, sx, sy, tw, th, bridgeH * foundPhase, archColor);
+  isoBox(ctx, sx, sy, tw, th, bridgeH, metal);
 
-    if (wallPhase > 0) {
-      ctx.strokeStyle = 'rgba(60,60,60,0.3)';
-      ctx.lineWidth = 0.8;
-      for (let i = -1; i <= 1; i++) {
-        const ax = sx + i * tw / 3;
-        const ay = sy - bridgeH * 0.3;
-        ctx.beginPath();
-        ctx.arc(ax - tw / 6, ay, bridgeH * 0.35, Math.PI * 0.1, Math.PI * 0.9);
-        ctx.stroke();
-      }
-    }
-
-    if (roofPhase > 0) {
-      ctx.globalAlpha = roofPhase;
-      const railH = 4;
-      ctx.fillStyle = '#707068';
-      ctx.fillRect(sx - tw / 2, sy - bridgeH * foundPhase - railH, 1.5, railH);
-      ctx.fillRect(sx + tw / 2 - 1.5, sy - bridgeH * foundPhase - railH + th / 4, 1.5, railH);
-      ctx.strokeStyle = '#808078';
-      ctx.lineWidth = 0.8;
+  // Arches
+  if (wallPhase > 0) {
+    ctx.strokeStyle = 'rgba(40,40,40,0.3)';
+    ctx.lineWidth = 1;
+    for (let i = -1; i <= 1; i++) {
+      const ax = sx + i * tw / 3;
       ctx.beginPath();
-      ctx.moveTo(sx - tw / 2, sy - bridgeH * foundPhase - railH * 0.5);
-      ctx.lineTo(sx, sy - bridgeH * foundPhase - railH * 0.5 + th / 4);
-      ctx.lineTo(sx + tw / 2, sy - bridgeH * foundPhase - railH * 0.5 + th / 2);
+      ctx.arc(ax - tw / 6, sy - bridgeH * 0.35, bridgeH * 0.35, 0.1 * Math.PI, 0.9 * Math.PI);
       ctx.stroke();
-      ctx.globalAlpha = 1;
     }
+  }
+
+  // Railings
+  if (roofPhase > 0) {
+    ctx.globalAlpha = roofPhase;
+    const railH = 5;
+    // Posts
+    for (let i = -2; i <= 2; i++) {
+      const px = sx - tw / 2 + (i + 2) * tw / 4;
+      const py = sy - bridgeH + th / 4 * ((i + 2) / 4);
+      ctx.fillStyle = '#808078';
+      ctx.fillRect(px - 1, py - railH, 2, railH);
+    }
+    // Rail line
+    ctx.strokeStyle = '#909088';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(sx - tw / 2, sy - bridgeH - railH + th / 4);
+    ctx.lineTo(sx, sy - bridgeH - railH + th / 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(sx, sy - bridgeH - railH);
+    ctx.lineTo(sx + tw / 2, sy - bridgeH - railH + th / 4);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
   }
 }
 
@@ -1496,45 +1622,49 @@ function drawGenericMonument(d: DrawCtx, accentColor: string) {
   const { ctx, sx, sy, tw, th, level, progress, time } = d;
   const { foundPhase, wallPhase, roofPhase } = getPhases(progress);
   const wallColor = lighten(accentColor, 0.4);
-  const baseWallH = 28;
-  const wH = Math.round(baseWallH * foundPhase);
+  const wallH = Math.round(30 * foundPhase);
 
   drawFoundation(ctx, sx, sy, tw, th, darken(accentColor, 0.2));
-  if (wH < 3) return;
+  if (wallH < 4) return;
 
-  isoLeftFace(ctx, sx, sy, tw, th, wH, wallColor);
-  isoRightFace(ctx, sx, sy, tw, th, wH, darken(wallColor, 0.14));
+  isoLeftFace(ctx, sx, sy, tw, th, wallH, wallColor);
+  isoRightFace(ctx, sx, sy, tw, th, wallH, darken(wallColor, 0.16));
 
-  if (wallPhase > 0) {
-    drawStoneTexture(ctx, sx - tw / 2, sy + th / 4, tw / 2, wH, Math.floor(wH / 5), true);
-    if (wallPhase > 0.5) {
-      drawDoor(ctx, sx - 3.5, sy - 10, 6, 9, darken(accentColor, 0.4));
-    }
-    if (wallPhase > 0.7) {
-      drawWindow(ctx, sx - tw / 3, sy - wH * 0.55, 4, 4, true);
-      drawWindow(ctx, sx + tw / 5 - 2, sy - wH * 0.55 + th / 8, 4, 4, false);
-    }
+  ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+  ctx.lineWidth = 0.4;
+  for (let j = 1; j <= 4; j++) {
+    ctx.beginPath();
+    ctx.moveTo(sx, sy - wallH * (j / 5));
+    ctx.lineTo(sx - tw / 2, sy + th / 4 - wallH * (j / 5));
+    ctx.stroke();
+  }
+
+  if (wallPhase > 0.3) drawBoldDoor(ctx, sx - 3.5, sy - 11, 6, 10, darken(accentColor, 0.4));
+  if (wallPhase > 0.5) {
+    drawBoldWindow(ctx, sx - tw / 2.8, sy - wallH * 0.5, 4.5, 4, '#80c8e8');
+    drawBoldWindow(ctx, sx + tw / 5 - 2, sy - wallH * 0.48 + th / 8, 4.5, 4, '#80c8e8');
   }
 
   if (roofPhase > 0) {
     ctx.globalAlpha = roofPhase;
     const rH = 12 * roofPhase;
-    drawHipRoof(ctx, sx, sy, tw * 1.04, th * 1.04, wH - 1, rH, darken(accentColor, 0.1));
+    drawHipRoof(ctx, sx, sy, tw * 1.05, th * 1.05, wallH - 1, rH, darken(accentColor, 0.1));
 
-    const spireH = 10;
     ctx.fillStyle = accentColor;
     ctx.beginPath();
-    ctx.moveTo(sx, sy - wH - rH - spireH * roofPhase);
-    ctx.lineTo(sx - 4, sy - wH - rH);
-    ctx.lineTo(sx + 4, sy - wH - rH);
+    ctx.moveTo(sx, sy - wallH - rH - 10 * roofPhase);
+    ctx.lineTo(sx - 4, sy - wallH - rH);
+    ctx.lineTo(sx + 4, sy - wallH - rH);
     ctx.closePath();
     ctx.fill();
-
+    ctx.strokeStyle = darken(accentColor, 0.4);
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
     ctx.globalAlpha = 1;
   }
-
-  isoBoxEdges(ctx, sx, sy, tw, th, wH, 0.1);
 }
+
+// ===== MAIN EXPORT =====
 
 export function drawIsoBuilding(
   ctx: CanvasRenderingContext2D,
@@ -1550,7 +1680,7 @@ export function drawIsoBuilding(
   if (progress < 0.01) {
     ctx.strokeStyle = '#c8963c';
     ctx.lineWidth = 1.5;
-    ctx.setLineDash([3, 3]);
+    ctx.setLineDash([4, 4]);
     ctx.beginPath();
     ctx.moveTo(sx, sy - 2);
     ctx.lineTo(sx + tw / 2, sy - 2 + th / 4);
@@ -1593,35 +1723,32 @@ export function drawIsoBuilding(
     case 'castelo_almourol':
     case 'castelo_palmela': drawMonumentCastle(d); break;
     case 'fortaleza_sagres': drawGenericMonument(d, '#a09070'); break;
-    case 'jardim_episcopal': drawGenericMonument(d, '#6a9a5a'); break;
+    case 'jardim_episcopal': drawGenericMonument(d, '#5a9a4a'); break;
     case 'se_guarda':
-    case 'se_viseu': drawGenericMonument(d, '#b0a898'); break;
-    case 'santuario_luzia': drawGenericMonument(d, '#c8b898'); break;
-    case 'solar_mateus': drawGenericMonument(d, '#c8a878'); break;
-    case 'lagoa_sete_cidades': drawGenericMonument(d, '#5a8a70'); break;
-    case 'monte_funchal': drawGenericMonument(d, '#7a9a60'); break;
+    case 'se_viseu': drawGenericMonument(d, '#b0a090'); break;
+    case 'santuario_luzia': drawGenericMonument(d, '#c8b090'); break;
+    case 'solar_mateus': drawGenericMonument(d, '#c8a868'); break;
+    case 'lagoa_sete_cidades': drawGenericMonument(d, '#4a8a68'); break;
+    case 'monte_funchal': drawGenericMonument(d, '#6a9a50'); break;
     default: {
       const def = BUILDING_DEFS[defId];
-      if (def) {
-        drawGenericMonument(d, '#b0a080');
-      }
+      if (def) drawGenericMonument(d, '#b0a080');
       break;
     }
   }
 
-  if (progress < 1 && progress > 0.01) {
-    const fullWallH = 20 + level * 3;
-    drawProgressBar(ctx, sx, sy, fullWallH, tw, progress, time);
-    if (progress < 0.66) {
-      drawConstructionScaffolding(ctx, sx, sy, tw, Math.round(fullWallH * Math.min(progress / 0.33, 1)), time);
-    }
+  // Construction overlay
+  if (progress > 0.01 && progress < 1) {
+    const wallH = 20 + level * 3;
+    if (progress < 0.6) drawScaffolding(ctx, sx, sy, tw, Math.round(wallH * Math.min(progress / 0.33, 1)));
+    drawProgressBar(ctx, sx, sy, sy - wallH - 10, tw, progress);
   }
 }
 
 export function drawConstructionDust(ctx: CanvasRenderingContext2D, sx: number, sy: number, tw: number, time: number) {
   ctx.strokeStyle = '#c8963c';
-  ctx.lineWidth = 1;
-  ctx.setLineDash([3, 3]);
+  ctx.lineWidth = 1.2;
+  ctx.setLineDash([4, 4]);
   ctx.beginPath();
   ctx.moveTo(sx, sy - 2);
   ctx.lineTo(sx + tw / 2, sy - 2 + TILE_H / 4);
