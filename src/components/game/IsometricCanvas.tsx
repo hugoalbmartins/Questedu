@@ -1,7 +1,7 @@
 import { useRef, useState, useCallback, useEffect, useMemo } from 'react';
 import { TILE_W, TILE_H, BUILDING_DEFS, PlacedBuilding, GridTile } from '@/lib/gameTypes';
 import { gridToIso, applyBuildingsToGrid } from '@/lib/gridLogic';
-import { BUILDING_SPRITES, getSpriteImage, preloadSprites } from '@/lib/sprites';
+import { preloadSprites } from '@/lib/sprites';
 import { updateParticles, drawParticles, addSmokeParticle, addSparkle, addLeafParticle, addFirefly, drawFlag, drawWaterShimmer, drawAtmosphere } from '@/lib/canvasEffects';
 import { AnimatedCitizen, Complaint } from '@/lib/simulation';
 import { generateTerrain, drawTerrainElement, drawWildernessTile, getWildernessBorder, studentIdToSeed, TerrainElement } from '@/lib/terrainGeneration';
@@ -20,6 +20,7 @@ interface IsometricCanvasProps {
   district?: string | null;
   cooldownElements?: Set<number>;
   constructingIds?: Set<string>;
+  constructionProgress?: Map<string, number>;
   onTileClick: (gx: number, gy: number) => void;
   onTileHover: (gx: number, gy: number) => void;
   onBuildingClick: (building: PlacedBuilding) => void;
@@ -36,7 +37,7 @@ const FARM_COLORS = ['#6b8e23', '#7a9e32', '#5a7e13', '#648a1e'];
 export const IsometricCanvas = ({
   grid, buildings, gridSize, selectedBuilding, ghostPos, canPlaceGhost,
   productionReady, animatedCitizens, complaints, studentId, district, cooldownElements,
-  constructingIds,
+  constructingIds, constructionProgress,
   onTileClick, onTileHover, onBuildingClick, onTerrainClick,
 }: IsometricCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -254,7 +255,7 @@ export const IsometricCanvas = ({
         }
         const { sx, sy } = gridToIso(ghostPos.x, ghostPos.y, TILE_W, TILE_H);
         ctx.globalAlpha = 0.6;
-        drawBuildingSprite(ctx, def.id, sx, sy, def.width, def.height, 1);
+        drawIsoBuilding(ctx, def.id, sx, sy, def.width, def.height, 1, 1, 0);
         ctx.globalAlpha = 1;
       }
     }
@@ -281,15 +282,11 @@ export const IsometricCanvas = ({
       ctx.fill();
 
       const isConstructing = constructingIds?.has(b.id) ?? false;
+      const progress = constructionProgress?.get(b.id) ?? (isConstructing ? 0 : 1);
 
-      if (isConstructing) {
-        ctx.globalAlpha = 0.35;
-        drawBuildingSprite(ctx, b.defId, sx, sy, def.width, def.height, b.level);
-        ctx.globalAlpha = 1;
-        drawConstructionScaffold(ctx, sx, sy, def.width, def.height, time);
-      } else {
-        drawBuildingSprite(ctx, b.defId, sx, sy, def.width, def.height, b.level);
+      drawIsoBuilding(ctx, b.defId, sx, sy, def.width, def.height, b.level, progress, time);
 
+      if (!isConstructing) {
         // Flags on towers/monuments
         if (def.id === 'tower' || def.category === 'monument') {
           drawFlag(ctx, sx + 8, sy - 20 - (b.level - 1) * 2, time);
@@ -490,24 +487,583 @@ export const IsometricCanvas = ({
     ctx.globalAlpha = 1;
   }
 
-  function drawBuildingSprite(ctx: CanvasRenderingContext2D, defId: string, sx: number, sy: number, bw: number, bh: number, level: number) {
-    const sprite = BUILDING_SPRITES[defId];
-    const img = sprite ? getSpriteImage(sprite.image) : null;
+  // ========== ISOMETRIC 3D BUILDING RENDERER ==========
+  // All buildings are drawn procedurally with proper isometric perspective:
+  // Each building has a top face, left face (NW), and right face (NE)
+  // progress: 0=foundation, 0.33=walls, 0.66=roof, 1=complete
 
-    if (img && sprite) {
-      const drawW = 32 + (bw - 1) * 24 + (level - 1) * 4;
-      const drawH = drawW * (sprite.sh / sprite.sw);
-      ctx.drawImage(img, sprite.sx, sprite.sy, sprite.sw, sprite.sh, sx - drawW / 2, sy - drawH + 8, drawW, drawH);
-    } else {
-      const def = BUILDING_DEFS[defId];
-      if (def) {
-        const baseSize = 22 + (bw - 1) * 10;
-        const levelSize = baseSize + (level - 1) * 3;
-        ctx.font = `${levelSize}px serif`;
-        ctx.textAlign = 'center';
-        ctx.fillText(def.emoji, sx, sy - 6 - (level - 1) * 2);
+  function isoLeft(ctx: CanvasRenderingContext2D, sx: number, sy: number, w: number, h: number, wallH: number, fill: string) {
+    ctx.beginPath();
+    ctx.moveTo(sx, sy);
+    ctx.lineTo(sx - w / 2, sy + h / 4);
+    ctx.lineTo(sx - w / 2, sy + h / 4 - wallH);
+    ctx.lineTo(sx, sy - wallH);
+    ctx.closePath();
+    ctx.fillStyle = fill;
+    ctx.fill();
+  }
+
+  function isoRight(ctx: CanvasRenderingContext2D, sx: number, sy: number, w: number, h: number, wallH: number, fill: string) {
+    ctx.beginPath();
+    ctx.moveTo(sx, sy);
+    ctx.lineTo(sx + w / 2, sy + h / 4);
+    ctx.lineTo(sx + w / 2, sy + h / 4 - wallH);
+    ctx.lineTo(sx, sy - wallH);
+    ctx.closePath();
+    ctx.fillStyle = fill;
+    ctx.fill();
+  }
+
+  function isoTop(ctx: CanvasRenderingContext2D, sx: number, sy: number, w: number, h: number, wallH: number, fill: string) {
+    ctx.beginPath();
+    ctx.moveTo(sx, sy - wallH);
+    ctx.lineTo(sx + w / 2, sy - wallH + h / 4);
+    ctx.lineTo(sx, sy - wallH + h / 2);
+    ctx.lineTo(sx - w / 2, sy - wallH + h / 4);
+    ctx.closePath();
+    ctx.fillStyle = fill;
+    ctx.fill();
+  }
+
+  function isoEdges(ctx: CanvasRenderingContext2D, sx: number, sy: number, w: number, h: number, wallH: number) {
+    ctx.strokeStyle = 'rgba(0,0,0,0.25)';
+    ctx.lineWidth = 0.8;
+    // vertical edges
+    ctx.beginPath();
+    ctx.moveTo(sx, sy); ctx.lineTo(sx, sy - wallH);
+    ctx.moveTo(sx - w/2, sy + h/4); ctx.lineTo(sx - w/2, sy + h/4 - wallH);
+    ctx.moveTo(sx + w/2, sy + h/4); ctx.lineTo(sx + w/2, sy + h/4 - wallH);
+    // top diamond
+    ctx.moveTo(sx, sy - wallH);
+    ctx.lineTo(sx + w/2, sy - wallH + h/4);
+    ctx.lineTo(sx, sy - wallH + h/2);
+    ctx.lineTo(sx - w/2, sy - wallH + h/4);
+    ctx.closePath();
+    ctx.stroke();
+  }
+
+  function drawIsoBuilding(ctx: CanvasRenderingContext2D, defId: string, sx: number, sy: number, bw: number, bh: number, level: number, progress: number, time: number) {
+    const tw = TILE_W * bw;
+    const th = TILE_H * bh;
+    // Base sizes for the isometric box
+    const baseH = (14 + level * 4) * Math.min(progress / 0.33, 1);
+    const fullWallH = 14 + level * 4;
+
+    // Phase 0→0.33: foundation (flat platform rising)
+    // Phase 0.33→0.66: walls rising
+    // Phase 0.66→1: roof / details appearing
+
+    const wallPhase = Math.min(Math.max((progress - 0.33) / 0.33, 0), 1);
+    const roofPhase = Math.min(Math.max((progress - 0.66) / 0.34, 0), 1);
+
+    if (progress < 0.01) {
+      // Just foundation outline
+      ctx.strokeStyle = '#c8963c';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath();
+      ctx.moveTo(sx, sy - 2);
+      ctx.lineTo(sx + tw/2, sy - 2 + th/4);
+      ctx.lineTo(sx, sy - 2 + th/2);
+      ctx.lineTo(sx - tw/2, sy - 2 + th/4);
+      ctx.closePath();
+      ctx.stroke();
+      ctx.setLineDash([]);
+      return;
+    }
+
+    // Helper: draw a window
+    const drawWindow = (wx: number, wy: number) => {
+      ctx.fillStyle = 'rgba(180,220,255,0.8)';
+      ctx.fillRect(wx, wy, 4, 4);
+      ctx.strokeStyle = 'rgba(80,60,40,0.8)';
+      ctx.lineWidth = 0.5;
+      ctx.strokeRect(wx, wy, 4, 4);
+      ctx.beginPath();
+      ctx.moveTo(wx + 2, wy); ctx.lineTo(wx + 2, wy + 4);
+      ctx.moveTo(wx, wy + 2); ctx.lineTo(wx + 4, wy + 2);
+      ctx.stroke();
+    };
+
+    const def = BUILDING_DEFS[defId];
+    if (!def) return;
+
+    switch (defId) {
+      // ---- HOUSE / PALHOÇA ----
+      case 'house': {
+        const wH = Math.round(fullWallH * Math.min((progress < 0.33 ? progress / 0.33 : 1), 1));
+        // Foundation
+        ctx.fillStyle = '#c4a882'; ctx.beginPath(); ctx.moveTo(sx, sy + 2); ctx.lineTo(sx + tw/2, sy + 2 + th/4); ctx.lineTo(sx, sy + 2 + th/2); ctx.lineTo(sx - tw/2, sy + 2 + th/4); ctx.closePath(); ctx.fill();
+        if (wH < 2) { drawConstructionDust(ctx, sx, sy, tw, time); return; }
+        // Walls
+        isoLeft(ctx, sx, sy, tw, th, wH, '#d4b896');
+        isoRight(ctx, sx, sy, tw, th, wH, '#c0a07a');
+        if (wallPhase > 0) {
+          // Wooden beam details on left face
+          ctx.strokeStyle = 'rgba(100,70,40,0.4)'; ctx.lineWidth = 0.7;
+          ctx.beginPath(); ctx.moveTo(sx - 2, sy - wH * 0.4); ctx.lineTo(sx - tw/2, sy + th/4 - wH * 0.4); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(sx - 2, sy - wH * 0.7); ctx.lineTo(sx - tw/2, sy + th/4 - wH * 0.7); ctx.stroke();
+          // Window
+          if (roofPhase > 0.3) drawWindow(sx - tw/4 - 2, sy - wH * 0.65);
+        }
+        // Roof (thatched gable)
+        if (roofPhase > 0) {
+          const rH = 12 * roofPhase;
+          ctx.beginPath(); ctx.moveTo(sx, sy - wH - rH); ctx.lineTo(sx + tw/2, sy - wH + th/4); ctx.lineTo(sx, sy - wH + th/2); ctx.lineTo(sx - tw/2, sy - wH + th/4); ctx.closePath();
+          ctx.fillStyle = '#8b6914'; ctx.fill();
+          // Thatch texture
+          ctx.strokeStyle = 'rgba(100,80,20,0.4)'; ctx.lineWidth = 0.6;
+          for (let i = 0; i < 4; i++) {
+            const t = (i + 1) / 5;
+            ctx.beginPath();
+            ctx.moveTo(sx - tw/2 * t, sy - wH + th/4 * t);
+            ctx.lineTo(sx + tw/2 * t, sy - wH + th/4 * t);
+            ctx.stroke();
+          }
+        }
+        isoEdges(ctx, sx, sy, tw, th, wH);
+        break;
+      }
+
+      // ---- MANSION / CABANA GRANDE ----
+      case 'mansion': {
+        const wH = Math.round(fullWallH * 1.6 * Math.min((progress < 0.33 ? progress / 0.33 : 1), 1));
+        ctx.fillStyle = '#b8a070'; ctx.beginPath(); ctx.moveTo(sx, sy + 2); ctx.lineTo(sx + tw/2, sy + 2 + th/4); ctx.lineTo(sx, sy + 2 + th/2); ctx.lineTo(sx - tw/2, sy + 2 + th/4); ctx.closePath(); ctx.fill();
+        if (wH < 2) { drawConstructionDust(ctx, sx, sy, tw, time); return; }
+        isoLeft(ctx, sx, sy, tw, th, wH, '#d8c090');
+        isoRight(ctx, sx, sy, tw, th, wH, '#c4a878');
+        if (wallPhase > 0) {
+          // Stone border detail
+          ctx.strokeStyle = 'rgba(120,90,50,0.5)'; ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(sx - tw/2, sy + th/4); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(sx + tw/2, sy + th/4); ctx.stroke();
+          if (roofPhase > 0.2) { drawWindow(sx - tw/4, sy - wH * 0.6); drawWindow(sx + tw/4 - 4, sy - wH * 0.6 + th/8); }
+        }
+        if (roofPhase > 0) {
+          const rH = 16 * roofPhase;
+          isoTop(ctx, sx, sy, tw, th, wH + rH, '#7a5a20');
+          ctx.beginPath(); ctx.moveTo(sx, sy - wH - rH); ctx.lineTo(sx + tw/2, sy - wH + th/4); ctx.closePath();
+          ctx.strokeStyle = '#5a4010'; ctx.lineWidth = 1; ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(sx, sy - wH - rH); ctx.lineTo(sx - tw/2, sy - wH + th/4); ctx.closePath(); ctx.stroke();
+        }
+        isoEdges(ctx, sx, sy, tw, th, wH);
+        break;
+      }
+
+      // ---- TOWER / ATALAIA ----
+      case 'tower': {
+        const tW = tw * 0.55; const tH = th * 0.55;
+        const wH = Math.round((fullWallH * 2.5) * Math.min((progress < 0.33 ? progress / 0.33 : 1), 1));
+        ctx.fillStyle = '#8a8a8a';
+        ctx.beginPath(); ctx.moveTo(sx, sy + 2); ctx.lineTo(sx + tW/2, sy + 2 + tH/4); ctx.lineTo(sx, sy + 2 + tH/2); ctx.lineTo(sx - tW/2, sy + 2 + tH/4); ctx.closePath(); ctx.fill();
+        if (wH < 2) { drawConstructionDust(ctx, sx, sy, tw, time); return; }
+        isoLeft(ctx, sx, sy, tW, tH, wH, '#909090');
+        isoRight(ctx, sx, sy, tW, tH, wH, '#787878');
+        if (wallPhase > 0) {
+          // Stone block pattern
+          ctx.strokeStyle = 'rgba(60,60,60,0.4)'; ctx.lineWidth = 0.6;
+          for (let j = 0; j < 4; j++) {
+            const rowY = sy - wH * ((j + 1) / 5);
+            ctx.beginPath(); ctx.moveTo(sx, rowY); ctx.lineTo(sx - tW/2, rowY + tH/4); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(sx, rowY); ctx.lineTo(sx + tW/2, rowY + tH/4); ctx.stroke();
+          }
+          if (roofPhase > 0.2) drawWindow(sx - tW/4 - 1, sy - wH * 0.5);
+        }
+        if (roofPhase > 0) {
+          // Battlements
+          isoTop(ctx, sx, sy, tW, tH, wH, '#a0a0a0');
+          const mH = 5 * roofPhase;
+          for (let i = -1; i <= 1; i++) {
+            const mx = sx + i * tW / 4;
+            const my = sy - wH;
+            ctx.fillStyle = '#888'; ctx.fillRect(mx - 2, my - mH, 4, mH);
+          }
+        }
+        isoEdges(ctx, sx, sy, tW, tH, wH);
+        break;
+      }
+
+      // ---- WORKSHOP / BANCADA ----
+      case 'workshop': {
+        const wH = Math.round(fullWallH * Math.min((progress < 0.33 ? progress / 0.33 : 1), 1));
+        ctx.fillStyle = '#9a7a50'; ctx.beginPath(); ctx.moveTo(sx, sy + 2); ctx.lineTo(sx + tw/2, sy + 2 + th/4); ctx.lineTo(sx, sy + 2 + th/2); ctx.lineTo(sx - tw/2, sy + 2 + th/4); ctx.closePath(); ctx.fill();
+        if (wH < 2) { drawConstructionDust(ctx, sx, sy, tw, time); return; }
+        isoLeft(ctx, sx, sy, tw, th, wH, '#c8a870');
+        isoRight(ctx, sx, sy, tw, th, wH, '#b09060');
+        if (wallPhase > 0) {
+          // Work bench on right face
+          ctx.fillStyle = '#8a6030'; ctx.fillRect(sx + 2, sy - wH * 0.4, tw/4, 3);
+        }
+        if (roofPhase > 0) {
+          const rH = 8 * roofPhase;
+          isoTop(ctx, sx, sy, tw, th, wH, '#6a4a20');
+          // Chimney
+          ctx.fillStyle = '#5a3a18'; ctx.fillRect(sx + 3, sy - wH - rH - 4, 4, 5 * roofPhase);
+          ctx.fillStyle = '#333'; ctx.fillRect(sx + 3, sy - wH - rH - 5, 4, 2 * roofPhase);
+        }
+        isoEdges(ctx, sx, sy, tw, th, wH);
+        break;
+      }
+
+      // ---- MARKET / BANCA ----
+      case 'market': {
+        const wH = Math.round(fullWallH * 0.9 * Math.min((progress < 0.33 ? progress / 0.33 : 1), 1));
+        ctx.fillStyle = '#a08050'; ctx.beginPath(); ctx.moveTo(sx, sy + 2); ctx.lineTo(sx + tw/2, sy + 2 + th/4); ctx.lineTo(sx, sy + 2 + th/2); ctx.lineTo(sx - tw/2, sy + 2 + th/4); ctx.closePath(); ctx.fill();
+        if (wH < 2) { drawConstructionDust(ctx, sx, sy, tw, time); return; }
+        isoLeft(ctx, sx, sy, tw, th, wH, '#d0a060');
+        isoRight(ctx, sx, sy, tw, th, wH, '#bc8e50');
+        if (roofPhase > 0) {
+          // Awning / canopy
+          const aAlpha = roofPhase;
+          ctx.globalAlpha = aAlpha;
+          isoTop(ctx, sx, sy + 2, tw * 1.1, th * 1.1, wH + 4, '#c04040');
+          // Stripes
+          ctx.strokeStyle = '#e06060'; ctx.lineWidth = 1;
+          for (let i = -2; i <= 2; i++) {
+            ctx.beginPath();
+            ctx.moveTo(sx + i * tw/6, sy - wH + 2);
+            ctx.lineTo(sx + i * tw/6 + tw/4, sy - wH + 2 + th/4);
+            ctx.stroke();
+          }
+          ctx.globalAlpha = 1;
+        }
+        isoEdges(ctx, sx, sy, tw, th, wH);
+        break;
+      }
+
+      // ---- BARRACKS / ACAMPAMENTO ----
+      case 'barracks': {
+        const wH = Math.round(fullWallH * 1.3 * Math.min((progress < 0.33 ? progress / 0.33 : 1), 1));
+        ctx.fillStyle = '#707050'; ctx.beginPath(); ctx.moveTo(sx, sy + 2); ctx.lineTo(sx + tw/2, sy + 2 + th/4); ctx.lineTo(sx, sy + 2 + th/2); ctx.lineTo(sx - tw/2, sy + 2 + th/4); ctx.closePath(); ctx.fill();
+        if (wH < 2) { drawConstructionDust(ctx, sx, sy, tw, time); return; }
+        isoLeft(ctx, sx, sy, tw, th, wH, '#90906a');
+        isoRight(ctx, sx, sy, tw, th, wH, '#787856');
+        if (wallPhase > 0) {
+          ctx.strokeStyle = 'rgba(60,60,40,0.5)'; ctx.lineWidth = 0.7;
+          for (let j = 1; j <= 3; j++) ctx.strokeRect(sx - tw/4 - 2, sy - wH * (j/4) - 3, 6, 5);
+        }
+        if (roofPhase > 0) {
+          isoTop(ctx, sx, sy, tw, th, wH, '#606040');
+          // Flag pole
+          ctx.strokeStyle = '#4a4a20'; ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.moveTo(sx, sy - wH); ctx.lineTo(sx, sy - wH - 10 * roofPhase); ctx.stroke();
+          ctx.fillStyle = '#c04040'; ctx.beginPath(); ctx.moveTo(sx, sy - wH - 10 * roofPhase); ctx.lineTo(sx + 7, sy - wH - 7 * roofPhase); ctx.lineTo(sx, sy - wH - 4 * roofPhase); ctx.fill();
+        }
+        isoEdges(ctx, sx, sy, tw, th, wH);
+        break;
+      }
+
+      // ---- FARM / CANTEIRO ----
+      case 'farm': {
+        const wH = 4 * Math.min((progress < 0.33 ? progress / 0.33 : 1), 1);
+        // Low soil mounds
+        ctx.fillStyle = '#6a4a20';
+        ctx.beginPath(); ctx.moveTo(sx, sy + 2); ctx.lineTo(sx + tw/2, sy + 2 + th/4); ctx.lineTo(sx, sy + 2 + th/2); ctx.lineTo(sx - tw/2, sy + 2 + th/4); ctx.closePath(); ctx.fill();
+        if (roofPhase > 0) {
+          // Soil rows
+          ctx.strokeStyle = '#4a3010'; ctx.lineWidth = 1;
+          for (let row = 1; row <= 3; row++) {
+            const ry = sy + th/2 * (row / 4);
+            ctx.beginPath(); ctx.moveTo(sx - tw/3, ry); ctx.lineTo(sx + tw/3, ry + th/8); ctx.stroke();
+          }
+          // Crop sprouts
+          ctx.fillStyle = '#2d8020';
+          for (let i = 0; i < 4; i++) {
+            const cx2 = sx - tw/3 + i * (tw * 0.22);
+            const cy2 = sy + th/4 * 0.6 + i * (th/4 * 0.2);
+            ctx.beginPath(); ctx.arc(cx2, cy2 - wH - 2 * roofPhase, 2.5 * roofPhase, 0, Math.PI * 2); ctx.fill();
+          }
+        }
+        break;
+      }
+
+      // ---- HOSPITAL / CURANDEIRO ----
+      case 'hospital': {
+        const wH = Math.round(fullWallH * 1.2 * Math.min((progress < 0.33 ? progress / 0.33 : 1), 1));
+        ctx.fillStyle = '#c0c0b0'; ctx.beginPath(); ctx.moveTo(sx, sy + 2); ctx.lineTo(sx + tw/2, sy + 2 + th/4); ctx.lineTo(sx, sy + 2 + th/2); ctx.lineTo(sx - tw/2, sy + 2 + th/4); ctx.closePath(); ctx.fill();
+        if (wH < 2) { drawConstructionDust(ctx, sx, sy, tw, time); return; }
+        isoLeft(ctx, sx, sy, tw, th, wH, '#e0e0d0');
+        isoRight(ctx, sx, sy, tw, th, wH, '#c8c8b8');
+        if (roofPhase > 0) {
+          isoTop(ctx, sx, sy, tw, th, wH, '#d0d0c0');
+          // Red cross on top
+          const ca = roofPhase;
+          ctx.globalAlpha = ca;
+          ctx.fillStyle = '#cc2222'; ctx.fillRect(sx - 2, sy - wH - 6, 4, 8); ctx.fillRect(sx - 5, sy - wH - 3, 10, 3);
+          ctx.globalAlpha = 1;
+        }
+        isoEdges(ctx, sx, sy, tw, th, wH);
+        break;
+      }
+
+      // ---- SCHOOL / MESTRE-ESCOLA ----
+      case 'school_building': {
+        const wH = Math.round(fullWallH * 1.1 * Math.min((progress < 0.33 ? progress / 0.33 : 1), 1));
+        ctx.fillStyle = '#c8b878'; ctx.beginPath(); ctx.moveTo(sx, sy + 2); ctx.lineTo(sx + tw/2, sy + 2 + th/4); ctx.lineTo(sx, sy + 2 + th/2); ctx.lineTo(sx - tw/2, sy + 2 + th/4); ctx.closePath(); ctx.fill();
+        if (wH < 2) { drawConstructionDust(ctx, sx, sy, tw, time); return; }
+        isoLeft(ctx, sx, sy, tw, th, wH, '#e8d898');
+        isoRight(ctx, sx, sy, tw, th, wH, '#d4c484');
+        if (wallPhase > 0) { if (roofPhase > 0.2) { drawWindow(sx - tw/4, sy - wH * 0.6); drawWindow(sx + tw/4 - 4, sy - wH * 0.6 + th/8); } }
+        if (roofPhase > 0) {
+          const rH = 14 * roofPhase;
+          // Gabled roof
+          ctx.beginPath(); ctx.moveTo(sx, sy - wH - rH); ctx.lineTo(sx + tw/2, sy - wH + th/4); ctx.lineTo(sx, sy - wH + th/2); ctx.lineTo(sx - tw/2, sy - wH + th/4); ctx.closePath();
+          ctx.fillStyle = '#b84040'; ctx.fill();
+          ctx.strokeStyle = '#8a2020'; ctx.lineWidth = 0.7; ctx.stroke();
+          // Bell tower
+          ctx.fillStyle = '#d0a030'; ctx.fillRect(sx - 3, sy - wH - rH - 5 * roofPhase, 6, 5 * roofPhase);
+        }
+        isoEdges(ctx, sx, sy, tw, th, wH);
+        break;
+      }
+
+      // ---- CHURCH / ALTAR ----
+      case 'church': {
+        const wH = Math.round(fullWallH * 1.4 * Math.min((progress < 0.33 ? progress / 0.33 : 1), 1));
+        ctx.fillStyle = '#d0c8b8'; ctx.beginPath(); ctx.moveTo(sx, sy + 2); ctx.lineTo(sx + tw/2, sy + 2 + th/4); ctx.lineTo(sx, sy + 2 + th/2); ctx.lineTo(sx - tw/2, sy + 2 + th/4); ctx.closePath(); ctx.fill();
+        if (wH < 2) { drawConstructionDust(ctx, sx, sy, tw, time); return; }
+        isoLeft(ctx, sx, sy, tw, th, wH, '#ece4d4');
+        isoRight(ctx, sx, sy, tw, th, wH, '#d8d0c0');
+        if (roofPhase > 0) {
+          const rH = 20 * roofPhase;
+          isoTop(ctx, sx, sy, tw, th, wH, '#d8d0c0');
+          // Spire
+          ctx.fillStyle = '#a89060'; ctx.beginPath(); ctx.moveTo(sx, sy - wH - rH); ctx.lineTo(sx - 5, sy - wH); ctx.lineTo(sx + 5, sy - wH); ctx.closePath(); ctx.fill();
+          // Cross
+          ctx.strokeStyle = '#c0a040'; ctx.lineWidth = 1.5;
+          ctx.beginPath(); ctx.moveTo(sx, sy - wH - rH - 5); ctx.lineTo(sx, sy - wH - rH + 4); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(sx - 3, sy - wH - rH); ctx.lineTo(sx + 3, sy - wH - rH); ctx.stroke();
+        }
+        isoEdges(ctx, sx, sy, tw, th, wH);
+        break;
+      }
+
+      // ---- WELL / POÇA ----
+      case 'well': {
+        const wH = Math.round(10 * Math.min((progress < 0.33 ? progress / 0.33 : 1), 1));
+        // Stone base
+        ctx.fillStyle = '#b0b0a0'; ctx.beginPath(); ctx.moveTo(sx, sy + 1); ctx.lineTo(sx + tw/2, sy + 1 + th/4); ctx.lineTo(sx, sy + 1 + th/2); ctx.lineTo(sx - tw/2, sy + 1 + th/4); ctx.closePath(); ctx.fill();
+        if (wH > 1) {
+          isoLeft(ctx, sx, sy, tw * 0.7, th * 0.7, wH, '#c0c0b0');
+          isoRight(ctx, sx, sy, tw * 0.7, th * 0.7, wH, '#a8a898');
+          isoTop(ctx, sx, sy, tw * 0.7, th * 0.7, wH, '#d0d0c0');
+          if (roofPhase > 0) {
+            // Roof beams
+            ctx.strokeStyle = '#6a4a20'; ctx.lineWidth = 1.5;
+            ctx.beginPath(); ctx.moveTo(sx - 6, sy - wH - 2); ctx.lineTo(sx, sy - wH - 8 * roofPhase); ctx.lineTo(sx + 6, sy - wH - 2); ctx.stroke();
+            // Bucket
+            ctx.fillStyle = '#8a6030'; ctx.fillRect(sx - 2, sy - wH - 4 * roofPhase, 4, 4);
+          }
+        }
+        break;
+      }
+
+      // ---- FOUNTAIN / PEDRA ----
+      case 'fountain': {
+        const wH = Math.round(8 * Math.min((progress < 0.33 ? progress / 0.33 : 1), 1));
+        ctx.fillStyle = '#c0b8a8'; ctx.beginPath(); ctx.arc(sx, sy - wH/2, tw/3, 0, Math.PI * 2); ctx.fill();
+        if (wH > 2 && roofPhase > 0) {
+          // Basin rim
+          ctx.strokeStyle = '#a0988a'; ctx.lineWidth = 1.5;
+          ctx.beginPath(); ctx.ellipse(sx, sy - wH, tw/2.5, th/4, 0, 0, Math.PI * 2); ctx.stroke();
+          // Water centre
+          ctx.fillStyle = '#80b4d0';
+          ctx.beginPath(); ctx.ellipse(sx, sy - wH + 1, tw/5, th/7, 0, 0, Math.PI * 2); ctx.fill();
+        }
+        break;
+      }
+
+      // ---- WINDMILL / MÓ ----
+      case 'windmill': {
+        const wH = Math.round(fullWallH * 2 * Math.min((progress < 0.33 ? progress / 0.33 : 1), 1));
+        ctx.fillStyle = '#b8b0a0'; ctx.beginPath(); ctx.moveTo(sx, sy + 2); ctx.lineTo(sx + tw/2*0.6, sy + 2 + th/4*0.6); ctx.lineTo(sx, sy + 2 + th/2*0.6); ctx.lineTo(sx - tw/2*0.6, sy + 2 + th/4*0.6); ctx.closePath(); ctx.fill();
+        if (wH < 2) { drawConstructionDust(ctx, sx, sy, tw, time); return; }
+        isoLeft(ctx, sx, sy, tw * 0.6, th * 0.6, wH, '#d0c8b8');
+        isoRight(ctx, sx, sy, tw * 0.6, th * 0.6, wH, '#b8b0a0');
+        if (roofPhase > 0) {
+          isoTop(ctx, sx, sy, tw * 0.6, th * 0.6, wH, '#c8b898');
+          // Sails
+          const sa = time * 1.2;
+          ctx.strokeStyle = '#8a6030'; ctx.lineWidth = 1.5;
+          for (let i = 0; i < 4; i++) {
+            const angle = sa + (i * Math.PI / 2);
+            const len = 12 * roofPhase;
+            ctx.beginPath(); ctx.moveTo(sx, sy - wH - 2); ctx.lineTo(sx + Math.cos(angle) * len, sy - wH - 2 + Math.sin(angle) * len * 0.5); ctx.stroke();
+            // Sail canvas
+            ctx.fillStyle = 'rgba(220,200,160,0.7)';
+            ctx.beginPath();
+            ctx.moveTo(sx, sy - wH - 2);
+            ctx.lineTo(sx + Math.cos(angle) * len, sy - wH - 2 + Math.sin(angle) * len * 0.5);
+            ctx.lineTo(sx + Math.cos(angle + 0.4) * len * 0.8, sy - wH - 2 + Math.sin(angle + 0.4) * len * 0.4);
+            ctx.closePath(); ctx.fill();
+          }
+        }
+        isoEdges(ctx, sx, sy, tw * 0.6, th * 0.6, wH);
+        break;
+      }
+
+      // ---- WALL / PALIÇADA ----
+      case 'wall': {
+        const wH = Math.round(8 * level * Math.min((progress < 0.33 ? progress / 0.33 : 1), 1));
+        ctx.fillStyle = '#8a7050';
+        ctx.beginPath(); ctx.moveTo(sx, sy + 1); ctx.lineTo(sx + tw/2, sy + 1 + th/4); ctx.lineTo(sx, sy + 1 + th/2); ctx.lineTo(sx - tw/2, sy + 1 + th/4); ctx.closePath(); ctx.fill();
+        if (wH > 1) {
+          // Wooden stakes
+          for (let i = -2; i <= 2; i++) {
+            const px = sx + i * tw / 5;
+            const py = sy + th / 4 * (i * 0.1);
+            ctx.fillStyle = '#7a5a30';
+            ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(px - 2, py - wH); ctx.lineTo(px + 2, py - wH); ctx.closePath(); ctx.fill();
+            ctx.strokeStyle = '#5a3a18'; ctx.lineWidth = 0.5; ctx.stroke();
+          }
+        }
+        break;
+      }
+
+      // ---- ROAD / CAMINHO ----
+      case 'road': {
+        // Road is drawn as a tile, no 3D building needed
+        break;
+      }
+
+      // ---- MONUMENTS (tower-like with distinctive forms) ----
+      case 'torre_belem': {
+        const wH = Math.round(fullWallH * 3 * Math.min((progress < 0.33 ? progress / 0.33 : 1), 1));
+        ctx.fillStyle = '#d4c898'; ctx.beginPath(); ctx.moveTo(sx, sy + 2); ctx.lineTo(sx + tw/2, sy + 2 + th/4); ctx.lineTo(sx, sy + 2 + th/2); ctx.lineTo(sx - tw/2, sy + 2 + th/4); ctx.closePath(); ctx.fill();
+        if (wH < 2) { drawConstructionDust(ctx, sx, sy, tw, time); return; }
+        isoLeft(ctx, sx, sy, tw * 0.8, th * 0.8, wH, '#e8dcb0');
+        isoRight(ctx, sx, sy, tw * 0.8, th * 0.8, wH, '#d0c898');
+        // Gothic arches on walls
+        if (wallPhase > 0.5) {
+          ctx.strokeStyle = 'rgba(160,140,80,0.7)'; ctx.lineWidth = 0.8;
+          for (let i = -1; i <= 1; i++) {
+            const ax = sx + i * tw / 5;
+            ctx.beginPath(); ctx.arc(ax - tw*0.2, sy - wH * 0.5, wH * 0.18, Math.PI, 0); ctx.stroke();
+          }
+        }
+        if (roofPhase > 0) {
+          isoTop(ctx, sx, sy, tw * 0.8, th * 0.8, wH, '#d8cc90');
+          // Turrets
+          for (let i = -1; i <= 1; i += 2) {
+            const tx2 = sx + i * tw / 5;
+            isoLeft(ctx, tx2, sy, tw * 0.2, th * 0.2, wH * 0.3 * roofPhase, '#e0d4a0');
+            isoTop(ctx, tx2, sy, tw * 0.2, th * 0.2, wH * 0.3 * roofPhase, '#c8bc80');
+          }
+        }
+        isoEdges(ctx, sx, sy, tw * 0.8, th * 0.8, wH);
+        break;
+      }
+
+      case 'castelo_guimaraes':
+      case 'castelo_braganca':
+      case 'castelo_beja':
+      case 'castelo_leiria':
+      case 'castelo_marvao':
+      case 'castelo_almourol':
+      case 'castelo_palmela': {
+        const wH = Math.round(fullWallH * 2.8 * Math.min((progress < 0.33 ? progress / 0.33 : 1), 1));
+        ctx.fillStyle = '#9a8870'; ctx.beginPath(); ctx.moveTo(sx, sy + 2); ctx.lineTo(sx + tw/2, sy + 2 + th/4); ctx.lineTo(sx, sy + 2 + th/2); ctx.lineTo(sx - tw/2, sy + 2 + th/4); ctx.closePath(); ctx.fill();
+        if (wH < 2) { drawConstructionDust(ctx, sx, sy, tw, time); return; }
+        isoLeft(ctx, sx, sy, tw, th, wH, '#b0a090');
+        isoRight(ctx, sx, sy, tw, th, wH, '#9c8c7c');
+        if (roofPhase > 0) {
+          isoTop(ctx, sx, sy, tw, th, wH, '#a89880');
+          // Battlements on top
+          for (let i = -2; i <= 2; i++) {
+            const mx = sx + i * tw / 5;
+            ctx.fillStyle = '#908070'; ctx.fillRect(mx - 2, sy - wH - 5 * roofPhase, 4, 5 * roofPhase);
+          }
+        }
+        isoEdges(ctx, sx, sy, tw, th, wH);
+        break;
+      }
+
+      case 'universidade_coimbra': {
+        const wH = Math.round(fullWallH * 2.2 * Math.min((progress < 0.33 ? progress / 0.33 : 1), 1));
+        ctx.fillStyle = '#c8b850'; ctx.beginPath(); ctx.moveTo(sx, sy + 2); ctx.lineTo(sx + tw/2, sy + 2 + th/4); ctx.lineTo(sx, sy + 2 + th/2); ctx.lineTo(sx - tw/2, sy + 2 + th/4); ctx.closePath(); ctx.fill();
+        if (wH < 2) { drawConstructionDust(ctx, sx, sy, tw, time); return; }
+        isoLeft(ctx, sx, sy, tw, th, wH, '#e8d870');
+        isoRight(ctx, sx, sy, tw, th, wH, '#d0c060');
+        if (roofPhase > 0) {
+          isoTop(ctx, sx, sy, tw, th, wH, '#d8c860');
+          // Clock tower
+          ctx.fillStyle = '#b89840'; ctx.fillRect(sx - 4, sy - wH - 16 * roofPhase, 8, 16 * roofPhase);
+          isoTop(ctx, sx, sy - wH * 0.01, tw * 0.15, th * 0.15, (wH + 16) * roofPhase, '#c0a830');
+          // Clock face
+          if (roofPhase > 0.6) {
+            ctx.fillStyle = '#f0f0d0'; ctx.beginPath(); ctx.arc(sx, sy - wH - 8 * roofPhase, 3, 0, Math.PI * 2); ctx.fill();
+          }
+        }
+        isoEdges(ctx, sx, sy, tw, th, wH);
+        break;
+      }
+
+      case 'templo_romano': {
+        const wH = Math.round(fullWallH * 2 * Math.min((progress < 0.33 ? progress / 0.33 : 1), 1));
+        ctx.fillStyle = '#d8d0c0'; ctx.beginPath(); ctx.moveTo(sx, sy + 2); ctx.lineTo(sx + tw/2, sy + 2 + th/4); ctx.lineTo(sx, sy + 2 + th/2); ctx.lineTo(sx - tw/2, sy + 2 + th/4); ctx.closePath(); ctx.fill();
+        if (wH < 2) { drawConstructionDust(ctx, sx, sy, tw, time); return; }
+        // Columns
+        for (let i = -2; i <= 2; i++) {
+          const cx2 = sx + i * tw / 5;
+          isoLeft(ctx, cx2, sy + th/4 * (i * 0.1), tw * 0.1, th * 0.1, wH * 0.9, '#e8e0d0');
+          isoTop(ctx, cx2, sy + th/4 * (i * 0.1), tw * 0.1, th * 0.1, wH * 0.9, '#d0c8b8');
+        }
+        if (roofPhase > 0) {
+          // Pediment
+          ctx.beginPath(); ctx.moveTo(sx, sy - wH - 12 * roofPhase); ctx.lineTo(sx + tw/2, sy - wH); ctx.lineTo(sx - tw/2, sy - wH + th/4); ctx.closePath();
+          ctx.fillStyle = '#ccc4b0'; ctx.fill();
+          ctx.strokeStyle = '#aaa098'; ctx.lineWidth = 0.8; ctx.stroke();
+        }
+        break;
+      }
+
+      // ---- DEFAULT (for any other building type) ----
+      default: {
+        const wH = Math.round(fullWallH * Math.min((progress < 0.33 ? progress / 0.33 : 1), 1));
+        // Generic colored box
+        const colors = ['#c8a870', '#a8c870', '#70a8c8', '#c870a8', '#70c8a8'];
+        const ci = Math.abs(defId.charCodeAt(0) + defId.charCodeAt(1)) % colors.length;
+        ctx.fillStyle = '#8a7850'; ctx.beginPath(); ctx.moveTo(sx, sy + 2); ctx.lineTo(sx + tw/2, sy + 2 + th/4); ctx.lineTo(sx, sy + 2 + th/2); ctx.lineTo(sx - tw/2, sy + 2 + th/4); ctx.closePath(); ctx.fill();
+        if (wH < 2) { drawConstructionDust(ctx, sx, sy, tw, time); return; }
+        isoLeft(ctx, sx, sy, tw, th, wH, colors[ci]);
+        isoRight(ctx, sx, sy, tw, th, wH, colors[(ci + 1) % colors.length]);
+        if (roofPhase > 0) isoTop(ctx, sx, sy, tw, th, wH, colors[(ci + 2) % colors.length]);
+        isoEdges(ctx, sx, sy, tw, th, wH);
+        // Emoji label for unrecognised types
+        if (roofPhase > 0.5) {
+          const def2 = BUILDING_DEFS[defId];
+          if (def2) { ctx.font = `${10 + bw * 4}px serif`; ctx.textAlign = 'center'; ctx.fillText(def2.emoji, sx, sy - wH - 4); }
+        }
+        break;
       }
     }
+
+    // Construction progress bar overlay
+    if (progress < 1) {
+      const barW = tw * 0.6;
+      const barX = sx - barW / 2;
+      const barY = sy - (fullWallH * 1.2) - 14;
+      ctx.fillStyle = 'rgba(0,0,0,0.5)';
+      ctx.beginPath(); ctx.roundRect(barX - 1, barY - 1, barW + 2, 8, 3); ctx.fill();
+      ctx.fillStyle = '#f0a020';
+      ctx.beginPath(); ctx.roundRect(barX, barY, barW * progress, 6, 2); ctx.fill();
+      // Construction worker emoji bouncing
+      const bounce = Math.sin(time * 5) * 1.5;
+      ctx.font = '10px serif'; ctx.textAlign = 'center';
+      ctx.fillText('🪖', sx, barY - 4 + bounce);
+    }
+  }
+
+  function drawConstructionDust(ctx: CanvasRenderingContext2D, sx: number, sy: number, tw: number, time: number) {
+    ctx.strokeStyle = '#c8963c'; ctx.lineWidth = 1;
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath();
+    ctx.moveTo(sx, sy - 2); ctx.lineTo(sx + tw/2, sy - 2 + TILE_H/4); ctx.lineTo(sx, sy - 2 + TILE_H/2); ctx.lineTo(sx - tw/2, sy - 2 + TILE_H/4); ctx.closePath();
+    ctx.stroke(); ctx.setLineDash([]);
+    // Dust puffs
+    const puff = Math.abs(Math.sin(time * 4));
+    ctx.fillStyle = `rgba(200,180,120,${puff * 0.4})`;
+    ctx.beginPath(); ctx.arc(sx, sy - 5, 6 * puff, 0, Math.PI * 2); ctx.fill();
   }
 
   function drawIsoDiamond(ctx: CanvasRenderingContext2D, sx: number, sy: number, type: string, x: number, y: number, buildingId: string | undefined, allBuildings: PlacedBuilding[]) {
@@ -577,52 +1133,6 @@ export const IsometricCanvas = ({
     }
   }
 
-  function drawConstructionScaffold(ctx: CanvasRenderingContext2D, sx: number, sy: number, w: number, h: number, time: number) {
-    const baseW = TILE_W * w * 0.6;
-    const baseH = 28 * h;
-    const bobble = Math.sin(time * 3) * 1.5;
-
-    // Foundation outline
-    ctx.strokeStyle = 'rgba(180,130,60,0.8)';
-    ctx.lineWidth = 1.5;
-    ctx.setLineDash([4, 3]);
-    ctx.beginPath();
-    ctx.rect(sx - baseW / 2, sy - baseH + bobble, baseW, baseH);
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    // Scaffolding poles
-    ctx.strokeStyle = '#c8963c';
-    ctx.lineWidth = 2;
-    for (let i = 0; i <= 2; i++) {
-      const px = sx - baseW / 2 + (baseW / 2) * i;
-      ctx.beginPath();
-      ctx.moveTo(px, sy + bobble);
-      ctx.lineTo(px, sy - baseH + bobble);
-      ctx.stroke();
-    }
-    // Horizontal bars
-    for (let j = 0; j < 3; j++) {
-      const py = sy - (baseH / 3) * (j + 0.5) + bobble;
-      ctx.beginPath();
-      ctx.moveTo(sx - baseW / 2, py);
-      ctx.lineTo(sx + baseW / 2, py);
-      ctx.stroke();
-    }
-
-    // Hard hat icon
-    ctx.font = `${14 + Math.sin(time * 2) * 1}px sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.fillText('🪖', sx, sy - baseH - 8 + bobble);
-
-    // Dust particles
-    if (Math.random() < 0.3) {
-      ctx.fillStyle = `rgba(200,170,100,${Math.random() * 0.3 + 0.1})`;
-      ctx.beginPath();
-      ctx.arc(sx + (Math.random() - 0.5) * baseW, sy - Math.random() * baseH + bobble, Math.random() * 2 + 1, 0, Math.PI * 2);
-      ctx.fill();
-    }
-  }
 
   function drawDiamondPath(ctx: CanvasRenderingContext2D, sx: number, sy: number) {
     ctx.beginPath();

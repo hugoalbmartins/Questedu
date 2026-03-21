@@ -67,6 +67,8 @@ export const VillageView = ({ student, onQuiz, onRefresh, onPremium }: VillageVi
   const [simState, setSimState] = useState<SimState | null>(null);
   const [animatedCitizens, setAnimatedCitizens] = useState<AnimatedCitizen[]>([]);
   const [constructingIds, setConstructingIds] = useState<Set<string>>(new Set());
+  const [constructionProgress, setConstructionProgress] = useState<Map<string, number>>(new Map());
+  const constructionTimers = useRef<Map<string, { startTime: number; duration: number }>>(new Map());
   const citizenAnimRef = useRef<number>(0);
 
   // Natural resources
@@ -354,18 +356,29 @@ export const VillageView = ({ student, onQuiz, onRefresh, onPremium }: VillageVi
     addBuildParticles(sx, sy);
 
     SFX.place();
-    toast.success(`${def.name} em construção! 🏗️`);
+    const buildDurationMs = Math.max(4000, Math.min(15000, def.costCoins * 80 + def.costDiamonds * 500));
     const newBuilding = { id: data.id, defId: def.id, x: gx, y: gy, level: 1, dbId: data.id };
     setBuildings(prev => [...prev, newBuilding]);
     setConstructingIds(prev => new Set([...prev, data.id]));
-    setTimeout(() => {
-      setConstructingIds(prev => {
-        const next = new Set(prev);
-        next.delete(data.id);
-        return next;
-      });
-      toast.success(`${def.name} concluído! ✅`);
-    }, 3000);
+    constructionTimers.current.set(data.id, { startTime: Date.now(), duration: buildDurationMs });
+    setConstructionProgress(prev => new Map(prev).set(data.id, 0));
+    toast.success(`${def.name} em construção! 🏗️`);
+
+    const progressInterval = setInterval(() => {
+      const timer = constructionTimers.current.get(data.id);
+      if (!timer) { clearInterval(progressInterval); return; }
+      const elapsed = Date.now() - timer.startTime;
+      const p = Math.min(elapsed / timer.duration, 1);
+      setConstructionProgress(prev => new Map(prev).set(data.id, p));
+      if (p >= 1) {
+        clearInterval(progressInterval);
+        constructionTimers.current.delete(data.id);
+        setConstructingIds(prev => { const n = new Set(prev); n.delete(data.id); return n; });
+        toast.success(`${def.name} concluído! ✅`);
+        SFX.place();
+      }
+    }, 100);
+
     setSelectedBuilding(null);
     setGhostPos(null);
     onRefresh();
@@ -591,6 +604,7 @@ export const VillageView = ({ student, onQuiz, onRefresh, onPremium }: VillageVi
         studentId={student.id}
         district={student.district}
         constructingIds={constructingIds}
+        constructionProgress={constructionProgress}
         onTileClick={handleTileClick} onTileHover={handleTileHover} onBuildingClick={handleBuildingClick}
         onTerrainClick={handleTerrainClick}
       />
