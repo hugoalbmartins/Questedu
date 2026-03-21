@@ -43,6 +43,10 @@ export const MissionsPanel = ({ studentId, onClaimReward }: MissionsPanelProps) 
   }, [studentId]);
 
   const fetchMissions = async () => {
+    await supabase.rpc("assign_student_missions", {
+      student_id_param: studentId,
+    });
+
     const { data } = await supabase
       .from("player_missions")
       .select(`

@@ -49,11 +49,10 @@ interface TournamentParticipant {
 
 interface TournamentPrize {
   placement: number;
-  coins_reward: number;
-  diamonds_reward: number;
-  xp_reward: number;
-  badge_reward: string | null;
-  title_reward: string | null;
+  prize_coins: number;
+  prize_diamonds: number;
+  special_badge: string | null;
+  special_title: string | null;
 }
 
 interface TournamentHubPanelProps {
@@ -688,30 +687,25 @@ const TournamentDetailView = ({
                     </span>
                     <div className="flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        {prize.coins_reward > 0 && (
+                        {prize.prize_coins > 0 && (
                           <span className="text-sm font-semibold text-yellow-600">
-                            🪙 {prize.coins_reward}
+                            🪙 {prize.prize_coins}
                           </span>
                         )}
-                        {prize.diamonds_reward > 0 && (
+                        {prize.prize_diamonds > 0 && (
                           <span className="text-sm font-semibold text-blue-500">
-                            💎 {prize.diamonds_reward}
-                          </span>
-                        )}
-                        {prize.xp_reward > 0 && (
-                          <span className="text-sm font-semibold text-green-600">
-                            +{prize.xp_reward} XP
+                            💎 {prize.prize_diamonds}
                           </span>
                         )}
                       </div>
-                      {prize.badge_reward && (
+                      {prize.special_badge && (
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          Emblema: {prize.badge_reward}
+                          Emblema: {prize.special_badge}
                         </p>
                       )}
-                      {prize.title_reward && (
+                      {prize.special_title && (
                         <p className="text-xs text-primary mt-0.5">
-                          Título: "{prize.title_reward}"
+                          Título: "{prize.special_title}"
                         </p>
                       )}
                     </div>
