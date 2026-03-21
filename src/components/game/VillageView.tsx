@@ -66,6 +66,7 @@ export const VillageView = ({ student, onQuiz, onRefresh, onPremium }: VillageVi
   // Simulation state
   const [simState, setSimState] = useState<SimState | null>(null);
   const [animatedCitizens, setAnimatedCitizens] = useState<AnimatedCitizen[]>([]);
+  const [constructingIds, setConstructingIds] = useState<Set<string>>(new Set());
   const citizenAnimRef = useRef<number>(0);
 
   // Natural resources
@@ -353,8 +354,18 @@ export const VillageView = ({ student, onQuiz, onRefresh, onPremium }: VillageVi
     addBuildParticles(sx, sy);
 
     SFX.place();
-    toast.success(`${def.name} construído! 🏗️`);
-    setBuildings(prev => [...prev, { id: data.id, defId: def.id, x: gx, y: gy, level: 1, dbId: data.id }]);
+    toast.success(`${def.name} em construção! 🏗️`);
+    const newBuilding = { id: data.id, defId: def.id, x: gx, y: gy, level: 1, dbId: data.id };
+    setBuildings(prev => [...prev, newBuilding]);
+    setConstructingIds(prev => new Set([...prev, data.id]));
+    setTimeout(() => {
+      setConstructingIds(prev => {
+        const next = new Set(prev);
+        next.delete(data.id);
+        return next;
+      });
+      toast.success(`${def.name} concluído! ✅`);
+    }, 3000);
     setSelectedBuilding(null);
     setGhostPos(null);
     onRefresh();
@@ -579,6 +590,7 @@ export const VillageView = ({ student, onQuiz, onRefresh, onPremium }: VillageVi
         complaints={simState?.complaints || []}
         studentId={student.id}
         district={student.district}
+        constructingIds={constructingIds}
         onTileClick={handleTileClick} onTileHover={handleTileHover} onBuildingClick={handleBuildingClick}
         onTerrainClick={handleTerrainClick}
       />

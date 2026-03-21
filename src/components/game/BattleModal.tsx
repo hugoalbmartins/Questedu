@@ -13,7 +13,7 @@ interface BattleModalProps {
   defenseLevel: number;
   isPremium?: boolean;
   onBattleEnd: (won: boolean, coins: number, diamonds: number, xp: number) => void;
-  onAnswerQuestion: () => Promise<boolean>;
+  onAnswerQuestion: (enemyName: string, enemyEmoji: string) => Promise<boolean>;
 }
 
 const enemies = [
@@ -74,7 +74,7 @@ export const BattleModal = ({
     setAnswering(true);
     
     // Player answers a question to attack
-    const correct = await onAnswerQuestion();
+    const correct = await onAnswerQuestion(battle.enemy.name, battle.enemy.emoji);
     
     if (correct) {
       // Deal damage to enemy

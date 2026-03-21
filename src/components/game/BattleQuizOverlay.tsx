@@ -47,11 +47,26 @@ export const BattleQuizOverlay = ({
     if (done) return;
     setDone(true);
     setSelected(idx);
-    const correct = question ? idx === question.correctAnswer : false;
+    const correct = question ? idx === question.correct_answer : false;
     setTimeout(() => onResult(correct), 900);
   };
 
-  if (!question) return null;
+  const handleFlee = () => {
+    if (done) return;
+    setDone(true);
+    onFlee();
+  };
+
+  if (!question) {
+    return (
+      <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 backdrop-blur-sm">
+        <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 p-8 text-center">
+          <div className="w-8 h-8 border-4 border-red-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-slate-600">A carregar pergunta...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 backdrop-blur-sm">
@@ -70,17 +85,17 @@ export const BattleQuizOverlay = ({
 
         <div className="p-6 space-y-5">
           <p className="text-slate-800 font-semibold text-center text-base leading-relaxed">
-            {question.question}
+            {question.question_text}
           </p>
 
           <div className="grid grid-cols-1 gap-2.5">
             {question.options.map((opt, i) => {
-              let cls = "border-2 border-slate-200 hover:border-amber-400 hover:bg-amber-50";
+              let cls = "border-2 border-slate-200 hover:border-amber-400 hover:bg-amber-50 cursor-pointer";
               if (done && selected === i) {
-                cls = i === question.correctAnswer
+                cls = i === question.correct_answer
                   ? "border-2 border-green-500 bg-green-50"
                   : "border-2 border-red-500 bg-red-50";
-              } else if (done && i === question.correctAnswer) {
+              } else if (done && i === question.correct_answer) {
                 cls = "border-2 border-green-500 bg-green-50";
               }
               return (
@@ -88,10 +103,11 @@ export const BattleQuizOverlay = ({
                   key={i}
                   onClick={() => handleAnswer(i)}
                   disabled={done}
-                  className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all flex items-center gap-2.5 ${cls}`}
+                  className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all flex items-center gap-2.5 ${cls} disabled:cursor-default`}
                 >
-                  {done && i === question.correctAnswer && <Check className="w-4 h-4 text-green-600 flex-shrink-0" />}
-                  {done && selected === i && i !== question.correctAnswer && <X className="w-4 h-4 text-red-600 flex-shrink-0" />}
+                  {done && i === question.correct_answer && <Check className="w-4 h-4 text-green-600 flex-shrink-0" />}
+                  {done && selected === i && i !== question.correct_answer && <X className="w-4 h-4 text-red-600 flex-shrink-0" />}
+                  {!done && <span className="w-5 h-5 rounded-full border-2 border-current opacity-30 flex-shrink-0 text-[10px] flex items-center justify-center font-bold">{String.fromCharCode(65 + i)}</span>}
                   <span>{opt}</span>
                 </button>
               );
@@ -101,11 +117,11 @@ export const BattleQuizOverlay = ({
           <Button
             variant="ghost"
             size="sm"
-            onClick={onFlee}
-            className="w-full text-slate-500 hover:text-slate-700"
+            onClick={handleFlee}
+            className="w-full text-slate-500 hover:text-red-600 hover:bg-red-50"
             disabled={done}
           >
-            Fugir da batalha
+            🏃 Fugir da batalha
           </Button>
         </div>
       </div>

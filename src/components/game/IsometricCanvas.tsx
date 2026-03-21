@@ -19,6 +19,7 @@ interface IsometricCanvasProps {
   studentId?: string;
   district?: string | null;
   cooldownElements?: Set<number>;
+  constructingIds?: Set<string>;
   onTileClick: (gx: number, gy: number) => void;
   onTileHover: (gx: number, gy: number) => void;
   onBuildingClick: (building: PlacedBuilding) => void;
@@ -35,6 +36,7 @@ const FARM_COLORS = ['#6b8e23', '#7a9e32', '#5a7e13', '#648a1e'];
 export const IsometricCanvas = ({
   grid, buildings, gridSize, selectedBuilding, ghostPos, canPlaceGhost,
   productionReady, animatedCitizens, complaints, studentId, district, cooldownElements,
+  constructingIds,
   onTileClick, onTileHover, onBuildingClick, onTerrainClick,
 }: IsometricCanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -278,54 +280,60 @@ export const IsometricCanvas = ({
       ctx.ellipse(sx + 3, sy + 5, 18 * def.width, 9 * def.height, 0.15, 0, Math.PI * 2);
       ctx.fill();
 
-      drawBuildingSprite(ctx, b.defId, sx, sy, def.width, def.height, b.level);
+      const isConstructing = constructingIds?.has(b.id) ?? false;
 
-      // Flags on towers/monuments
-      if (def.id === 'tower' || def.category === 'monument') {
-        drawFlag(ctx, sx + 8, sy - 20 - (b.level - 1) * 2, time);
-      }
+      if (isConstructing) {
+        drawConstructionScaffold(ctx, sx, sy, def.width, def.height, time);
+      } else {
+        drawBuildingSprite(ctx, b.defId, sx, sy, def.width, def.height, b.level);
 
-      // Fountain water
-      if (def.id === 'fountain' || def.id === 'well') {
-        drawWaterShimmer(ctx, sx, sy - 8, 20, time);
-      }
+        // Flags on towers/monuments
+        if (def.id === 'tower' || def.category === 'monument') {
+          drawFlag(ctx, sx + 8, sy - 20 - (b.level - 1) * 2, time);
+        }
 
-      // Farm crop animation
-      if (def.id === 'farm') {
-        drawFarmCrops(ctx, sx, sy, b.level, time);
-      }
+        // Fountain water
+        if (def.id === 'fountain' || def.id === 'well') {
+          drawWaterShimmer(ctx, sx, sy - 8, 20, time);
+        }
 
-      // Hospital cross
-      if (def.id === 'hospital') {
-        drawCross(ctx, sx, sy - 25, time);
-      }
+        // Farm crop animation
+        if (def.id === 'farm') {
+          drawFarmCrops(ctx, sx, sy, b.level, time);
+        }
 
-      // Level badge
-      if (b.level > 1) {
-        ctx.fillStyle = '#f5a623';
-        ctx.beginPath();
-        ctx.arc(sx + 14, sy - 22 - (b.level - 1) * 2, 8, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 1;
-        ctx.stroke();
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold 10px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText(`${b.level}`, sx + 14, sy - 19 - (b.level - 1) * 2);
-      }
+        // Hospital cross
+        if (def.id === 'hospital') {
+          drawCross(ctx, sx, sy - 25, time);
+        }
 
-      // Production ready indicator
-      if (productionReady.has(b.id)) {
-        const bobY = Math.sin(time * 4) * 3;
-        ctx.fillStyle = '#f5a623';
-        ctx.beginPath();
-        ctx.arc(sx, sy - 30 + bobY, 8, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold 10px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('🪙', sx, sy - 27 + bobY);
+        // Level badge
+        if (b.level > 1) {
+          ctx.fillStyle = '#f5a623';
+          ctx.beginPath();
+          ctx.arc(sx + 14, sy - 22 - (b.level - 1) * 2, 8, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = '#fff';
+          ctx.lineWidth = 1;
+          ctx.stroke();
+          ctx.fillStyle = '#fff';
+          ctx.font = 'bold 10px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(`${b.level}`, sx + 14, sy - 19 - (b.level - 1) * 2);
+        }
+
+        // Production ready indicator
+        if (productionReady.has(b.id)) {
+          const bobY = Math.sin(time * 4) * 3;
+          ctx.fillStyle = '#f5a623';
+          ctx.beginPath();
+          ctx.arc(sx, sy - 30 + bobY, 8, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#fff';
+          ctx.font = 'bold 10px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('🪙', sx, sy - 27 + bobY);
+        }
       }
     }
 
@@ -563,6 +571,53 @@ export const IsometricCanvas = ({
         ctx.lineTo(sx + 3, sy - 1);
         ctx.stroke();
       }
+    }
+  }
+
+  function drawConstructionScaffold(ctx: CanvasRenderingContext2D, sx: number, sy: number, w: number, h: number, time: number) {
+    const baseW = TILE_W * w * 0.6;
+    const baseH = 28 * h;
+    const bobble = Math.sin(time * 3) * 1.5;
+
+    // Foundation outline
+    ctx.strokeStyle = 'rgba(180,130,60,0.8)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([4, 3]);
+    ctx.beginPath();
+    ctx.rect(sx - baseW / 2, sy - baseH + bobble, baseW, baseH);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Scaffolding poles
+    ctx.strokeStyle = '#c8963c';
+    ctx.lineWidth = 2;
+    for (let i = 0; i <= 2; i++) {
+      const px = sx - baseW / 2 + (baseW / 2) * i;
+      ctx.beginPath();
+      ctx.moveTo(px, sy + bobble);
+      ctx.lineTo(px, sy - baseH + bobble);
+      ctx.stroke();
+    }
+    // Horizontal bars
+    for (let j = 0; j < 3; j++) {
+      const py = sy - (baseH / 3) * (j + 0.5) + bobble;
+      ctx.beginPath();
+      ctx.moveTo(sx - baseW / 2, py);
+      ctx.lineTo(sx + baseW / 2, py);
+      ctx.stroke();
+    }
+
+    // Hard hat icon
+    ctx.font = `${14 + Math.sin(time * 2) * 1}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText('🪖', sx, sy - baseH - 8 + bobble);
+
+    // Dust particles
+    if (Math.random() < 0.3) {
+      ctx.fillStyle = `rgba(200,170,100,${Math.random() * 0.3 + 0.1})`;
+      ctx.beginPath();
+      ctx.arc(sx + (Math.random() - 0.5) * baseW, sy - Math.random() * baseH + bobble, Math.random() * 2 + 1, 0, Math.PI * 2);
+      ctx.fill();
     }
   }
 

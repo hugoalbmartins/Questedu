@@ -54,6 +54,7 @@ const GamePage = () => {
   const [showTournamentHub, setShowTournamentHub] = useState(false);
   const [streakInfo, setStreakInfo] = useState({ current_streak: 0, longest_streak: 0 });
   const [battleQuizCallback, setBattleQuizCallback] = useState<((correct: boolean) => void) | null>(null);
+  const battleQuizCallbackRef = useRef<((correct: boolean) => void) | null>(null);
   const [showBattleQuiz, setShowBattleQuiz] = useState(false);
   const [battleEnemy, setBattleEnemy] = useState<{ name: string; emoji: string } | null>(null);
   const { achievements, unlocked, checkAchievements } = useAchievements(studentData?.id);
@@ -132,12 +133,15 @@ const GamePage = () => {
     return new Promise((resolve) => {
       setBattleEnemy({ name: enemyName, emoji: enemyEmoji });
       setShowBattleQuiz(true);
-      setBattleQuizCallback(() => (correct: boolean) => {
+      const cb = (correct: boolean) => {
         setShowBattleQuiz(false);
         setBattleQuizCallback(null);
+        battleQuizCallbackRef.current = null;
         setBattleEnemy(null);
         resolve(correct);
-      });
+      };
+      setBattleQuizCallback(() => cb);
+      battleQuizCallbackRef.current = cb;
     });
   }, []);
 
@@ -490,12 +494,15 @@ const GamePage = () => {
           student={studentData}
           enemyName={battleEnemy.name}
           enemyEmoji={battleEnemy.emoji}
-          onResult={(correct) => battleQuizCallback?.(correct)}
+          onResult={(correct) => battleQuizCallbackRef.current?.(correct)}
           onFlee={() => {
+            const cb = battleQuizCallbackRef.current;
             setShowBattleQuiz(false);
             setShowBattle(false);
             setBattleQuizCallback(null);
+            battleQuizCallbackRef.current = null;
             setBattleEnemy(null);
+            cb?.(false);
           }}
         />
       )}
