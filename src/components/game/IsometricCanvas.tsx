@@ -283,6 +283,9 @@ export const IsometricCanvas = ({
       const isConstructing = constructingIds?.has(b.id) ?? false;
 
       if (isConstructing) {
+        ctx.globalAlpha = 0.35;
+        drawBuildingSprite(ctx, b.defId, sx, sy, def.width, def.height, b.level);
+        ctx.globalAlpha = 1;
         drawConstructionScaffold(ctx, sx, sy, def.width, def.height, time);
       } else {
         drawBuildingSprite(ctx, b.defId, sx, sy, def.width, def.height, b.level);
