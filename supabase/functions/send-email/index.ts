@@ -11,6 +11,7 @@ interface EmailRequest {
   subject: string;
   html: string;
   text?: string;
+  from?: string;
 }
 
 Deno.serve(async (req: Request) => {
@@ -19,7 +20,7 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const { to, subject, html, text }: EmailRequest = await req.json();
+    const { to, subject, html, text, from }: EmailRequest = await req.json();
 
     if (!to || !subject || !html) {
       return new Response(
@@ -28,85 +29,49 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const smtpHost = Deno.env.get("SMTP_HOST");
-    const smtpPort = parseInt(Deno.env.get("SMTP_PORT") || "465");
-    const smtpUser = Deno.env.get("SMTP_USER");
-    const smtpPassword = Deno.env.get("SMTP_PASSWORD");
+    const resendApiKey = Deno.env.get("RESEND_API_KEY");
 
-    if (!smtpHost || !smtpUser || !smtpPassword) {
+    if (!resendApiKey) {
       return new Response(
-        JSON.stringify({ error: "SMTP credentials not configured" }),
+        JSON.stringify({ error: "RESEND_API_KEY not configured" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const authString = btoa(`\x00${smtpUser}\x00${smtpPassword}`);
+    const senderAddress = from || "Questeduca <noreply@questeduca.pt>";
 
-    const boundary = `----=_Part_${Date.now()}`;
-    const plainText = text || html.replace(/<[^>]*>/g, "");
-    const emailContent = [
-      `From: Questeduca <${smtpUser}>`,
-      `To: ${to}`,
-      `Subject: ${subject}`,
-      `MIME-Version: 1.0`,
-      `Content-Type: multipart/alternative; boundary="${boundary}"`,
-      ``,
-      `--${boundary}`,
-      `Content-Type: text/plain; charset=utf-8`,
-      `Content-Transfer-Encoding: 7bit`,
-      ``,
-      plainText,
-      ``,
-      `--${boundary}`,
-      `Content-Type: text/html; charset=utf-8`,
-      `Content-Transfer-Encoding: 7bit`,
-      ``,
+    const payload: Record<string, unknown> = {
+      from: senderAddress,
+      to: [to],
+      subject,
       html,
-      ``,
-      `--${boundary}--`,
-    ].join("\r\n");
+    };
 
-    const conn = await Deno.connectTls({
-      hostname: smtpHost,
-      port: smtpPort,
+    if (text) {
+      payload.text = text;
+    }
+
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${resendApiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
     });
 
-    const encoder = new TextEncoder();
-    const decoder = new TextDecoder();
+    const result = await response.json();
 
-    const readResponse = async (): Promise<string> => {
-      const buffer = new Uint8Array(4096);
-      const n = await conn.read(buffer);
-      return decoder.decode(buffer.subarray(0, n || 0));
-    };
-
-    const sendCommand = async (cmd: string): Promise<string> => {
-      await conn.write(encoder.encode(cmd + "\r\n"));
-      return await readResponse();
-    };
-
-    await readResponse();
-    await sendCommand(`EHLO questeduca.pt`);
-    const authResp = await sendCommand(`AUTH PLAIN ${authString}`);
-
-    if (!authResp.startsWith("235")) {
-      conn.close();
+    if (!response.ok) {
+      console.error("Resend API error:", result);
       return new Response(
-        JSON.stringify({ error: "SMTP authentication failed", details: authResp }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: "Failed to send email", details: result }),
+        { status: response.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    await sendCommand(`MAIL FROM:<${smtpUser}>`);
-    await sendCommand(`RCPT TO:<${to}>`);
-    await sendCommand(`DATA`);
-    await conn.write(encoder.encode(emailContent + "\r\n.\r\n"));
-    await readResponse();
-    await sendCommand(`QUIT`);
-    conn.close();
-
     return new Response(
-      JSON.stringify({ success: true, message: "Email sent successfully" }),
+      JSON.stringify({ success: true, id: result.id }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {

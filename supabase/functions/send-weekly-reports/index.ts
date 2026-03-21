@@ -1,6 +1,30 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
+async function sendEmailViaResend(to: string, subject: string, html: string): Promise<void> {
+  const resendApiKey = Deno.env.get("RESEND_API_KEY");
+  if (!resendApiKey) throw new Error("RESEND_API_KEY not configured");
+
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${resendApiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from: "Questeduca <noreply@questeduca.pt>",
+      to: [to],
+      subject,
+      html,
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(`Resend API error: ${JSON.stringify(error)}`);
+  }
+}
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
@@ -83,23 +107,11 @@ Deno.serve(async (req: Request) => {
 
         const emailHtml = generateEmailHTML(student.student_name, report);
 
-        const { error: emailError } = await supabase.functions.invoke("send-email", {
-          body: {
-            to: student.parent_email,
-            subject: `Relatório Semanal: ${student.student_name}`,
-            html: emailHtml,
-          },
-        });
-
-        if (emailError) {
-          console.error(`Error sending email to ${student.parent_email}:`, emailError);
-          results.push({
-            student: student.student_name,
-            success: false,
-            error: emailError.message,
-          });
-          continue;
-        }
+        await sendEmailViaResend(
+          student.parent_email,
+          `Relatório Semanal: ${student.student_name}`,
+          emailHtml,
+        );
 
         await supabase
           .from("progress_reports")
@@ -186,16 +198,16 @@ function generateEmailHTML(studentName: string, report: any): string {
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
       </head>
       <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 10px 10px 0 0; text-align: center;">
-          <h1 style="color: white; margin: 0;">📊 Relatório Semanal</h1>
-          <p style="color: white; margin: 10px 0 0 0;">${studentName}</p>
+        <div style="background: linear-gradient(135deg, #c9a227 0%, #d4a726 100%); padding: 30px; border-radius: 10px 10px 0 0; text-align: center;">
+          <h1 style="color: #1a1a2e; margin: 0;">Relatório Semanal</h1>
+          <p style="color: #1a1a2e; margin: 10px 0 0 0;">${studentName}</p>
         </div>
 
         <div style="background: white; padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 10px 10px;">
           <p style="font-size: 16px; margin-bottom: 20px;">${report.parent_message}</p>
 
           <div style="background: #f9fafb; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-            <h2 style="color: #667eea; margin-top: 0;">Resumo Geral</h2>
+            <h2 style="color: #8b7355; margin-top: 0;">Resumo Geral</h2>
             <table style="width: 100%; border-collapse: collapse;">
               <tr>
                 <td style="padding: 8px 0;"><strong>Perguntas Respondidas:</strong></td>
@@ -207,7 +219,7 @@ function generateEmailHTML(studentName: string, report: any): string {
               </tr>
               <tr>
                 <td style="padding: 8px 0;"><strong>Precisão:</strong></td>
-                <td style="padding: 8px 0; text-align: right; font-weight: bold; color: #667eea;">${report.accuracy_percentage}%</td>
+                <td style="padding: 8px 0; text-align: right; font-weight: bold; color: #8b7355;">${report.accuracy_percentage}%</td>
               </tr>
               <tr>
                 <td style="padding: 8px 0;"><strong>Dias Ativos:</strong></td>
@@ -218,7 +230,7 @@ function generateEmailHTML(studentName: string, report: any): string {
 
           ${subjectsHTML ? `
             <div style="margin-bottom: 20px;">
-              <h2 style="color: #667eea;">Desempenho por Disciplina</h2>
+              <h2 style="color: #8b7355;">Desempenho por Disciplina</h2>
               <table style="width: 100%; border-collapse: collapse; border: 1px solid #e5e7eb;">
                 <thead>
                   <tr style="background: #f9fafb;">
