@@ -9,6 +9,16 @@ const parseRole = (value: unknown): AppRole | null => {
 };
 
 export const resolvePostLoginRoute = async (user: User): Promise<string> => {
+  const { data: adminRole } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (adminRole?.role === "admin" || adminRole?.role === "super_admin") {
+    return "/administratorquest";
+  }
+
   let role = parseRole(user.user_metadata?.role);
 
   if (!role) {
