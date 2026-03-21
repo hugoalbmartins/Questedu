@@ -379,8 +379,11 @@ export const VillageView = ({ student, onQuiz, onRefresh, onPremium }: VillageVi
       }
     }, 100);
 
-    setSelectedBuilding(null);
-    setGhostPos(null);
+    const keepSelected = def.id === 'road' || def.id === 'wall';
+    if (!keepSelected) {
+      setSelectedBuilding(null);
+      setGhostPos(null);
+    }
     onRefresh();
   }, [selectedBuilding, fullGrid, student, onRefresh, isFree, buildings.length, resources, spendResources]);
 

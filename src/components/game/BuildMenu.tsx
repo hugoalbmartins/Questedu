@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { BUILDING_DEFS, BUILDING_CATEGORIES, BuildingDef, NaturalResourceType } from '@/lib/gameTypes';
 import { RESOURCE_INFO } from '@/hooks/useResources';
 import { SFX } from '@/lib/sounds';
@@ -39,14 +38,20 @@ export const BuildMenu = ({
   const meetsAccess = (def: BuildingDef) => !def.premiumOnly || isPremium;
 
   return (
-    <div className="absolute bottom-16 left-0 right-0 z-30 bg-card/95 backdrop-blur-sm border-t-2 border-border">
-      {/* Category tabs */}
-      <div className="flex gap-1 px-2 py-1.5 overflow-x-auto">
+    <div
+      className="absolute bottom-16 left-0 right-0 z-30 bg-card/95 backdrop-blur-sm border-t-2 border-border"
+      onTouchStart={(e) => e.stopPropagation()}
+      onTouchMove={(e) => e.stopPropagation()}
+    >
+      <div
+        className="flex gap-1 px-2 py-1.5"
+        style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', touchAction: 'pan-x' }}
+      >
         {BUILDING_CATEGORIES.map(cat => (
           <button
             key={cat.id}
             onClick={() => { setActiveCategory(cat.id); SFX.click(); }}
-            className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-body font-semibold whitespace-nowrap transition-colors
+            className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-body font-semibold whitespace-nowrap transition-colors flex-shrink-0
               ${activeCategory === cat.id
                 ? 'bg-primary text-primary-foreground'
                 : 'bg-muted text-muted-foreground hover:bg-muted/80'
@@ -58,9 +63,11 @@ export const BuildMenu = ({
         ))}
       </div>
 
-      {/* Buildings list */}
-      <ScrollArea className="max-h-40">
-        <div className="flex gap-2 px-2 py-2 overflow-x-auto">
+      <div
+        className="max-h-40"
+        style={{ overflowX: 'auto', overflowY: 'auto', WebkitOverflowScrolling: 'touch', touchAction: 'pan-x pan-y' }}
+      >
+        <div className="flex gap-2 px-2 py-2" style={{ minWidth: 'max-content' }}>
           {filteredBuildings.map(def => {
             const affordable = canAfford(def);
             const levelOk = meetsLevel(def);
@@ -84,7 +91,6 @@ export const BuildMenu = ({
               >
                 <div className="text-2xl mb-0.5">{def.emoji}</div>
                 <div className="text-[10px] font-body font-bold leading-tight truncate">{def.name}</div>
-                {/* Currency costs */}
                 <div className="flex items-center justify-center gap-1 mt-0.5 flex-wrap">
                   {def.costCoins > 0 && (
                     <span className={`flex items-center gap-0.5 text-[9px] ${coins < def.costCoins ? 'text-destructive' : ''}`}>
@@ -97,7 +103,6 @@ export const BuildMenu = ({
                     </span>
                   )}
                 </div>
-                {/* Resource costs */}
                 {def.resourceCosts.length > 0 && (
                   <div className="flex items-center justify-center gap-1 mt-0.5 flex-wrap">
                     {def.resourceCosts.map(rc => {
@@ -122,9 +127,8 @@ export const BuildMenu = ({
             </p>
           )}
         </div>
-      </ScrollArea>
+      </div>
 
-      {/* Cancel button when building selected */}
       {selectedBuilding && (
         <div className="px-2 pb-2">
           <Button
@@ -133,7 +137,7 @@ export const BuildMenu = ({
             className="w-full text-xs"
             onClick={() => { onSelect(null); SFX.click(); }}
           >
-            ✕ Cancelar construção
+            Cancelar
           </Button>
         </div>
       )}

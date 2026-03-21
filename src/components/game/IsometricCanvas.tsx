@@ -68,33 +68,35 @@ export const IsometricCanvas = ({
     preloadSprites().then(() => setSpritesLoaded(true));
   }, []);
 
-  const screenToGrid = useCallback((clientX: number, clientY: number) => {
+  const screenToWorld = useCallback((clientX: number, clientY: number) => {
     const canvas = canvasRef.current;
     if (!canvas) return null;
     const rect = canvas.getBoundingClientRect();
-    const w = canvas.clientWidth;
-    const h = canvas.clientHeight;
-    const mx = (clientX - rect.left - w / 2) / zoom - camera.x + originX;
-    const my = (clientY - rect.top - h / 2) / zoom - camera.y + originY;
+    const w = rect.width;
+    const h = rect.height;
+    const mx = ((clientX - rect.left - w / 2) / zoom) - camera.x + originX;
+    const my = ((clientY - rect.top - h / 2) / zoom) - camera.y + originY;
+    return { mx, my };
+  }, [camera, zoom, originX, originY]);
+
+  const screenToGrid = useCallback((clientX: number, clientY: number) => {
+    const world = screenToWorld(clientX, clientY);
+    if (!world) return null;
+    const { mx, my } = world;
     const gx = Math.floor((mx / (TILE_W / 2) + my / (TILE_H / 2)) / 2);
     const gy = Math.floor((my / (TILE_H / 2) - mx / (TILE_W / 2)) / 2);
     if (gx >= 0 && gx < gridSize && gy >= 0 && gy < gridSize) return { gx, gy };
     return null;
-  }, [camera, zoom, gridSize, originX]);
+  }, [screenToWorld, gridSize]);
 
-  // Convert screen coords to fractional grid coords (for terrain element detection, supports outside grid)
   const screenToWorldGrid = useCallback((clientX: number, clientY: number) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return null;
-    const rect = canvas.getBoundingClientRect();
-    const w = canvas.clientWidth;
-    const h = canvas.clientHeight;
-    const mx = (clientX - rect.left - w / 2) / zoom - camera.x + originX;
-    const my = (clientY - rect.top - h / 2) / zoom - camera.y + originY;
+    const world = screenToWorld(clientX, clientY);
+    if (!world) return null;
+    const { mx, my } = world;
     const gx = (mx / (TILE_W / 2) + my / (TILE_H / 2)) / 2;
     const gy = (my / (TILE_H / 2) - mx / (TILE_W / 2)) / 2;
     return { gx, gy };
-  }, [camera, zoom, originX]);
+  }, [screenToWorld]);
 
   // Find nearest terrain element to world coords
   const findTerrainElement = useCallback((worldGx: number, worldGy: number): TerrainElement | null => {
@@ -129,7 +131,7 @@ export const IsometricCanvas = ({
     };
     animFrameRef.current = requestAnimationFrame(loop);
     return () => { running = false; cancelAnimationFrame(animFrameRef.current); };
-  }, [fullGrid, buildings, camera, zoom, ghostPos, selectedBuilding, canPlaceGhost, gridSize, spritesLoaded, productionReady, animatedCitizens, complaints]);
+  }, [fullGrid, buildings, camera, zoom, ghostPos, selectedBuilding, canPlaceGhost, gridSize, spritesLoaded, productionReady, animatedCitizens, complaints, constructingIds, constructionProgress]);
 
   // Smoke, leaf and firefly effects
   useEffect(() => {
@@ -175,11 +177,12 @@ export const IsometricCanvas = ({
     if (!ctx) return;
 
     const dpr = window.devicePixelRatio || 1;
-    const w = canvas.clientWidth;
-    const h = canvas.clientHeight;
+    const rect = canvas.getBoundingClientRect();
+    const w = rect.width;
+    const h = rect.height;
     if (canvasSize.current.w !== w || canvasSize.current.h !== h) {
-      canvas.width = w * dpr;
-      canvas.height = h * dpr;
+      canvas.width = Math.round(w * dpr);
+      canvas.height = Math.round(h * dpr);
       canvasSize.current = { w, h };
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
@@ -1143,34 +1146,52 @@ export const IsometricCanvas = ({
     ctx.closePath();
   }
 
-  // Mouse/touch handlers
+  const isDragBuildable = selectedBuilding === 'road' || selectedBuilding === 'wall';
+  const lastDragPlaceRef = useRef<string | null>(null);
+  const pinchStartDist = useRef<number | null>(null);
+  const pinchStartZoom = useRef<number>(1);
+
   const handleMouseDown = (e: React.MouseEvent) => {
+    lastDragPlaceRef.current = null;
     setDragging(true);
     setDragStart({ x: e.clientX, y: e.clientY });
     setCamStart({ ...camera });
   };
+
   const handleMouseMove = (e: React.MouseEvent) => {
+    const pos = screenToGrid(e.clientX, e.clientY);
     if (dragging) {
-      setCamera({ x: camStart.x + (e.clientX - dragStart.x) / zoom, y: camStart.y + (e.clientY - dragStart.y) / zoom });
+      if (isDragBuildable && selectedBuilding && pos) {
+        const key = `${pos.gx},${pos.gy}`;
+        if (lastDragPlaceRef.current !== key) {
+          lastDragPlaceRef.current = key;
+          onTileClick(pos.gx, pos.gy);
+        }
+        onTileHover(pos.gx, pos.gy);
+      } else {
+        setCamera({
+          x: camStart.x + (e.clientX - dragStart.x) / zoom,
+          y: camStart.y + (e.clientY - dragStart.y) / zoom,
+        });
+      }
     } else {
-      const pos = screenToGrid(e.clientX, e.clientY);
       if (pos) onTileHover(pos.gx, pos.gy);
     }
   };
+
   const handleMouseUp = (e: React.MouseEvent) => {
     if (dragging) {
       const dist = Math.abs(e.clientX - dragStart.x) + Math.abs(e.clientY - dragStart.y);
-      if (dist < 5) {
+      if (dist < 8) {
         const pos = screenToGrid(e.clientX, e.clientY);
         if (pos) {
           const tile = fullGrid[pos.gy]?.[pos.gx];
           if (tile?.buildingId && !selectedBuilding) {
-            const b = buildings.find(b => b.id === tile.buildingId);
+            const b = buildings.find(bl => bl.id === tile.buildingId);
             if (b) { onBuildingClick(b); setDragging(false); return; }
           }
           onTileClick(pos.gx, pos.gy);
         } else if (onTerrainClick) {
-          // Clicked outside village grid — check for terrain elements
           const worldPos = screenToWorldGrid(e.clientX, e.clientY);
           if (worldPos) {
             const el = findTerrainElement(worldPos.gx, worldPos.gy);
@@ -1180,29 +1201,80 @@ export const IsometricCanvas = ({
       }
     }
     setDragging(false);
+    lastDragPlaceRef.current = null;
   };
+
   const handleWheel = (e: React.WheelEvent) => {
     e.preventDefault();
     setZoom(z => Math.max(0.4, Math.min(2.5, z - e.deltaY * 0.001)));
   };
+
   const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 2) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      pinchStartDist.current = Math.sqrt(dx * dx + dy * dy);
+      pinchStartZoom.current = zoom;
+      return;
+    }
     if (e.touches.length === 1) {
+      lastDragPlaceRef.current = null;
       setDragging(true);
       setDragStart({ x: e.touches[0].clientX, y: e.touches[0].clientY });
       setCamStart({ ...camera });
+      if (selectedBuilding) {
+        const pos = screenToGrid(e.touches[0].clientX, e.touches[0].clientY);
+        if (pos) onTileHover(pos.gx, pos.gy);
+      }
     }
   };
+
   const handleTouchMove = (e: React.TouchEvent) => {
+    if (e.touches.length === 2 && pinchStartDist.current !== null) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const scale = dist / pinchStartDist.current;
+      setZoom(Math.max(0.4, Math.min(2.5, pinchStartZoom.current * scale)));
+      return;
+    }
     if (dragging && e.touches.length === 1) {
-      setCamera({ x: camStart.x + (e.touches[0].clientX - dragStart.x) / zoom, y: camStart.y + (e.touches[0].clientY - dragStart.y) / zoom });
+      const touch = e.touches[0];
+      if (isDragBuildable && selectedBuilding) {
+        const pos = screenToGrid(touch.clientX, touch.clientY);
+        if (pos) {
+          const key = `${pos.gx},${pos.gy}`;
+          if (lastDragPlaceRef.current !== key) {
+            lastDragPlaceRef.current = key;
+            onTileClick(pos.gx, pos.gy);
+          }
+          onTileHover(pos.gx, pos.gy);
+        }
+      } else {
+        setCamera({
+          x: camStart.x + (touch.clientX - dragStart.x) / zoom,
+          y: camStart.y + (touch.clientY - dragStart.y) / zoom,
+        });
+      }
     }
   };
+
   const handleTouchEnd = (e: React.TouchEvent) => {
+    if (pinchStartDist.current !== null && e.touches.length < 2) {
+      pinchStartDist.current = null;
+      return;
+    }
     if (dragging && e.changedTouches.length === 1) {
       const t = e.changedTouches[0];
-      if (Math.abs(t.clientX - dragStart.x) + Math.abs(t.clientY - dragStart.y) < 10) {
+      const dist = Math.abs(t.clientX - dragStart.x) + Math.abs(t.clientY - dragStart.y);
+      if (dist < 15 && !isDragBuildable) {
         const pos = screenToGrid(t.clientX, t.clientY);
         if (pos) {
+          const tile = fullGrid[pos.gy]?.[pos.gx];
+          if (tile?.buildingId && !selectedBuilding) {
+            const b = buildings.find(bl => bl.id === tile.buildingId);
+            if (b) { onBuildingClick(b); setDragging(false); return; }
+          }
           onTileClick(pos.gx, pos.gy);
         } else if (onTerrainClick) {
           const worldPos = screenToWorldGrid(t.clientX, t.clientY);
@@ -1214,16 +1286,18 @@ export const IsometricCanvas = ({
       }
     }
     setDragging(false);
+    lastDragPlaceRef.current = null;
   };
 
   return (
     <canvas
       ref={canvasRef}
-      className="w-full h-full cursor-grab active:cursor-grabbing touch-none"
+      className="w-full h-full cursor-grab active:cursor-grabbing"
+      style={{ touchAction: 'none' }}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
-      onMouseLeave={() => setDragging(false)}
+      onMouseLeave={() => { setDragging(false); lastDragPlaceRef.current = null; }}
       onWheel={handleWheel}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
