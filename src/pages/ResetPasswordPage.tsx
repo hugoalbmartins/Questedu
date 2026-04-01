@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Loader2, CheckCircle } from "lucide-react";
+import { Loader as Loader2, CircleCheck as CheckCircle } from "lucide-react";
 import logo from "@/assets/logo.png";
 
 const ResetPasswordPage = () => {
@@ -17,22 +17,49 @@ const ResetPasswordPage = () => {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [isValidSession, setIsValidSession] = useState(false);
+  const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    // Check if we have a valid recovery session
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN") {
+        if (session) {
+          setIsValidSession(true);
+          setChecking(false);
+        }
+      }
+    });
+
     const checkSession = async () => {
+      const hash = window.location.hash;
+      if (hash && (hash.includes("type=recovery") || hash.includes("access_token"))) {
+        const params = new URLSearchParams(hash.substring(1));
+        const accessToken = params.get("access_token");
+        const refreshToken = params.get("refresh_token");
+
+        if (accessToken && refreshToken) {
+          const { error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+          if (!error) {
+            setIsValidSession(true);
+            setChecking(false);
+            window.history.replaceState(null, "", window.location.pathname);
+            return;
+          }
+        }
+      }
+
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         setIsValidSession(true);
-      } else {
-        // Check hash for recovery type
-        const hash = window.location.hash;
-        if (hash.includes("type=recovery")) {
-          setIsValidSession(true);
-        }
       }
+      setChecking(false);
     };
+
     checkSession();
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -82,13 +109,24 @@ const ResetPasswordPage = () => {
     );
   }
 
+  if (checking) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4 parchment-bg">
+        <div className="w-full max-w-md game-border p-8 bg-card text-center">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-primary" />
+          <p className="font-body text-muted-foreground">A verificar link...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!isValidSession) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4 parchment-bg">
         <div className="w-full max-w-md game-border p-8 bg-card text-center">
-          <h1 className="font-display text-2xl font-bold mb-2">Link Inválido</h1>
+          <h1 className="font-display text-2xl font-bold mb-2">Link Invalido</h1>
           <p className="font-body text-muted-foreground mb-6">
-            Este link de recuperação expirou ou é inválido. Por favor, solicita um novo.
+            Este link de recuperacao expirou ou e invalido. Por favor, solicita um novo.
           </p>
           <Button onClick={() => navigate("/forgot-password")} className="w-full">
             Solicitar Novo Link

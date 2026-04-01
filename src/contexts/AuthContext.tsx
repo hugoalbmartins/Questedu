@@ -95,22 +95,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     // Listen for auth changes AFTER initialization
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, newSession) => {
+      (event, newSession) => {
         if (cancelled) return;
-        
-        // Skip if not yet initialized to avoid race with getSession
-        if (!initialized.current) return;
+
+        if (!initialized.current && event !== "PASSWORD_RECOVERY") return;
 
         setSession(newSession);
         setUser(newSession?.user ?? null);
 
         if (newSession?.user) {
-          await fetchProfile(newSession.user.id);
+          (async () => {
+            await fetchProfile(newSession.user.id);
+            setLoading(false);
+          })();
         } else {
           setProfile(null);
           setStudentData(null);
+          setLoading(false);
         }
-        setLoading(false);
       }
     );
 
